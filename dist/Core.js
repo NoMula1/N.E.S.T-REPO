@@ -61,7 +61,8 @@ exports.client = new CoreClient_1.default(config_1.config.clientID, {
     ],
     partials: [
         discord_js_1.Partials.Message,
-        discord_js_1.Partials.Reaction
+        discord_js_1.Partials.Reaction,
+        discord_js_1.Partials.Channel
     ]
 });
 if (process.env.NODE_ENV === "production")

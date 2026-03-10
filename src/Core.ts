@@ -24,7 +24,8 @@ export const client = new CoreClient(config.clientID, {
 	],
 	partials: [
 		Partials.Message,
-		Partials.Reaction
+		Partials.Reaction,
+		Partials.Channel
 	]
 })
 
