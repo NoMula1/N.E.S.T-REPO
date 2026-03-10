@@ -1,4 +1,4 @@
-import { ModalSubmitInteraction, TextInputStyle, TextInputBuilder, Interaction, APIMessageActionRowComponent, ChannelType, Message, TextChannel, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, APIActionRowComponent, Events } from "discord.js"
+import { ModalSubmitInteraction, TextInputStyle, TextInputBuilder, Interaction, ChannelType, Message, TextChannel, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, APIActionRowComponent, Events } from "discord.js"
 import ModMail from "../../schemas/ModMail"
 import { handleError } from "../../utils/GenUtils"
 import { Log } from "../../utils/logging"
@@ -11,7 +11,7 @@ async function editLast(channel: TextChannel, userId: string, edited: ActionRowB
 	const messages = await channel.messages.fetch({ limit: 3 })
 	const lastMessage = messages.find(message => message.author.id === userId)
 	if (lastMessage) {
-		await lastMessage.edit({ components: [edited as unknown as APIActionRowComponent<APIMessageActionRowComponent>] })
+		await lastMessage.edit({ components: [edited as any] })
 	}
 }
 
@@ -57,7 +57,7 @@ export default {
 			newModMailUser.save().catch((error) => {
 				Log.error("Failed to save ModMailUser: " + error)
 			})
-			await message.reply({ embeds: [sureEmbed], components: [confirmRow as unknown as APIActionRowComponent<APIMessageActionRowComponent>] })
+			await message.reply({ embeds: [sureEmbed], components: [confirmRow as any] })
 		}
 	},
 	async onInteractionCreate(_: EventOptions, interaction: Interaction) {
@@ -147,7 +147,7 @@ export default {
 						const channel = interaction.client.channels.cache.get(channelLookup(Channel.MOD_MAIL)) as TextChannel
 						editLast(interaction.client.channels.cache.get(find.channelID) as TextChannel, channelLookup(Channel.MOD_MAIL), confirmed)
 						await interaction.reply({ embeds: [sentEmbed], ephemeral: true })
-						await channel.send({ embeds: [embed], components: [row as unknown as APIActionRowComponent<APIMessageActionRowComponent>] }).then(sentMessage => {
+						await channel.send({ embeds: [embed], components: [row as any] }).then(sentMessage => {
 							find.messageID = sentMessage.id
 						}).catch((error) => {
 							Log.error("Failed to send embed: " + error)

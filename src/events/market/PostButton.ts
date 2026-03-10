@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable import/no-named-as-default */
-import { APIActionRowComponent, APIMessageActionRowComponent, ActionRow, ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Channel, ChannelType, ColorResolvable, Colors, Embed, EmbedBuilder, Events, Guild, GuildMember, GuildMemberRoleManager, Interaction, Message, MessageActionRowComponent, ModalBuilder, ModalSubmitInteraction, PermissionFlagsBits, PermissionsBitField, Role, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, TextChannel, TextInputBuilder, TextInputStyle, User } from "discord.js"
+import { APIActionRowComponent, ActionRow, ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, Channel, ChannelType, ColorResolvable, Colors, Embed, EmbedBuilder, Events, Guild, GuildMember, GuildMemberRoleManager, Interaction, Message, MessageActionRowComponent, ModalBuilder, ModalSubmitInteraction, PermissionFlagsBits, PermissionsBitField, Role, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, TextChannel, TextInputBuilder, TextInputStyle, User } from "discord.js"
 import { config } from "../../utils/config"
 import PostTemplates, { PostTemplateType } from "../../schemas/PostTemplates"
 import { handleError } from "../../utils/GenUtils"
@@ -1355,13 +1355,10 @@ export default {
 						const jobMessage = await (jobChannel as TextChannel).send({
 							content: `<@${interaction.user.id}>`,
 							embeds: embeds,
-							components: [(row2 as unknown as APIActionRowComponent<APIMessageActionRowComponent>)]
-						}).catch(() => { })
+						components: [(row2 as any)]
+					}).catch(() => { })
 
-						await Post.create({
-							guildID: interaction.guildId,
-							userID: interaction.user.id,
-							jobChannelId: jobChannel.id,
+					await Post.create({
 							messageId: (jobMessage as Message<boolean>).id,
 							postTemplateReference: sendPostTemplate._id
 						})
