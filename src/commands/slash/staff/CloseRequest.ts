@@ -55,6 +55,6 @@ export default new CommandExecutor()
 			.setColor("Green")
 			.setTimestamp()
 			.setFooter({ text: "Ticket will close automatically in 24 hours." })
-		interaction.reply({ content: `<@${foundTicket.creatorID}>`, embeds: [closeReq], components: [closeReqButtons] })
+		interaction.reply({ content: `<@${foundTicket.creatorID}>`, embeds: [closeReq], components: [closeReqButtons.toJSON()] })
 
 	})

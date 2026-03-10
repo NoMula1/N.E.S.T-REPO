@@ -98,9 +98,9 @@ export default new CommandExecutor()
 		if (histArr.length > 1) {
 			row = new ActionRowBuilder<ButtonBuilder>()
 				.addComponents(
-					ButtonBuilder.from(histReply.components[0].components[0] as APIButtonComponent).setDisabled(true),
-					ButtonBuilder.from(histReply.components[0].components[1] as APIButtonComponent).setDisabled(false),
-					ButtonBuilder.from(histReply.components[0].components[2] as APIButtonComponent).setDisabled(false)
+					ButtonBuilder.from((histReply.components[0] as any).components[0] as APIButtonComponent).setDisabled(true),
+					ButtonBuilder.from((histReply.components[0] as any).components[1] as APIButtonComponent).setDisabled(false),
+					ButtonBuilder.from((histReply.components[0] as any).components[2] as APIButtonComponent).setDisabled(false)
 				)
 			histReply.edit({ components: [row] })
 		}
@@ -122,9 +122,9 @@ export default new CommandExecutor()
 					if (numbers === 0) {
 						row = new ActionRowBuilder<ButtonBuilder>()
 							.addComponents(
-								ButtonBuilder.from(histReply.components[0].components[0] as APIButtonComponent).setDisabled(true),
-								ButtonBuilder.from(histReply.components[0].components[1] as APIButtonComponent),
-								ButtonBuilder.from(histReply.components[0].components[2] as APIButtonComponent).setDisabled(false),
+								ButtonBuilder.from((histReply.components[0] as any).components[0] as APIButtonComponent).setDisabled(true),
+							ButtonBuilder.from((histReply.components[0] as any).components[1] as APIButtonComponent),
+							ButtonBuilder.from((histReply.components[0] as any).components[2] as APIButtonComponent).setDisabled(false),
 							)
 					}
 
@@ -142,9 +142,9 @@ export default new CommandExecutor()
 
 					row = new ActionRowBuilder<ButtonBuilder>()
 						.addComponents(
-							ButtonBuilder.from(histReply.components[0].components[0] as APIButtonComponent).setDisabled(true),
-							ButtonBuilder.from(histReply.components[0].components[1] as APIButtonComponent).setDisabled(true),
-							ButtonBuilder.from(histReply.components[0].components[2] as APIButtonComponent).setDisabled(true)
+			ButtonBuilder.from((histReply.components[0] as any).components[0] as APIButtonComponent).setDisabled(true),
+			ButtonBuilder.from((histReply.components[0] as any).components[1] as APIButtonComponent).setDisabled(true),
+			ButtonBuilder.from((histReply.components[0] as any).components[2] as APIButtonComponent).setDisabled(true)
 						)
 					const histEndInteraction = new EmbedBuilder()
 						.setAuthor({ name: `${user!.username}'s History (${numbers + 1}/${histArr.length})`, iconURL: user!.displayAvatarURL() || undefined })
@@ -162,14 +162,13 @@ export default new CommandExecutor()
 					if (histArr[numbers + 1] == null) {
 						row = new ActionRowBuilder<ButtonBuilder>()
 							.addComponents(
-								ButtonBuilder.from(histReply.components[0].components[0] as APIButtonComponent).setDisabled(false),
-								ButtonBuilder.from(histReply.components[0].components[1] as APIButtonComponent),
-								ButtonBuilder.from(histReply.components[0].components[2] as APIButtonComponent).setDisabled(true),
-							)
-					}
+							ButtonBuilder.from((histReply.components[0] as any).components[0] as APIButtonComponent).setDisabled(false),
+							ButtonBuilder.from((histReply.components[0] as any).components[1] as APIButtonComponent),
+							ButtonBuilder.from((histReply.components[0] as any).components[2] as APIButtonComponent).setDisabled(true),
+						)
+				}
 
-
-					const histRightEdit = new EmbedBuilder()
+				const histRightEdit = new EmbedBuilder()
 						.setAuthor({ name: `${user!.username}'s History (${numbers + 1}/${histArr.length})`, iconURL: user!.displayAvatarURL() || undefined })
 						.setColor("Green")
 						.setDescription(`${histArr[numbers]}`)
@@ -185,9 +184,9 @@ export default new CommandExecutor()
 		collector.on("end", async (bInteraction: ButtonInteraction) => {
 			row = new ActionRowBuilder<ButtonBuilder>()
 				.addComponents(
-					ButtonBuilder.from(histReply.components[0].components[0] as APIButtonComponent).setDisabled(true),
-					ButtonBuilder.from(histReply.components[0].components[1] as APIButtonComponent).setDisabled(true),
-					ButtonBuilder.from(histReply.components[0].components[2] as APIButtonComponent).setDisabled(true)
+					ButtonBuilder.from((histReply.components[0] as any).components[0] as APIButtonComponent).setDisabled(false),
+					ButtonBuilder.from((histReply.components[0] as any).components[1] as APIButtonComponent),
+					ButtonBuilder.from((histReply.components[0] as any).components[2] as APIButtonComponent).setDisabled(true),
 				)
 			const histEndInteraction = new EmbedBuilder()
 				.setAuthor({ name: `${user!.username}'s History (${numbers + 1}/${histArr.length})`, iconURL: user!.displayAvatarURL() || undefined })

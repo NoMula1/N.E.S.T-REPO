@@ -52,7 +52,7 @@ export default {
 					if (!fields) return
 					const modalInteraction = i as unknown as ModalSubmitInteraction
 
-					const input = modalInteraction.fields.getField("query_id")?.value
+					const input = (modalInteraction.fields.getField("query_id") as any)?.value
 					if (!input) return
 					const id = parseInt(input)
 					if (isNaN(id)) return

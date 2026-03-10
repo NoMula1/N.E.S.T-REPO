@@ -485,8 +485,8 @@ export default {
 
 					const row = new ActionRowBuilder<ButtonBuilder>()
 						.addComponents(
-							ButtonBuilder.from(interaction.message.components[0].components[0] as APIButtonComponent).setDisabled(true),
-							ButtonBuilder.from(interaction.message.components[0].components[1] as APIButtonComponent).setDisabled(true),
+							ButtonBuilder.from((interaction.message.components[0] as any).components[0] as APIButtonComponent).setDisabled(true),
+							ButtonBuilder.from((interaction.message.components[0] as any).components[1] as APIButtonComponent).setDisabled(true),
 						)
 					interaction.message.edit({ components: [row] })
 
@@ -566,8 +566,8 @@ export default {
 
 					const reqRow = new ActionRowBuilder<ButtonBuilder>()
 						.addComponents(
-							ButtonBuilder.from(interaction.message.components[0].components[0] as APIButtonComponent).setDisabled(true),
-							ButtonBuilder.from(interaction.message.components[0].components[1] as APIButtonComponent).setDisabled(true),
+						ButtonBuilder.from((interaction.message.components[0] as any).components[0] as APIButtonComponent).setDisabled(true),
+						ButtonBuilder.from((interaction.message.components[0] as any).components[1] as APIButtonComponent).setDisabled(true),
 						)
 					interaction.message.edit({ components: [reqRow] })
 					interaction.channel?.send({ content: "Close request denied!" }).catch(() => { })

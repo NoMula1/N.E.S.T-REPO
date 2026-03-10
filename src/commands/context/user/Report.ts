@@ -47,11 +47,8 @@ export default new MessageContextCommandExecutor()
 							.setStyle(TextInputStyle.Paragraph)
 					)
 				)
-		)
-
-		cooldown.set(interaction.user.id, true)
-		globalUsages += 1
-		setTimeout(()=>{
+	)
+	setTimeout(()=>{
 			globalUsages -= 1
 			cooldown.delete(interaction.user.id)
 		}, 900000)
