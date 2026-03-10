@@ -12,12 +12,12 @@ export default new CommandExecutor()
 			.setDescription("Role to ping")
 			.setRequired(true)
 			.addChoices(
-				{ name: 'Scripting', value: '860403017291399218' },
-				{ name: 'Advanced Scripting', value: '860406415259467809' },
-				{ name: 'Modeling', value: '860403126162948106' },
-				{ name: 'Building', value: '860402692919525376' },
-				{ name: 'Animation', value: '947686667886673960' },
-				{ name: 'General', value: '860407504192929802' },
+				{ name: 'Scripting', value: '1480457270285566086' },
+				{ name: 'Advanced Scripting', value: '1480457221975445605' },
+				{ name: 'Modeling', value: '1480459000662462495' },
+				{ name: 'Building', value: '1480459532013535345' },
+				{ name: 'Animation', value: '1480456771045687508' },
+				{ name: 'General', value: '1480456771045687508' },
 			)
 	)
 	.addStringOption(opt =>
