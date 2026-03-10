@@ -6,7 +6,7 @@ import { config } from "../../../utils/config"
 const authorized_list = [
 	'1149913737558499358', // 
 	'1149913737558499358' // 
-	// where is lanjt, a-holes!!
+	// HI
 ]
 
 export default new CommandExecutor()
