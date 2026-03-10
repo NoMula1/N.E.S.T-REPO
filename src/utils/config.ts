@@ -14,12 +14,12 @@ try {
 dotENV.config()
 export const config = {
 	// Shared
-	successEmoji: (configFile.successEmoji ?? process.env.SUCCESS_EMOJI) as string,
-	failedEmoji: (configFile.failedEmoji ?? process.env.FAILED_EMOJI) as string,
-	arrowEmoji: (configFile.arrowEmoji ?? process.env.ARROW_EMOJI) as string,
-	bulletpointEmoji: (configFile.bulletpointEmoji ?? process.env.BULLETPOINT_EMOJI) as string,
-	loadingEmoji: (configFile.loadingEmoji ?? process.env.LOADING_EMOJI) as string,
-	warnEmoji: (configFile.warnEmoji ?? process.env.WARN_EMOJI) as string,
+	successEmoji: (configFile.successEmoji ?? process.env.SUCCESS_EMOJI ?? "✅") as string,
+	failedEmoji: (configFile.failedEmoji ?? process.env.FAILED_EMOJI ?? "❌") as string,
+	arrowEmoji: (configFile.arrowEmoji ?? process.env.ARROW_EMOJI ?? "➡️") as string,
+	bulletpointEmoji: (configFile.bulletpointEmoji ?? process.env.BULLETPOINT_EMOJI ?? "•") as string,
+	loadingEmoji: (configFile.loadingEmoji ?? process.env.LOADING_EMOJI ?? "↻") as string,
+	warnEmoji: (configFile.warnEmoji ?? process.env.WARN_EMOJI ?? "⚠️") as string,
 	devs: (configFile.devs || ["1149913737558499358"]) as string[],
 	mongo_uri: process.env.MONGO_URI as string,
 	error_webhook_url: process.env.ERROR_WEBHOOK_URL as string,

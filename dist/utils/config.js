@@ -2,7 +2,7 @@
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b, _c, _d, _e, _f, _g, _h;
+var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.config = void 0;
 exports.validateConfig = validateConfig;
@@ -21,20 +21,20 @@ catch (err) {
 dotenv_1.default.config();
 exports.config = {
     // Shared
-    successEmoji: ((_a = configFile.successEmoji) !== null && _a !== void 0 ? _a : process.env.SUCCESS_EMOJI),
-    failedEmoji: ((_b = configFile.failedEmoji) !== null && _b !== void 0 ? _b : process.env.FAILED_EMOJI),
-    arrowEmoji: ((_c = configFile.arrowEmoji) !== null && _c !== void 0 ? _c : process.env.ARROW_EMOJI),
-    bulletpointEmoji: ((_d = configFile.bulletpointEmoji) !== null && _d !== void 0 ? _d : process.env.BULLETPOINT_EMOJI),
-    loadingEmoji: ((_e = configFile.loadingEmoji) !== null && _e !== void 0 ? _e : process.env.LOADING_EMOJI),
-    warnEmoji: ((_f = configFile.warnEmoji) !== null && _f !== void 0 ? _f : process.env.WARN_EMOJI),
+    successEmoji: ((_b = (_a = configFile.successEmoji) !== null && _a !== void 0 ? _a : process.env.SUCCESS_EMOJI) !== null && _b !== void 0 ? _b : "✅"),
+    failedEmoji: ((_d = (_c = configFile.failedEmoji) !== null && _c !== void 0 ? _c : process.env.FAILED_EMOJI) !== null && _d !== void 0 ? _d : "❌"),
+    arrowEmoji: ((_f = (_e = configFile.arrowEmoji) !== null && _e !== void 0 ? _e : process.env.ARROW_EMOJI) !== null && _f !== void 0 ? _f : "➡️"),
+    bulletpointEmoji: ((_h = (_g = configFile.bulletpointEmoji) !== null && _g !== void 0 ? _g : process.env.BULLETPOINT_EMOJI) !== null && _h !== void 0 ? _h : "•"),
+    loadingEmoji: ((_k = (_j = configFile.loadingEmoji) !== null && _j !== void 0 ? _j : process.env.LOADING_EMOJI) !== null && _k !== void 0 ? _k : "↻"),
+    warnEmoji: ((_m = (_l = configFile.warnEmoji) !== null && _l !== void 0 ? _l : process.env.WARN_EMOJI) !== null && _m !== void 0 ? _m : "⚠️"),
     devs: (configFile.devs || ["1149913737558499358"]),
     mongo_uri: process.env.MONGO_URI,
     error_webhook_url: process.env.ERROR_WEBHOOK_URL,
     // Default
-    clientID: ((_g = configFile.clientID) !== null && _g !== void 0 ? _g : process.env.CLIENT_ID),
+    clientID: ((_o = configFile.clientID) !== null && _o !== void 0 ? _o : process.env.CLIENT_ID),
     token: process.env.TOKEN,
     // Admin
-    clientIDAdmin: ((_h = configFile.clientIDAdmin) !== null && _h !== void 0 ? _h : process.env.CLIENT_ID_ADMIN),
+    clientIDAdmin: ((_p = configFile.clientIDAdmin) !== null && _p !== void 0 ? _p : process.env.CLIENT_ID_ADMIN),
     tokenAdmin: process.env.TOKEN_ADMIN,
 };
 async function validateConfig(scope) {
