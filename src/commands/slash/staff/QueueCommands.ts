@@ -299,7 +299,7 @@ export async function attemptRegeneration(interaction: ButtonInteraction<"cached
 						.setCustomId('qi-refresh')
 						.setLabel('Refresh')
 						.setStyle(ButtonStyle.Primary)
-				)
+				) as any
 			]
 		}
 

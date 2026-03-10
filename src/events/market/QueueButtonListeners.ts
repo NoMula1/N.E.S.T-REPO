@@ -139,7 +139,7 @@ export default {
 					embeds: [
 						(await generateEmbed(resolvedPost!, (await client.users.fetch(resolvedPost!.userID).catch(() => { }))!, interaction.guild, true)).PostEmbed
 					],
-					components: defaultQueueInterfaceRows
+					components: defaultQueueInterfaceRows as any
 				})
 
 				return

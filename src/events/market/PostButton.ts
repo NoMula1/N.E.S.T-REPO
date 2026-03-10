@@ -285,7 +285,7 @@ export default {
 							jobFormImages.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(arg))
 						}
 
-						await interaction.showModal(jobFormImages)
+						await interaction.showModal(jobFormImages as any)
 
 						break
 					}
@@ -1201,7 +1201,7 @@ export default {
 							} catch (err) {
 								row.components[0].setDisabled(true)
 								row.components[1].setDisabled(true)
-								await interaction.editReply({ components: [row] })
+								await interaction.editReply({ components: [row as any] })
 								Log.error(err)
 							}
 							return
