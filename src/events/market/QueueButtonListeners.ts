@@ -441,7 +441,7 @@ export default {
 					form.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(arg))
 				}
 
-				await interaction.showModal(form)
+				await interaction.showModal(form.toJSON())
 
 				break
 			}

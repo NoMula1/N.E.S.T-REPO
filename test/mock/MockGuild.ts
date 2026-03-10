@@ -38,7 +38,8 @@ export default class MockGuild extends Guild {
 			stickers: [],
 			premium_progress_bar_enabled: false,
 			hub_type: null,
-			safety_alerts_channel_id: null
+			safety_alerts_channel_id: null,
+			incidents_data: null
 		} as APIGuild)
 		//this.roles = new MockRoleManager(this)
 		client.guilds.cache.set('000000000000000000', this)

@@ -55,7 +55,7 @@ export async function checkTickets() {
 						Click \`Log Transcript\` to log the transcript.`)
 			.setColor("Green")
 			.setTimestamp()
-		ticketChannel.send({ embeds: [ticketClosed], components: [ticketRowReq] })
+		ticketChannel.send({ embeds: [ticketClosed], components: [ticketRowReq.toJSON()] })
 
 		const ticketClosedDM = new EmbedBuilder()
 			.setAuthor({ name: "Ticket Closed", iconURL: guild.iconURL() || undefined })

@@ -317,7 +317,7 @@ export default {
 									.setStyle(ButtonStyle.Success),
 							)
 
-						await interaction.update({ content: `${config.warnEmoji} You are about to delete your post template for ${jobTypeDelete.toLowerCase()}. You will NOT be able to recover it. __Are you sure you wish to continue?__`, embeds: [], components: [deleteRow] })
+						await interaction.update({ content: `${config.warnEmoji} You are about to delete your post template for ${jobTypeDelete.toLowerCase()}. You will NOT be able to recover it. __Are you sure you wish to continue?__`, embeds: [], components: [deleteRow.toJSON()] })
 
 						break
 					}
@@ -346,7 +346,7 @@ export default {
 									.setDisabled(true),
 							)
 
-						await interaction.update({ content: `${config.loadingEmoji} Deleting your post template.`, components: [deleteRowYes] })
+						await interaction.update({ content: `${config.loadingEmoji} Deleting your post template.`, components: [deleteRowYes.toJSON()] })
 
 						await PostTemplates.findOneAndDelete({
 							userID: interaction.user.id,
@@ -411,7 +411,7 @@ export default {
 									.setDisabled(true),
 							)
 
-						await interaction.update({ content: `${config.loadingEmoji} Returning you back to the post template editor...`, components: [deleteRowNo] })
+						await interaction.update({ content: `${config.loadingEmoji} Returning you back to the post template editor...`, components: [deleteRowNo.toJSON()] })
 
 						const postTemplateNo = await PostTemplates.findOne({
 							userID: interaction.user.id,
@@ -523,7 +523,7 @@ export default {
 									.setDisabled(true),
 							)
 
-						await interaction.update({ content: `${config.loadingEmoji} Submitting your post for approval.`, components: [approveRowYes] })
+						await interaction.update({ content: `${config.loadingEmoji} Submitting your post for approval.`, components: [approveRowYes.toJSON()] })
 
 						const approvalEmbed = await generateEmbed(foundTemplateApprovalYes, interaction.user, interaction.guild, true)
 
@@ -557,7 +557,7 @@ export default {
 						const noteListApprove = await UserMarketNote.find({
 							userID: foundTemplateApprovalYes.userID
 						})
-						const message = await approvalChannel.send({ content: `Template in ${jobTypeApprovalYes} by: ${interaction.user.username} (${interaction.user.id} <@${interaction.user.id}>)\nUser joined <t:${Math.round(interaction.member.joinedAt!.getTime() / 1000)}:R>\nTemplate ID: \`${foundTemplateApprovalYes._id}\`\n${noteListApprove.length < 1 ? '' : `User has **${noteListApprove.length}** marketplace note(s)`}`, embeds: [approvalEmbed.PostEmbed], components: [approvalButtons] }).catch(() => { })
+						const message = await approvalChannel.send({ content: `Template in ${jobTypeApprovalYes} by: ${interaction.user.username} (${interaction.user.id} <@${interaction.user.id}>)\nUser joined <t:${Math.round(interaction.member.joinedAt!.getTime() / 1000)}:R>\nTemplate ID: \`${foundTemplateApprovalYes._id}\`\n${noteListApprove.length < 1 ? '' : `User has **${noteListApprove.length}** marketplace note(s)`}`, embeds: [approvalEmbed.PostEmbed], components: [approvalButtons.toJSON()] }).catch(() => { })
 
 						await foundTemplateApprovalYes.updateOne({
 							waitingForApproval: true,
@@ -734,7 +734,7 @@ export default {
 
 						const approveUser = interaction.guild.members.cache.get(approvalTemplate.userID)
 						if (!approveUser) {
-							interaction.update({ content: `${config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [approvalButtonsDisabled] })
+							interaction.update({ content: `${config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [approvalButtonsDisabled.toJSON()] })
 							await approvalTemplate.updateOne({
 								waitingForApproval: false,
 								approvalMessageID: "",
@@ -770,7 +770,7 @@ export default {
 							localPostTemplateCache.set(interaction.message.id, new Date())
 						}
 
-						await interaction.update({ content: `${config.loadingEmoji} Approving template...`, components: [approvalButtonsDisabled] })
+						await interaction.update({ content: `${config.loadingEmoji} Approving template...`, components: [approvalButtonsDisabled.toJSON()] })
 
 						await approvalTemplate.updateOne({
 							approved: true,
@@ -850,7 +850,7 @@ export default {
 							approvalMessageID: interaction.message.id
 						})
 						if (!approvalTemplateNo) {
-							interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabledNo] })
+							interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabledNo.toJSON()] })
 							return
 						}
 
@@ -934,7 +934,7 @@ export default {
 							approvalMessageID: interaction.message.id
 						})
 						if (!approvalTemplateReverse) {
-							interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalReverseButtonsDisabled] })
+							interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] })
 							return
 						}
 						if (approvalTemplateReverse.waitingForApproval === true) {
@@ -944,7 +944,7 @@ export default {
 
 						const reverseUser = interaction.guild.members.cache.get(approvalTemplateReverse.userID)
 						if (!reverseUser) {
-							interaction.update({ content: `${config.failedEmoji} User has left the server. Failed to reverse decision.`, embeds: [], components: [approvalReverseButtonsDisabled] })
+							interaction.update({ content: `${config.failedEmoji} User has left the server. Failed to reverse decision.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] })
 							await approvalTemplateReverse.updateOne({
 								waitingForApproval: false,
 								approvalMessageID: "",
@@ -1641,7 +1641,7 @@ export default {
 							approvalMessageID: interaction.message.id
 						})
 						if (!templateRej) {
-							interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [postRejectedButtons] })
+							interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [postRejectedButtons.toJSON()] })
 							return
 						}
 						if (templateRej.approved === true) {
@@ -1650,7 +1650,7 @@ export default {
 
 						const approveUser = interaction.guild.members.cache.get(templateRej.userID)
 						if (!approveUser) {
-							interaction.update({ content: `${config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [postRejectedButtons] })
+							interaction.update({ content: `${config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [postRejectedButtons.toJSON()] })
 							await templateRej.updateOne({
 								waitingForApproval: false,
 							})
@@ -1712,7 +1712,7 @@ export default {
 							})
 						}
 
-						await interaction.update({ content: `${config.loadingEmoji} Rejecting template...`, components: [postRejectedButtons] })
+						await interaction.update({ content: `${config.loadingEmoji} Rejecting template...`, components: [postRejectedButtons.toJSON()] })
 
 						await templateRej.updateOne({
 							approved: false,
