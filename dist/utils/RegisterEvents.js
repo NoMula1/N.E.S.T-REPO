@@ -53,7 +53,7 @@ async function load(client) {
     for (const file of eventFiles) {
         const filePath = path_1.default.join(eventPath, file);
         const event = (await Promise.resolve(`${filePath}`).then(s => __importStar(require(s)))).default;
-        if (!(event === null || event === void 0 ? void 0 : event.execute))
+        if (!(event === null || event === void 0 ? void 0 : event.execute) && !Object.keys(event !== null && event !== void 0 ? event : {}).some(k => k.startsWith("on")))
             continue; // Avoid non-event objects
         if ((_a = event === null || event === void 0 ? void 0 : event.scope) !== null && _a !== void 0 ? _a : GlobalScope_1.Scope.Default === GlobalScope_1.scope) {
             if (event.name) {

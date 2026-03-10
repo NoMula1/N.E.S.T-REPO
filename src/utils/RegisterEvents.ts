@@ -28,7 +28,7 @@ export async function load(client: CoreClient) {
 		const filePath = path.join(eventPath, file)
 		const event = (await import(filePath)).default as Event
 
-		if (!event?.execute) continue // Avoid non-event objects
+		if (!event?.execute && !Object.keys(event ?? {}).some(k => k.startsWith("on"))) continue // Avoid non-event objects
 
 		if (event?.scope ?? Scope.Default === scope) {
 			if (event.name) {
