@@ -16,6 +16,7 @@ export const client = new CoreClient(config.clientID, {
 	intents: [
 		GatewayIntentBits.DirectMessages,
 		GatewayIntentBits.GuildModeration,
+		GatewayIntentBits.GuildMembers,
 		GatewayIntentBits.GuildPresences,
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.Guilds,

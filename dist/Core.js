@@ -53,6 +53,7 @@ exports.client = new CoreClient_1.default(config_1.config.clientID, {
     intents: [
         discord_js_1.GatewayIntentBits.DirectMessages,
         discord_js_1.GatewayIntentBits.GuildModeration,
+        discord_js_1.GatewayIntentBits.GuildMembers,
         discord_js_1.GatewayIntentBits.GuildPresences,
         discord_js_1.GatewayIntentBits.MessageContent,
         discord_js_1.GatewayIntentBits.Guilds,
