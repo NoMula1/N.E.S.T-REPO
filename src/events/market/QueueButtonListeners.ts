@@ -115,7 +115,7 @@ export default {
 						}
 					}
 
-					// Now we know if the current tag is selected by the MM, now we need to check if it's already in the template data
+					// Now we know if the current tagg is selected by the MM, now we need to check if it's already in the template data
 					if ((freezeTemplateTags & BigInt(tempTagBits! as unknown as any) as bigint) !== BigInt(0)) {
 						if (!found) {
 							// MM deselected tag; remove from data

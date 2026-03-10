@@ -4,9 +4,8 @@ import { errorEmbed, sendModLogs } from "../../../utils/GenUtils"
 import { config } from "../../../utils/config"
 
 const authorized_list = [
-	'1149913737558499358', // t9knightnight
-	'140163987500302336', // cj 
-	'348174855755137027' // Shooter
+	'1149913737558499358', // 
+	'1149913737558499358' // 
 	// where is lanjt, a-holes!!
 ]
 
@@ -25,7 +24,7 @@ export default new CommandExecutor()
 	)
 	.setDefaultMemberPermissions(BigInt(0x0004000000000000)) // USE_EXTERNAL_APPS: https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags
 	.setBasePermission({
-		HasRole: ['1203544113501437952', '1274077734171316315'], // Senior Marketplace Moderator, Senior Ranker (Role for giving out ranking roles)
+		HasRole: ['1480436288296583228', '1274077734171316315'], // Senior Marketplace Moderator, Senior Ranker (Role for giving out ranking roles)
 		Level: PermissionLevel.Moderator
 
 	})

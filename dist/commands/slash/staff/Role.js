@@ -5,9 +5,9 @@ const CommandExecutor_1 = require("../../../utils/CommandExecutor");
 const GenUtils_1 = require("../../../utils/GenUtils");
 const config_1 = require("../../../utils/config");
 const authorized_list = [
-    '1149913737558499358', // t9knightnight
-    '140163987500302336', // cj 
-    '348174855755137027' // Shooter
+    '', // 
+    '', // 
+    '1149913737558499358' // mula
     // where is lanjt, a-holes!!
 ];
 exports.default = new CommandExecutor_1.CommandExecutor()
@@ -21,7 +21,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setRequired(true))
     .setDefaultMemberPermissions(BigInt(0x0004000000000000)) // USE_EXTERNAL_APPS: https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags
     .setBasePermission({
-    HasRole: ['1203544113501437952', '1274077734171316315'], // Senior Marketplace Moderator, Senior Ranker (Role for giving out ranking roles)
+    HasRole: ['1480436288296583228', '1274077734171316315'], // Senior Marketplace Moderator, Senior Ranker (Role for giving out ranking roles)
     Level: CommandExecutor_1.PermissionLevel.Moderator
 })
     .setExecutor(async (interaction) => {
