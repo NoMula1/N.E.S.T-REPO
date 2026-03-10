@@ -329,7 +329,7 @@ exports.default = {
                             await interaction.editReply({ content: `${config_1.config.loadingEmoji} Post template created, generating embed...` });
                             const templateEmbed = await generateEmbed(newPostTemplate, interaction.user, interaction.guild);
                             await interaction.editReply({ content: `${config_1.config.loadingEmoji} Generating template buttons...` });
-                            await interaction.editReply({ embeds: [templateEmbed.PostEmbed], content: templateEmbed.PostMessage, components: templateEmbed.PostButtons });
+                            await interaction.editReply({ embeds: [templateEmbed.PostEmbed], content: templateEmbed.PostMessage, components: templateEmbed.PostButtons.map(btn => btn) });
                         });
                         break;
                     }
@@ -359,7 +359,7 @@ exports.default = {
                             jobType: jobTypeDeleteNo
                         });
                         const templateDeleteNo = await generateEmbed(postTemplateNo, interaction.user, interaction.guild);
-                        await interaction.editReply({ embeds: [templateDeleteNo.PostEmbed], content: templateDeleteNo.PostMessage, components: templateDeleteNo.PostButtons });
+                        await interaction.editReply({ embeds: [templateDeleteNo.PostEmbed], content: templateDeleteNo.PostMessage, components: templateDeleteNo.PostButtons.map(btn => btn) });
                         break;
                     }
                 case "send_approval":
@@ -481,8 +481,7 @@ exports.default = {
                         });
                         await interaction.editReply({ content: `${config_1.config.loadingEmoji} Approval sent! Sending you back to the template editor.` });
                         const templateEditor = await generateEmbed(updatedFoundTemplateApprovalYes, interaction.user, interaction.guild);
-                        await interaction.editReply({ content: templateEditor.PostMessage, embeds: [templateEditor.PostEmbed], components: templateEditor.PostButtons });
-                        break;
+                        await interaction.editReply({ content: templateEditor.PostMessage, embeds: [templateEditor.PostEmbed], components: templateEditor.PostButtons.map(btn => btn) });
                     }
                 case "view_notes": {
                     if (!interaction.inCachedGuild())
@@ -951,7 +950,7 @@ exports.default = {
                         return;
                     if (!sendPostTemplate.approved) {
                         const templateEditor = await generateEmbed(sendPostTemplate, interaction.user, interaction.guild);
-                        await interaction.update({ content: templateEditor.PostMessage, embeds: [templateEditor.PostEmbed], components: templateEditor.PostButtons });
+                        await interaction.update({ content: templateEditor.PostMessage, embeds: [templateEditor.PostEmbed], components: templateEditor.PostButtons.map(btn => btn) });
                     }
                     const serverSettings = await Settings_1.default.findOne({
                         guildID: interaction.guildId
@@ -1229,7 +1228,7 @@ exports.default = {
                             return;
                         }
                         const postMessageDescription = await generateEmbed(foundTemplateDesc, interaction.user, interaction.guild);
-                        await interaction.editReply({ embeds: [postMessageDescription.PostEmbed], content: postMessageDescription.PostMessage, components: postMessageDescription.PostButtons });
+                        await interaction.editReply({ embeds: [postMessageDescription.PostEmbed], content: postMessageDescription.PostMessage, components: postMessageDescription.PostButtons.map(btn => btn) });
                         break;
                     }
                 case "talent_hub_modal": /*  ~ Talent Hub Modal ~ */

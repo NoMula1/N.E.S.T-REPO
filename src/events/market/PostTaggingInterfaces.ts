@@ -224,7 +224,7 @@ async function handleSelectMenuInteraction(i: StringSelectMenuInteraction) {
 						.setCustomId("post-search-group")
 						.setPlaceholder("Choose a tag group")
 				),
-			],
+			] as any,
 		});
 	}
 }

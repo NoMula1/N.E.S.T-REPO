@@ -82,7 +82,7 @@ export class SimpleCommand extends SlashCommandBuilder {
 		delete json.text
 		delete json.reply
 		delete json.scope
-		return json as RESTPostAPIChatInputApplicationCommandsJSONBody
+		return json
 	}
 }
 

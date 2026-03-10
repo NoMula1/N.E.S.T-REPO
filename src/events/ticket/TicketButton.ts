@@ -51,7 +51,7 @@ export default {
 						],
 						components: [
 							internalAffairButtons
-						]
+						] as any
 					})
 					break
 				}
@@ -488,7 +488,7 @@ export default {
 							ButtonBuilder.from((interaction.message.components[0] as any).components[0] as APIButtonComponent).setDisabled(true),
 							ButtonBuilder.from((interaction.message.components[0] as any).components[1] as APIButtonComponent).setDisabled(true),
 						)
-					interaction.message.edit({ components: [row] })
+					interaction.message.edit({ components: [row as any] })
 
 					const ticketRowReq = new ActionRowBuilder<ButtonBuilder>()
 						.addComponents(
@@ -513,7 +513,7 @@ export default {
 						Click \`Log Transcript\` to log the transcript.`)
 						.setColor("Green")
 						.setTimestamp()
-					interaction.channel?.send({ embeds: [ticketClosed], components: [ticketRowReq] })
+					interaction.channel?.send({ embeds: [ticketClosed], components: [ticketRowReq as any] })
 
 					const ticketClosedDM = new EmbedBuilder()
 						.setAuthor({ name: "Ticket Closed", iconURL: interaction.guild.iconURL() || undefined })
@@ -569,7 +569,7 @@ export default {
 						ButtonBuilder.from((interaction.message.components[0] as any).components[0] as APIButtonComponent).setDisabled(true),
 						ButtonBuilder.from((interaction.message.components[0] as any).components[1] as APIButtonComponent).setDisabled(true),
 						)
-					interaction.message.edit({ components: [reqRow] })
+					interaction.message.edit({ components: [reqRow as any] })
 					interaction.channel?.send({ content: "Close request denied!" }).catch(() => { })
 					interaction.editReply({ content: "Cancelled close request." })
 
@@ -639,7 +639,7 @@ export default {
 								.setDisabled(true)
 								.setEmoji("✖"),
 						)
-					await interaction.message?.edit({ components: [ticketRow] })
+					await interaction.message?.edit({ components: [ticketRow as any] })
 
 					ticketRow = new ActionRowBuilder<ButtonBuilder>()
 						.addComponents(
@@ -658,7 +658,7 @@ export default {
 						Click \`Log Transcript\` to log the transcript.`)
 						.setColor("Green")
 						.setTimestamp()
-					interaction.channel?.send({ embeds: [ticketClosed], components: [ticketRow] })
+					interaction.channel?.send({ embeds: [ticketClosed], components: [ticketRow as any] })
 
 					const ticketClosedDM = new EmbedBuilder()
 						.setAuthor({ name: "Ticket Closed", iconURL: interaction.guild.iconURL() || undefined })

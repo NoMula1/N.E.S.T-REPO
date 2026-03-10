@@ -36,10 +36,8 @@ export default {
 									.setStyle(TextInputStyle.Paragraph)
 							)
 						)
-					await i.showModal(modal)
-				}
+					await i.showModal(modal as any)			}
 					break
-
 				default:
 					return
 			}

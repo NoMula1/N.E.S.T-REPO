@@ -94,7 +94,7 @@ export default new CommandExecutor()
 			.setThumbnail(user?.displayAvatarURL() || null)
 			.setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() || undefined })
 			.setTimestamp()
-		const histReply = await interaction.reply({ embeds: [historyEmbed], fetchReply: true, components: [row] })
+	const histReply = await interaction.reply({ embeds: [historyEmbed], fetchReply: true, components: [row as any] })
 		if (histArr.length > 1) {
 			row = new ActionRowBuilder<ButtonBuilder>()
 				.addComponents(
@@ -102,7 +102,7 @@ export default new CommandExecutor()
 					ButtonBuilder.from((histReply.components[0] as any).components[1] as APIButtonComponent).setDisabled(false),
 					ButtonBuilder.from((histReply.components[0] as any).components[2] as APIButtonComponent).setDisabled(false)
 				)
-			histReply.edit({ components: [row] })
+		histReply.edit({ components: [row as any] })
 		}
 
 		const collector = histReply.createMessageComponentCollector({ time: 50000 })
@@ -135,7 +135,7 @@ export default new CommandExecutor()
 						.setThumbnail(user?.displayAvatarURL() || null)
 						.setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() || undefined })
 						.setTimestamp()
-					histReply.edit({ embeds: [histLeftEdit], components: [row] })
+					histReply.edit({ embeds: [histLeftEdit], components: [row as any] })
 
 					break
 				case "end_interaction":
@@ -153,7 +153,7 @@ export default new CommandExecutor()
 						.setThumbnail(user?.displayAvatarURL() || null)
 						.setFooter({ text: `Requested by ${interaction.user.username} - Interaction Ended (User)`, iconURL: interaction.user.displayAvatarURL() || undefined })
 						.setTimestamp()
-					histReply.edit({ embeds: [histEndInteraction], components: [row] })
+					histReply.edit({ embeds: [histEndInteraction], components: [row as any] })
 
 					break
 				case "right":
@@ -175,7 +175,7 @@ export default new CommandExecutor()
 						.setThumbnail(user?.displayAvatarURL() || null)
 						.setFooter({ text: `Requested by ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() || undefined })
 						.setTimestamp()
-					histReply.edit({ embeds: [histRightEdit], components: [row] })
+					histReply.edit({ embeds: [histRightEdit], components: [row as any] })
 
 					break
 			}
@@ -195,7 +195,7 @@ export default new CommandExecutor()
 				.setThumbnail(user?.displayAvatarURL() || null)
 				.setFooter({ text: `Requested by ${interaction.user.username} - Interaction Ended (Auto)`, iconURL: interaction.user.displayAvatarURL() || undefined })
 				.setTimestamp()
-			histReply.edit({ embeds: [histEndInteraction], components: [row] })
+			histReply.edit({ embeds: [histEndInteraction], components: [row as any] })
 
 		})
 

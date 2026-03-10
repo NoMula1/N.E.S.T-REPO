@@ -170,7 +170,7 @@ export default {
 								)
 						)
 					]
-				})
+				} as any)
 				return
 			}
 			if (interaction.customId !== "qi-quick-reject")
@@ -481,7 +481,7 @@ export default {
 			}
 			case 'tag-group-select-back': {
 				await interaction.update({
-					components: defaultQueueInterfaceRows
+					components: defaultQueueInterfaceRows as any
 				})
 				break
 			}
