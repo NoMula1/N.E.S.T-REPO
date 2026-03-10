@@ -486,7 +486,7 @@ exports.default = {
                 case "view_notes": {
                     if (!interaction.inCachedGuild())
                         return;
-                    if (interaction.member.roles.highest.position < ((_d = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial marketplace moderator")) === null || _d === void 0 ? void 0 : _d.position)) {
+                    if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
                         interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
                         return;
                     }
@@ -577,7 +577,7 @@ exports.default = {
                 case "approved_auto_reject":
                     if (!interaction.inCachedGuild())
                         return;
-                    if (interaction.member.roles.highest.position < ((_j = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial marketplace moderator")) === null || _j === void 0 ? void 0 : _j.position)) {
+                    if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
                         interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
                         return;
                     }
@@ -586,7 +586,7 @@ exports.default = {
                     {
                         if (!interaction.inCachedGuild())
                             return;
-                        if (interaction.member.roles.highest.position < ((_k = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial marketplace moderator")) === null || _k === void 0 ? void 0 : _k.position) || interaction.member.roles.cache.find((r) => r.name.toLowerCase() === "knowiel test role")) {
+                        if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
                             interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
                             return;
                         }
@@ -681,7 +681,7 @@ exports.default = {
                         const yourPostHasBeenApproved = new discord_js_1.EmbedBuilder()
                             .setAuthor({ name: `Template Approved!`, iconURL: interaction.guild.iconURL() || undefined })
                             .setColor("Green")
-                            .setDescription(`Your template for __${approvalTemplate.jobType.toLowerCase()}__ has been approved! You may now post to the Marketplace! Run \`/post\` in https://discord.com/channels/813997998245150721/1403396269589794827 again to post.\n\nWe very highly recommend the utilization of our [Middlemanning Services](https://discord.gg/qAsVfc22Bp); with a minimal 10% fee (negotiable for repeat users), we offer;\n\n- **In-depth verification** and research on your Freelancer / Employer prior to the job\n- **Active guidance and counselling** throughout the entire transaction\n- **Logging of the entire job** inside of our Middlemanning ticket system\n- A **guaranteed 100% payback** (custom tailored to every specific instance) in the event of a scam\n\n*Feel free to ping NoMula for any assistance you may need*`)
+                            .setDescription(`Your template for __${approvalTemplate.jobType.toLowerCase()}__ has been approved! You may now post to the Marketplace! Run \`/post\` in https://discord.com/channels/813997998245150721/1403396269589794827 again to post.\n\nWe very highly recommend the utilization of our [Middlemanning Services](https://discord.gg/UWnmc2rFve); with a minimal 10% fee (negotiable for repeat users), we offer;\n\n- **In-depth verification** and research on your Freelancer / Employer prior to the job\n- **Active guidance and counselling** throughout the entire transaction\n- **Logging of the entire job** inside of our Middlemanning ticket system\n- A **guaranteed 100% payback** (custom tailored to every specific instance) in the event of a scam\n\n*Feel free to ping NoMula for any assistance you may need*`)
                             .setTimestamp();
                         await approveUser.send({ embeds: [yourPostHasBeenApproved] }).catch((err) => {
                             logging_1.Log.error(err);
@@ -696,6 +696,10 @@ exports.default = {
                     {
                         if (!interaction.inCachedGuild())
                             return;
+                        if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
+                            interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
+                            return;
+                        }
                         const approvalButtonsDisabledNo = new discord_js_1.ActionRowBuilder()
                             .addComponents(new discord_js_1.ButtonBuilder()
                             .setCustomId("approved_yes")
@@ -741,7 +745,7 @@ exports.default = {
                 case "approved_reverse_approval": {
                     if (!interaction.inCachedGuild())
                         return;
-                    if (interaction.member.roles.highest.position < ((_o = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial marketplace moderator")) === null || _o === void 0 ? void 0 : _o.position)) {
+                    if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
                         interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
                         return;
                     }
