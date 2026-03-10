@@ -1,0 +1,11 @@
+{
+    "clientID": "012345678901234567",
+    "clientIDAdmin": "012345678901234567",
+    "devs": ["140163987500302336"],
+    "successEmoji": "✅",
+    "failedEmoji": "❌",
+    "arrowEmoji": "➡️",
+    "bulletpointEmoji": "•",
+    "loadingEmoji": "↻",
+    "warnEmoji": "⚠️"
+}
