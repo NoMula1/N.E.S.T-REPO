@@ -1,5 +1,0 @@
-{
-	"editor.insertSpaces": false,
-	"editor.detectIndentation": false,
-	"sarif-viewer.connectToGithubCodeScanning": "off"
-}

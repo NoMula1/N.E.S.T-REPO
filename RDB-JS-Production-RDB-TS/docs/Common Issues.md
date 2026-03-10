@@ -1,1 +1,0 @@
-- [[SQLITE_ERROR no such table]]
