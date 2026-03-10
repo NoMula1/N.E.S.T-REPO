@@ -171,7 +171,10 @@ exports.default = {
                             }
                             //const channel = client.channels.cache.get('1212593742423527454') as TextChannel;
                             const modMailChannelId = (0, channels_1.default)(channels_1.Channel.MOD_MAIL);
-                            const channel = ((_a = interaction.client.channels.cache.get(modMailChannelId)) !== null && _a !== void 0 ? _a : await interaction.client.channels.fetch(modMailChannelId).catch(() => null));
+                            const channel = ((_a = interaction.client.channels.cache.get(modMailChannelId)) !== null && _a !== void 0 ? _a : await interaction.client.channels.fetch(modMailChannelId).catch((err) => {
+                                logging_1.Log.error(`MOD_MAIL channel fetch failed: ${err}`);
+                                return null;
+                            }));
                             if (!channel) {
                                 logging_1.Log.error("Could not find or fetch MOD_MAIL channel");
                                 return;

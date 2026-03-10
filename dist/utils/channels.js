@@ -11,7 +11,7 @@ function channels(ids) {
 }
 var Channel;
 (function (Channel) {
-    Channel["BOT_COMMANDS"] = "1282020342457569361";
-    Channel["MOD_MAIL"] = "1282020357120983101";
-    Channel["QOTD"] = "1282020367002632232";
+    Channel["BOT_COMMANDS"] = "1403396269589794827";
+    Channel["MOD_MAIL"] = "1480795474137972746";
+    Channel["QOTD"] = "1480800774123557059";
 })(Channel || (exports.Channel = Channel = {}));
