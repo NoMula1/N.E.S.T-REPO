@@ -58,7 +58,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
             embed
         ],
         components: [
-            actionRow
+            actionRow.toJSON()
         ]
     }));
     await ((_b = interaction.channel) === null || _b === void 0 ? void 0 : _b.send({
@@ -66,7 +66,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
             embed2
         ],
         components: [
-            actionRow2
+            actionRow2.toJSON()
         ]
     }));
 });

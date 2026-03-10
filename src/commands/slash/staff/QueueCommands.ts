@@ -247,7 +247,7 @@ export default new CommandExecutor()
 					embeds: [
 						embed
 					],
-					components: defaultQueueInterfaceRows
+					components: defaultQueueInterfaceRows.map(row => row.toJSON())
 				})
 				break
 			}
@@ -337,9 +337,9 @@ export async function attemptRegeneration(interaction: ButtonInteraction<"cached
 			embeds: [
 				preEmbed.PostEmbed
 			],
-			components: defaultQueueInterfaceRows
+			components: defaultQueueInterfaceRows.map(row => row.toJSON())
 		}
-
+		
 		if (interaction.isButton()) {
 			await interaction.update(replyToEdit)
 		} else if (interaction.isStringSelectMenu()) {
@@ -347,6 +347,7 @@ export async function attemptRegeneration(interaction: ButtonInteraction<"cached
 		} else if (interaction.isModalSubmit()) {
 			await interaction.editReply(replyToEdit)
 		}
+	}
 
 		/*
 		await interaction.editReply({
@@ -357,7 +358,6 @@ export async function attemptRegeneration(interaction: ButtonInteraction<"cached
 			components: defaultQueueInterfaceRows
 		});
 		*/
-	}
 }
 
 async function attemptGeneration(interaction: ChatInputCommandInteraction<"cached">) {

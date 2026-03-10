@@ -214,7 +214,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
                 embeds: [
                     embed
                 ],
-                components: exports.defaultQueueInterfaceRows
+                components: exports.defaultQueueInterfaceRows.map(row => row.toJSON())
             });
             break;
         }
@@ -295,7 +295,7 @@ async function attemptRegeneration(interaction) {
             embeds: [
                 preEmbed.PostEmbed
             ],
-            components: exports.defaultQueueInterfaceRows
+            components: exports.defaultQueueInterfaceRows.map(row => row.toJSON())
         };
         if (interaction.isButton()) {
             await interaction.update(replyToEdit);
@@ -306,16 +306,16 @@ async function attemptRegeneration(interaction) {
         else if (interaction.isModalSubmit()) {
             await interaction.editReply(replyToEdit);
         }
-        /*
-        await interaction.editReply({
-            content: `**${await getQueueLength()}** post(s) remaining in queue • <@${nextInQueue.userID}> ~ ${nextInQueue._id}`,
-            embeds: [
-                preEmbed as any
-            ],
-            components: defaultQueueInterfaceRows
-        });
-        */
     }
+    /*
+    await interaction.editReply({
+        content: `**${await getQueueLength()}** post(s) remaining in queue • <@${nextInQueue.userID}> ~ ${nextInQueue._id}`,
+        embeds: [
+            preEmbed as any
+        ],
+        components: defaultQueueInterfaceRows
+    });
+    */
 }
 async function attemptGeneration(interaction) {
     var _a;

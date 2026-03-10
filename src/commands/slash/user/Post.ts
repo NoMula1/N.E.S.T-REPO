@@ -145,7 +145,7 @@ export default new CommandExecutor()
 
 		await interaction.editReply({ content: `${config.loadingEmoji} Generating template buttons...` })
 
-		interaction.editReply({ content: templateEmbed.PostMessage, embeds: [templateEmbed.PostEmbed], components: templateEmbed.PostButtons })
+		interaction.editReply({ content: templateEmbed.PostMessage, embeds: [templateEmbed.PostEmbed], components: templateEmbed.PostButtons.map(btn => btn.toJSON()) })
 
 	})
 

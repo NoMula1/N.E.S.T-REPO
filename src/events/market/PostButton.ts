@@ -172,58 +172,55 @@ export default {
 							jobForm.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(arg))
 						}
 
-						await interaction.showModal(jobForm)
+					await interaction.showModal(jobForm as any)
+					break
+				}
+				case "add_payment": {
+					if (!interaction.inCachedGuild()) return
 
-						break
+					const jobTypePayment = getJobType(interaction)
+					if (!jobTypePayment) {
+						interaction.update({ content: `${config.failedEmoji} Unable to find valid job type! If this error persists, please contact a bot developer.`, embeds: [], components: [] })
+						return
 					}
-				case "edit_payment": /*  ~ Button: Edit payment ~ */
-					{
-						if (!interaction.inCachedGuild()) return
 
-						const jobTypePayment = getJobType(interaction)
-						if (!jobTypePayment) {
-							interaction.update({ content: `${config.failedEmoji} Unable to find valid job type! If this error persists, please contact a bot developer.`, embeds: [], components: [] })
-							return
-						}
+					const jobFormPayment = new ModalBuilder()
+						.setCustomId("job_payment_modal")
+						.setTitle("Enter payment detials")
 
-						const jobFormPayment = new ModalBuilder()
-							.setCustomId("job_payment_modal")
-							.setTitle("Enter payment detials")
+					const argsPayment: TextInputBuilder[] = [
+						new TextInputBuilder()
+							.setCustomId("job_payment_robux")
+							.setLabel("How much in Robux?")
+							.setPlaceholder("None")
+							.setRequired(false)
+							.setMaxLength(30)
+							.setStyle(TextInputStyle.Short),
 
-						const argsPayment: TextInputBuilder[] = [
-							new TextInputBuilder()
-								.setCustomId("job_payment_robux")
-								.setLabel("How much in Robux?")
-								.setPlaceholder("None")
-								.setRequired(false)
-								.setMaxLength(30)
-								.setStyle(TextInputStyle.Short),
+						new TextInputBuilder()
+							.setCustomId("job_payment_money")
+							.setLabel("How much in real-world currency?")
+							.setPlaceholder("None")
+							.setRequired(false)
+							.setMaxLength(30)
+							.setStyle(TextInputStyle.Short),
 
-							new TextInputBuilder()
-								.setCustomId("job_payment_money")
-								.setLabel("How much in real-world currency?")
-								.setPlaceholder("None")
-								.setRequired(false)
-								.setMaxLength(30)
-								.setStyle(TextInputStyle.Short),
+						new TextInputBuilder()
+							.setCustomId("job_payment_other")
+							.setLabel("What other payments are being offered?")
+							.setPlaceholder("None")
+							.setRequired(false)
+							.setMaxLength(100)
+							.setStyle(TextInputStyle.Short),
+					]
 
-							new TextInputBuilder()
-								.setCustomId("job_payment_other")
-								.setLabel("What other payments are being offered?")
-								.setPlaceholder("None")
-								.setRequired(false)
-								.setMaxLength(100)
-								.setStyle(TextInputStyle.Short),
-						]
-
-						for (const arg of argsPayment) {
-							jobFormPayment.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(arg))
-						}
-
-						await interaction.showModal(jobFormPayment)
-
-						break
+					for (const arg of argsPayment) {
+						jobFormPayment.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(arg))
 					}
+
+					await interaction.showModal(jobFormPayment as any)
+					break
+				}
 				case "add_talent_hub": /*  ~ Button: Add Talent Hub ~ */
 					{
 						if (!interaction.inCachedGuild()) return
@@ -253,20 +250,17 @@ export default {
 							jobFormTalent.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(arg))
 						}
 
-						await interaction.showModal(jobFormTalent)
+					await interaction.showModal(jobFormTalent as any)
+				break
+			}
+			case "add_images": {
+				if (!interaction.inCachedGuild()) return
 
-						break
-					}
-				case "edit_images":
-					{
-						if (!interaction.inCachedGuild()) return
-
-						const jobTypeImages = getJobType(interaction)
-						if (!jobTypeImages) {
-							interaction.update({ content: `${config.failedEmoji} Unable to find valid job type! If this error persists, please contact a bot developer.`, embeds: [], components: [] })
-							return
-						}
-
+				const jobTypeImages = getJobType(interaction)
+				if (!jobTypeImages) {
+					interaction.update({ content: `${config.failedEmoji} Unable to find valid job type! If this error persists, please contact a bot developer.`, embeds: [], components: [] })
+					return
+				}
 						const jobFormImages = new ModalBuilder()
 							.setCustomId("job_images_modal")
 							.setTitle("Enter images you'd like to add")
@@ -457,7 +451,7 @@ export default {
 										text: "NIGHTHAWK SERVERS Marketplace"
 									})
 							],
-							components: [approvalRow],
+							components: [approvalRow.toJSON()],
 							content: jobTypeApproval.toLowerCase()
 						})
 						// await interaction.update({ content: `${config.warnEmoji} You are about to submit your job template for ${jobTypeApproval.toLowerCase()} to be approved. You will NOT be able to edit your template until it has been answered. __Are you sure you wish to continue?__`, embeds: [], components: [approvalRow] });
@@ -614,7 +608,7 @@ export default {
 						approvalMessageID: interaction.message.id
 					})
 					if (!template) {
-						interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled] })
+						interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled.toJSON()] })
 						return
 					}
 					const user = await interaction.client.users.fetch(template.userID) ?? interaction.client.users.cache.get(template.userID)
@@ -728,7 +722,7 @@ export default {
 							approvalMessageID: interaction.message.id
 						})
 						if (!approvalTemplate) {
-							interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled] })
+							interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled.toJSON()] })
 							return
 						}
 
@@ -873,125 +867,123 @@ export default {
 							rejectForm.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(arg))
 						}
 
-						await interaction.showModal(rejectForm)
+					await interaction.showModal(rejectForm as any)
+				break
+			}
+			case "approved_reverse_approval": {
+				if (!interaction.inCachedGuild()) return
 
-						break
-					}
-				case "approved_reverse_approval":
-					{
-						if (!interaction.inCachedGuild()) return
+				if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial marketplace moderator")?.position!) {
+					interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
+					return
+				}
 
-						if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial marketplace moderator")?.position!) {
-							interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
-							return
-						}
+				Log.info(`${interaction.user.id} reversed template on message id ${interaction.message.id}`)
 
-						Log.info(`${interaction.user.id} reversed template on message id ${interaction.message.id}`)
+				const approvalReverseButtonsDisabled = new ActionRowBuilder<ButtonBuilder>()
+					.addComponents(
+						new ButtonBuilder()
+							.setCustomId("approved_yes")
+							.setLabel("Approve Template")
+							.setStyle(ButtonStyle.Success)
+							.setDisabled(true),
+						new ButtonBuilder()
+							.setCustomId("approved_no")
+							.setLabel("Reject Template")
+							.setStyle(ButtonStyle.Danger)
+							.setDisabled(true),
+						new ButtonBuilder()
+							.setCustomId("approved_auto_reject")
+							.setLabel("Auto Reject")
+							.setStyle(ButtonStyle.Danger)
+							.setDisabled(true),
+						new ButtonBuilder()
+							.setCustomId("approved_reverse_approval")
+							.setLabel('Reverse Decision')
+							.setStyle(ButtonStyle.Danger)
 
-						const approvalReverseButtonsDisabled = new ActionRowBuilder<ButtonBuilder>()
-							.addComponents(
-								new ButtonBuilder()
-									.setCustomId("approved_yes")
-									.setLabel("Approve Template")
-									.setStyle(ButtonStyle.Success)
-									.setDisabled(true),
-								new ButtonBuilder()
-									.setCustomId("approved_no")
-									.setLabel("Reject Template")
-									.setStyle(ButtonStyle.Danger)
-									.setDisabled(true),
-								new ButtonBuilder()
-									.setCustomId("approved_auto_reject")
-									.setLabel("Auto Reject")
-									.setStyle(ButtonStyle.Danger)
-									.setDisabled(true),
-								new ButtonBuilder()
-									.setCustomId("approved_reverse_approval")
-									.setLabel('Reverse Decision')
-									.setStyle(ButtonStyle.Danger)
+						)
 
-							)
+				const approvalReverseButtons = new ActionRowBuilder<ButtonBuilder>()
+					.addComponents(
+						new ButtonBuilder()
+							.setCustomId("approved_yes")
+							.setLabel("Approve Template")
+							.setStyle(ButtonStyle.Success)
+							.setDisabled(false),
+						new ButtonBuilder()
+							.setCustomId("approved_no")
+							.setLabel("Reject Template")
+							.setStyle(ButtonStyle.Danger)
+							.setDisabled(false),
+						new ButtonBuilder()
+							.setCustomId("approved_auto_reject")
+							.setLabel("Auto Reject")
+							.setStyle(ButtonStyle.Danger)
+						)
 
-						const approvalReverseButtons = new ActionRowBuilder<ButtonBuilder>()
-							.addComponents(
-								new ButtonBuilder()
-									.setCustomId("approved_yes")
-									.setLabel("Approve Template")
-									.setStyle(ButtonStyle.Success)
-									.setDisabled(false),
-								new ButtonBuilder()
-									.setCustomId("approved_no")
-									.setLabel("Reject Template")
-									.setStyle(ButtonStyle.Danger)
-									.setDisabled(false),
-								new ButtonBuilder()
-									.setCustomId("approved_auto_reject")
-									.setLabel("Auto Reject")
-									.setStyle(ButtonStyle.Danger)
-							)
+				const approvalTemplateReverse = await PostTemplates.findOne({
+					approvalMessageID: interaction.message.id
+				})
+				if (!approvalTemplateReverse) {
+					interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] })
+					return
+				}
+				if (approvalTemplateReverse.waitingForApproval === true) {
+					await (interaction.channel as TextChannel)?.send(`<@${interaction.user.id}> Failed to reverse decision; this may be because this is an older template.`).catch(() => { })
+					return
+				}
 
-						const approvalTemplateReverse = await PostTemplates.findOne({
-							approvalMessageID: interaction.message.id
-						})
-						if (!approvalTemplateReverse) {
-							interaction.update({ content: `${config.failedEmoji} No template found.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] })
-							return
-						}
-						if (approvalTemplateReverse.waitingForApproval === true) {
-							await interaction.channel?.send(`<@${interaction.user.id}> Failed to reverse decision; this may be because this is an older template.`).catch(() => { })
-							return
-						}
+				const reverseUser = interaction.guild.members.cache.get(approvalTemplateReverse.userID)
+				if (!reverseUser) {
+					interaction.update({ content: `${config.failedEmoji} User has left the server. Failed to reverse decision.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] })
+					await approvalTemplateReverse.updateOne({
+						waitingForApproval: false,
+						approvalMessageID: "",
+						approved: false
+					})
+					return
+				}
 
-						const reverseUser = interaction.guild.members.cache.get(approvalTemplateReverse.userID)
-						if (!reverseUser) {
-							interaction.update({ content: `${config.failedEmoji} User has left the server. Failed to reverse decision.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] })
-							await approvalTemplateReverse.updateOne({
-								waitingForApproval: false,
-								approvalMessageID: "",
-								approved: false
-							})
-							return
-						}
+				Log.info(`Logging non-unique post template change for market mod ${interaction.user.id} on message ${interaction.message.id}`)
+				await PostTemplateChanges.create({
+					marketModerator: interaction.user.id,
+					userId: reverseUser!.user.id,
+					templateChannel: approvalTemplateReverse.jobType ?? "UNKNOWN",
+					templateType: "REVERSE",
+					templateCreatedAt: approvalTemplateReverse.createdAt,
+					templateChangedAt: approvalTemplateReverse.updatedAt,
 
-						Log.info(`Logging non-unique post template change for market mod ${interaction.user.id} on message ${interaction.message.id}`)
-						await PostTemplateChanges.create({
-							marketModerator: interaction.user.id,
-							userId: reverseUser!.user.id,
-							templateChannel: approvalTemplateReverse.jobType ?? "UNKNOWN",
-							templateType: "REVERSE",
-							templateCreatedAt: approvalTemplateReverse.createdAt,
-							templateChangedAt: approvalTemplateReverse.updatedAt,
+					isActionUnique: false
+				})
+				localPostTemplateCache.set(interaction.message.id, new Date())
 
-							isActionUnique: false
-						})
-						localPostTemplateCache.set(interaction.message.id, new Date())
-
-						await interaction.update({
-							content: `${config.loadingEmoji} Reversing decision...`
-						})
-						await approvalTemplateReverse.updateOne({
-							waitingForApproval: true,
-							approvalMessageID: interaction.message.id,
-							approved: false
-						})
-						await reverseUser.send({
-							embeds: [
-								new EmbedBuilder()
-									.setAuthor({ name: `Template Approval Reversed`, iconURL: interaction.guild.iconURL() || undefined })
-									.setColor("Red")
-									.setDescription(`Your template's status for ${approvalTemplateReverse.jobType.toLowerCase()} has been reversed, and is awaiting a decision.\n\nThis is likely due to staff error in approving your post.`)
-									.setTimestamp()
-							]
-						}).catch(() => { })
-						const noteList3 = await UserMarketNote.find({
-							userID: approvalTemplateReverse.userID
-						})
-						await interaction.editReply({
-							content: `Template in ${approvalTemplateReverse.jobType.toLowerCase()} by: ${reverseUser.user.username} (${reverseUser.user.id} <@${reverseUser.user.id}>)\nUser joined <t:${Math.round(reverseUser.joinedAt!.getTime() / 1000)}:R>\n${noteList3.length < 1 ? '' : `User has **${noteList3.length}** marketplace note(s)`}`,
-							components: [approvalReverseButtons]
-						})
-						break
-					}
+				await interaction.update({
+					content: `${config.loadingEmoji} Reversing decision...`
+				})
+				await approvalTemplateReverse.updateOne({
+					waitingForApproval: true,
+					approvalMessageID: interaction.message.id,
+					approved: false
+				})
+				await reverseUser.send({
+					embeds: [
+						new EmbedBuilder()
+							.setAuthor({ name: `Template Approval Reversed`, iconURL: interaction.guild.iconURL() || undefined })
+							.setColor("Red")
+							.setDescription(`Your template's status for ${approvalTemplateReverse.jobType.toLowerCase()} has been reversed, and is awaiting a decision.\n\nThis is likely due to staff error in approving your post.`)
+							.setTimestamp()
+					]
+				}).catch(() => { })
+				const noteList3 = await UserMarketNote.find({
+					userID: approvalTemplateReverse.userID
+				})
+				await interaction.editReply({
+					content: `Template in ${approvalTemplateReverse.jobType.toLowerCase()} by: ${reverseUser.user.username} (${reverseUser.user.id} <@${reverseUser.user.id}>)\nUser joined <t:${Math.round(reverseUser.joinedAt!.getTime() / 1000)}:R>\n${noteList3.length < 1 ? '' : `User has **${noteList3.length}** marketplace note(s)`}`,
+					components: [approvalReverseButtons.toJSON()]
+				})
+				break
+			}
 				case "edit_extras":
 					{
 						if (!interaction.inCachedGuild()) return
@@ -1039,11 +1031,7 @@ export default {
 							extrasForm.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(arg))
 						}
 
-						await interaction.showModal(extrasForm)
-
-						break
-					}
-				case 'delete': {
+					await interaction.showModal(extrasForm as any)
 					const thisPost = await Post.findOne({
 						messageId: interaction.message.id
 					})
@@ -1182,7 +1170,7 @@ export default {
 								ephemeral: true,
 								content: `You already have an [active post in that category](<https://www.discord.com/channels/${thisChannel.guild.id}/${thisChannel.id}/${thisMessage.id}>). Please delete it to make a new post.\n\nClick the button below to have me delete this post for you.`,
 								components: [
-									row
+									row.toJSON()
 								],
 								fetchReply: true
 							})
@@ -1471,7 +1459,7 @@ export default {
 						}
 						const postMessageTalent = await generateEmbed(foundTemplateTalent, interaction.user, interaction.guild)
 
-						await interaction.update({ embeds: [postMessageTalent.PostEmbed], content: postMessageTalent.PostMessage, components: postMessageTalent.PostButtons }); break
+						await interaction.update({ embeds: [postMessageTalent.PostEmbed], content: postMessageTalent.PostMessage, components: postMessageTalent.PostButtons.map(btn => btn.toJSON()) }); break
 					}
 
 				case "job_payment_modal": /*  ~ Job Payment Form ~ */
@@ -1537,7 +1525,7 @@ export default {
 						}
 						const postMessagePayment = await generateEmbed(foundTemplatePayment, interaction.user, interaction.guild)
 
-						await interaction.editReply({ embeds: [postMessagePayment.PostEmbed], content: postMessagePayment.PostMessage, components: postMessagePayment.PostButtons }); break
+						await interaction.editReply({ embeds: [postMessagePayment.PostEmbed], content: postMessagePayment.PostMessage, components: postMessagePayment.PostButtons.map(btn => btn.toJSON()) }); break
 					}
 				case "job_images_modal": /*  ~ Job Image Modal ~ */
 
@@ -1597,7 +1585,7 @@ export default {
 
 						const postMessageImages = await generateEmbed(foundTemplateImages, interaction.user, interaction.guild)
 
-						await interaction.editReply({ embeds: [postMessageImages.PostEmbed], content: postMessageImages.PostMessage, components: postMessageImages.PostButtons })
+						await interaction.editReply({ embeds: [postMessageImages.PostEmbed], content: postMessageImages.PostMessage, components: postMessageImages.PostButtons.map(btn => btn.toJSON()) })
 
 						break
 					}
@@ -1790,7 +1778,7 @@ export default {
 						await interaction.editReply({ content: `${config.loadingEmoji} Changes made! Sending you back to post editor...` })
 						const postMessageExtras = await generateEmbed(foundTemplateExtras, interaction.user, interaction.guild)
 
-						await interaction.editReply({ embeds: [postMessageExtras.PostEmbed], content: postMessageExtras.PostMessage, components: postMessageExtras.PostButtons })
+						await interaction.editReply({ embeds: [postMessageExtras.PostEmbed], content: postMessageExtras.PostMessage, components: postMessageExtras.PostButtons.map(btn => btn.toJSON()) })
 
 
 						break

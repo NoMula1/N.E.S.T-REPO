@@ -35,20 +35,20 @@ export default new CommandExecutor()
 				.setFooter({ text: `Ensure you only find the posts you're looking for with our staff-selected Market Tags` })
 		],
 		components: [
-			new ActionRowBuilder<ButtonBuilder>().addComponents(
+			(new ActionRowBuilder<ButtonBuilder>().addComponents(
 				new ButtonBuilder()
 					.setCustomId('post-search-execute')
 					.setLabel('Search')
 					.setStyle(ButtonStyle.Secondary)
-			),
-			new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+			) as any),
+			(new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
 				new StringSelectMenuBuilder()
 					.addOptions(
 						tagGroupAsOptions()
 					)
 					.setCustomId('post-search-group')
 					.setPlaceholder('Choose a tag group')
-			)
+			) as any)
 		]
 	})
 	cooldownMap.set(i.user.id, Date.now());

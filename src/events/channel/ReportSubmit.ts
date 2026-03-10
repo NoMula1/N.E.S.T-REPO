@@ -38,11 +38,11 @@ export default {
 					.setColor(Colors.Red)
 			],
 			components: [
-				new ActionRowBuilder<ButtonBuilder>().addComponents(
+				(new ActionRowBuilder<ButtonBuilder>().addComponents(
 					new ButtonBuilder()
 						.setCustomId(`message-report-reviewed`)
 						.setLabel("Mark as Resolved")
-						.setStyle(ButtonStyle.Success))
+						.setStyle(ButtonStyle.Success)) as any)
 			]
 		}))
 	}

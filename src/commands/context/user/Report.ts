@@ -34,7 +34,7 @@ export default new MessageContextCommandExecutor()
 			return
 		}
 		await interaction.showModal(
-			new ModalBuilder()
+			(new ModalBuilder()
 				.setCustomId('report-message-submit-' + interaction.targetMessage.id)
 				.setTitle(`Report Message Info`)
 				.addComponents(
@@ -46,8 +46,8 @@ export default new MessageContextCommandExecutor()
 							.setRequired(true)
 							.setStyle(TextInputStyle.Paragraph)
 					)
-				)
-	)
+				) as any)
+		)
 	setTimeout(()=>{
 			globalUsages -= 1
 			cooldown.delete(interaction.user.id)

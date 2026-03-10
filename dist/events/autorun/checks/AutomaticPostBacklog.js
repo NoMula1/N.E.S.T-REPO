@@ -40,7 +40,7 @@ async function CheckPosts() {
             ]);
             await channel.send({
                 embeds: [embed],
-                components: [actionrow]
+                components: [actionrow.toJSON()]
             }).catch(err => logging_1.Log.error("AutomaticPostBacklog " + err));
         });
     }

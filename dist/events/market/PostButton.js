@@ -161,47 +161,46 @@ exports.default = {
                         await interaction.showModal(jobForm);
                         break;
                     }
-                case "edit_payment": /*  ~ Button: Edit payment ~ */
-                    {
-                        if (!interaction.inCachedGuild())
-                            return;
-                        const jobTypePayment = getJobType(interaction);
-                        if (!jobTypePayment) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} Unable to find valid job type! If this error persists, please contact a bot developer.`, embeds: [], components: [] });
-                            return;
-                        }
-                        const jobFormPayment = new discord_js_1.ModalBuilder()
-                            .setCustomId("job_payment_modal")
-                            .setTitle("Enter payment detials");
-                        const argsPayment = [
-                            new discord_js_1.TextInputBuilder()
-                                .setCustomId("job_payment_robux")
-                                .setLabel("How much in Robux?")
-                                .setPlaceholder("None")
-                                .setRequired(false)
-                                .setMaxLength(30)
-                                .setStyle(discord_js_1.TextInputStyle.Short),
-                            new discord_js_1.TextInputBuilder()
-                                .setCustomId("job_payment_money")
-                                .setLabel("How much in real-world currency?")
-                                .setPlaceholder("None")
-                                .setRequired(false)
-                                .setMaxLength(30)
-                                .setStyle(discord_js_1.TextInputStyle.Short),
-                            new discord_js_1.TextInputBuilder()
-                                .setCustomId("job_payment_other")
-                                .setLabel("What other payments are being offered?")
-                                .setPlaceholder("None")
-                                .setRequired(false)
-                                .setMaxLength(100)
-                                .setStyle(discord_js_1.TextInputStyle.Short),
-                        ];
-                        for (const arg of argsPayment) {
-                            jobFormPayment.addComponents(new discord_js_1.ActionRowBuilder().setComponents(arg));
-                        }
-                        await interaction.showModal(jobFormPayment);
-                        break;
+                case "add_payment": {
+                    if (!interaction.inCachedGuild())
+                        return;
+                    const jobTypePayment = getJobType(interaction);
+                    if (!jobTypePayment) {
+                        interaction.update({ content: `${config_1.config.failedEmoji} Unable to find valid job type! If this error persists, please contact a bot developer.`, embeds: [], components: [] });
+                        return;
                     }
+                    const jobFormPayment = new discord_js_1.ModalBuilder()
+                        .setCustomId("job_payment_modal")
+                        .setTitle("Enter payment detials");
+                    const argsPayment = [
+                        new discord_js_1.TextInputBuilder()
+                            .setCustomId("job_payment_robux")
+                            .setLabel("How much in Robux?")
+                            .setPlaceholder("None")
+                            .setRequired(false)
+                            .setMaxLength(30)
+                            .setStyle(discord_js_1.TextInputStyle.Short),
+                        new discord_js_1.TextInputBuilder()
+                            .setCustomId("job_payment_money")
+                            .setLabel("How much in real-world currency?")
+                            .setPlaceholder("None")
+                            .setRequired(false)
+                            .setMaxLength(30)
+                            .setStyle(discord_js_1.TextInputStyle.Short),
+                        new discord_js_1.TextInputBuilder()
+                            .setCustomId("job_payment_other")
+                            .setLabel("What other payments are being offered?")
+                            .setPlaceholder("None")
+                            .setRequired(false)
+                            .setMaxLength(100)
+                            .setStyle(discord_js_1.TextInputStyle.Short),
+                    ];
+                    for (const arg of argsPayment) {
+                        jobFormPayment.addComponents(new discord_js_1.ActionRowBuilder().setComponents(arg));
+                    }
+                    await interaction.showModal(jobFormPayment);
+                    break;
+                }
                 case "add_talent_hub": /*  ~ Button: Add Talent Hub ~ */
                     {
                         if (!interaction.inCachedGuild())
@@ -230,38 +229,37 @@ exports.default = {
                         await interaction.showModal(jobFormTalent);
                         break;
                     }
-                case "edit_images":
-                    {
-                        if (!interaction.inCachedGuild())
-                            return;
-                        const jobTypeImages = getJobType(interaction);
-                        if (!jobTypeImages) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} Unable to find valid job type! If this error persists, please contact a bot developer.`, embeds: [], components: [] });
-                            return;
-                        }
-                        const jobFormImages = new discord_js_1.ModalBuilder()
-                            .setCustomId("job_images_modal")
-                            .setTitle("Enter images you'd like to add");
-                        const argsImages = [
-                            new discord_js_1.TextInputBuilder()
-                                .setCustomId("job_image")
-                                .setLabel("Enter post image URL")
-                                .setPlaceholder("Enter a valid IMAGE URL. (Or leave blank)")
-                                .setRequired(false)
-                                .setStyle(discord_js_1.TextInputStyle.Short),
-                            new discord_js_1.TextInputBuilder()
-                                .setCustomId("job_thumbnail")
-                                .setLabel("Enter post thumbnail URL")
-                                .setPlaceholder("Enter a valid IMAGE URL. (Or leave blank)")
-                                .setRequired(false)
-                                .setStyle(discord_js_1.TextInputStyle.Short),
-                        ];
-                        for (const arg of argsImages) {
-                            jobFormImages.addComponents(new discord_js_1.ActionRowBuilder().setComponents(arg));
-                        }
-                        await interaction.showModal(jobFormImages);
-                        break;
+                case "add_images": {
+                    if (!interaction.inCachedGuild())
+                        return;
+                    const jobTypeImages = getJobType(interaction);
+                    if (!jobTypeImages) {
+                        interaction.update({ content: `${config_1.config.failedEmoji} Unable to find valid job type! If this error persists, please contact a bot developer.`, embeds: [], components: [] });
+                        return;
                     }
+                    const jobFormImages = new discord_js_1.ModalBuilder()
+                        .setCustomId("job_images_modal")
+                        .setTitle("Enter images you'd like to add");
+                    const argsImages = [
+                        new discord_js_1.TextInputBuilder()
+                            .setCustomId("job_image")
+                            .setLabel("Enter post image URL")
+                            .setPlaceholder("Enter a valid IMAGE URL. (Or leave blank)")
+                            .setRequired(false)
+                            .setStyle(discord_js_1.TextInputStyle.Short),
+                        new discord_js_1.TextInputBuilder()
+                            .setCustomId("job_thumbnail")
+                            .setLabel("Enter post thumbnail URL")
+                            .setPlaceholder("Enter a valid IMAGE URL. (Or leave blank)")
+                            .setRequired(false)
+                            .setStyle(discord_js_1.TextInputStyle.Short),
+                    ];
+                    for (const arg of argsImages) {
+                        jobFormImages.addComponents(new discord_js_1.ActionRowBuilder().setComponents(arg));
+                    }
+                    await interaction.showModal(jobFormImages);
+                    break;
+                }
                 case "delete_template":
                     {
                         if (!interaction.inCachedGuild())
@@ -391,7 +389,7 @@ exports.default = {
                                     text: "NIGHTHAWK SERVERS Marketplace"
                                 })
                             ],
-                            components: [approvalRow],
+                            components: [approvalRow.toJSON()],
                             content: jobTypeApproval.toLowerCase()
                         });
                         // await interaction.update({ content: `${config.warnEmoji} You are about to submit your job template for ${jobTypeApproval.toLowerCase()} to be approved. You will NOT be able to edit your template until it has been answered. __Are you sure you wish to continue?__`, embeds: [], components: [approvalRow] });
@@ -514,7 +512,7 @@ exports.default = {
                         approvalMessageID: interaction.message.id
                     });
                     if (!template) {
-                        interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled] });
+                        interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled.toJSON()] });
                         return;
                     }
                     const user = (_e = await interaction.client.users.fetch(template.userID)) !== null && _e !== void 0 ? _e : interaction.client.users.cache.get(template.userID);
@@ -614,7 +612,7 @@ exports.default = {
                             approvalMessageID: interaction.message.id
                         });
                         if (!approvalTemplate) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled] });
+                            interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled.toJSON()] });
                             return;
                         }
                         const approveUser = interaction.guild.members.cache.get(approvalTemplate.userID);
@@ -741,103 +739,102 @@ exports.default = {
                         await interaction.showModal(rejectForm);
                         break;
                     }
-                case "approved_reverse_approval":
-                    {
-                        if (!interaction.inCachedGuild())
-                            return;
-                        if (interaction.member.roles.highest.position < ((_o = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial marketplace moderator")) === null || _o === void 0 ? void 0 : _o.position)) {
-                            interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
-                            return;
-                        }
-                        logging_1.Log.info(`${interaction.user.id} reversed template on message id ${interaction.message.id}`);
-                        const approvalReverseButtonsDisabled = new discord_js_1.ActionRowBuilder()
-                            .addComponents(new discord_js_1.ButtonBuilder()
-                            .setCustomId("approved_yes")
-                            .setLabel("Approve Template")
-                            .setStyle(discord_js_1.ButtonStyle.Success)
-                            .setDisabled(true), new discord_js_1.ButtonBuilder()
-                            .setCustomId("approved_no")
-                            .setLabel("Reject Template")
-                            .setStyle(discord_js_1.ButtonStyle.Danger)
-                            .setDisabled(true), new discord_js_1.ButtonBuilder()
-                            .setCustomId("approved_auto_reject")
-                            .setLabel("Auto Reject")
-                            .setStyle(discord_js_1.ButtonStyle.Danger)
-                            .setDisabled(true), new discord_js_1.ButtonBuilder()
-                            .setCustomId("approved_reverse_approval")
-                            .setLabel('Reverse Decision')
-                            .setStyle(discord_js_1.ButtonStyle.Danger));
-                        const approvalReverseButtons = new discord_js_1.ActionRowBuilder()
-                            .addComponents(new discord_js_1.ButtonBuilder()
-                            .setCustomId("approved_yes")
-                            .setLabel("Approve Template")
-                            .setStyle(discord_js_1.ButtonStyle.Success)
-                            .setDisabled(false), new discord_js_1.ButtonBuilder()
-                            .setCustomId("approved_no")
-                            .setLabel("Reject Template")
-                            .setStyle(discord_js_1.ButtonStyle.Danger)
-                            .setDisabled(false), new discord_js_1.ButtonBuilder()
-                            .setCustomId("approved_auto_reject")
-                            .setLabel("Auto Reject")
-                            .setStyle(discord_js_1.ButtonStyle.Danger));
-                        const approvalTemplateReverse = await PostTemplates_1.default.findOne({
-                            approvalMessageID: interaction.message.id
-                        });
-                        if (!approvalTemplateReverse) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] });
-                            return;
-                        }
-                        if (approvalTemplateReverse.waitingForApproval === true) {
-                            await ((_p = interaction.channel) === null || _p === void 0 ? void 0 : _p.send(`<@${interaction.user.id}> Failed to reverse decision; this may be because this is an older template.`).catch(() => { }));
-                            return;
-                        }
-                        const reverseUser = interaction.guild.members.cache.get(approvalTemplateReverse.userID);
-                        if (!reverseUser) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Failed to reverse decision.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] });
-                            await approvalTemplateReverse.updateOne({
-                                waitingForApproval: false,
-                                approvalMessageID: "",
-                                approved: false
-                            });
-                            return;
-                        }
-                        logging_1.Log.info(`Logging non-unique post template change for market mod ${interaction.user.id} on message ${interaction.message.id}`);
-                        await PostTemplateChanges_1.default.create({
-                            marketModerator: interaction.user.id,
-                            userId: reverseUser.user.id,
-                            templateChannel: (_q = approvalTemplateReverse.jobType) !== null && _q !== void 0 ? _q : "UNKNOWN",
-                            templateType: "REVERSE",
-                            templateCreatedAt: approvalTemplateReverse.createdAt,
-                            templateChangedAt: approvalTemplateReverse.updatedAt,
-                            isActionUnique: false
-                        });
-                        localPostTemplateCache.set(interaction.message.id, new Date());
-                        await interaction.update({
-                            content: `${config_1.config.loadingEmoji} Reversing decision...`
-                        });
+                case "approved_reverse_approval": {
+                    if (!interaction.inCachedGuild())
+                        return;
+                    if (interaction.member.roles.highest.position < ((_o = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial marketplace moderator")) === null || _o === void 0 ? void 0 : _o.position)) {
+                        interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
+                        return;
+                    }
+                    logging_1.Log.info(`${interaction.user.id} reversed template on message id ${interaction.message.id}`);
+                    const approvalReverseButtonsDisabled = new discord_js_1.ActionRowBuilder()
+                        .addComponents(new discord_js_1.ButtonBuilder()
+                        .setCustomId("approved_yes")
+                        .setLabel("Approve Template")
+                        .setStyle(discord_js_1.ButtonStyle.Success)
+                        .setDisabled(true), new discord_js_1.ButtonBuilder()
+                        .setCustomId("approved_no")
+                        .setLabel("Reject Template")
+                        .setStyle(discord_js_1.ButtonStyle.Danger)
+                        .setDisabled(true), new discord_js_1.ButtonBuilder()
+                        .setCustomId("approved_auto_reject")
+                        .setLabel("Auto Reject")
+                        .setStyle(discord_js_1.ButtonStyle.Danger)
+                        .setDisabled(true), new discord_js_1.ButtonBuilder()
+                        .setCustomId("approved_reverse_approval")
+                        .setLabel('Reverse Decision')
+                        .setStyle(discord_js_1.ButtonStyle.Danger));
+                    const approvalReverseButtons = new discord_js_1.ActionRowBuilder()
+                        .addComponents(new discord_js_1.ButtonBuilder()
+                        .setCustomId("approved_yes")
+                        .setLabel("Approve Template")
+                        .setStyle(discord_js_1.ButtonStyle.Success)
+                        .setDisabled(false), new discord_js_1.ButtonBuilder()
+                        .setCustomId("approved_no")
+                        .setLabel("Reject Template")
+                        .setStyle(discord_js_1.ButtonStyle.Danger)
+                        .setDisabled(false), new discord_js_1.ButtonBuilder()
+                        .setCustomId("approved_auto_reject")
+                        .setLabel("Auto Reject")
+                        .setStyle(discord_js_1.ButtonStyle.Danger));
+                    const approvalTemplateReverse = await PostTemplates_1.default.findOne({
+                        approvalMessageID: interaction.message.id
+                    });
+                    if (!approvalTemplateReverse) {
+                        interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] });
+                        return;
+                    }
+                    if (approvalTemplateReverse.waitingForApproval === true) {
+                        await ((_p = interaction.channel) === null || _p === void 0 ? void 0 : _p.send(`<@${interaction.user.id}> Failed to reverse decision; this may be because this is an older template.`).catch(() => { }));
+                        return;
+                    }
+                    const reverseUser = interaction.guild.members.cache.get(approvalTemplateReverse.userID);
+                    if (!reverseUser) {
+                        interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Failed to reverse decision.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] });
                         await approvalTemplateReverse.updateOne({
-                            waitingForApproval: true,
-                            approvalMessageID: interaction.message.id,
+                            waitingForApproval: false,
+                            approvalMessageID: "",
                             approved: false
                         });
-                        await reverseUser.send({
-                            embeds: [
-                                new discord_js_1.EmbedBuilder()
-                                    .setAuthor({ name: `Template Approval Reversed`, iconURL: interaction.guild.iconURL() || undefined })
-                                    .setColor("Red")
-                                    .setDescription(`Your template's status for ${approvalTemplateReverse.jobType.toLowerCase()} has been reversed, and is awaiting a decision.\n\nThis is likely due to staff error in approving your post.`)
-                                    .setTimestamp()
-                            ]
-                        }).catch(() => { });
-                        const noteList3 = await UserMarketNote_1.default.find({
-                            userID: approvalTemplateReverse.userID
-                        });
-                        await interaction.editReply({
-                            content: `Template in ${approvalTemplateReverse.jobType.toLowerCase()} by: ${reverseUser.user.username} (${reverseUser.user.id} <@${reverseUser.user.id}>)\nUser joined <t:${Math.round(reverseUser.joinedAt.getTime() / 1000)}:R>\n${noteList3.length < 1 ? '' : `User has **${noteList3.length}** marketplace note(s)`}`,
-                            components: [approvalReverseButtons]
-                        });
-                        break;
+                        return;
                     }
+                    logging_1.Log.info(`Logging non-unique post template change for market mod ${interaction.user.id} on message ${interaction.message.id}`);
+                    await PostTemplateChanges_1.default.create({
+                        marketModerator: interaction.user.id,
+                        userId: reverseUser.user.id,
+                        templateChannel: (_q = approvalTemplateReverse.jobType) !== null && _q !== void 0 ? _q : "UNKNOWN",
+                        templateType: "REVERSE",
+                        templateCreatedAt: approvalTemplateReverse.createdAt,
+                        templateChangedAt: approvalTemplateReverse.updatedAt,
+                        isActionUnique: false
+                    });
+                    localPostTemplateCache.set(interaction.message.id, new Date());
+                    await interaction.update({
+                        content: `${config_1.config.loadingEmoji} Reversing decision...`
+                    });
+                    await approvalTemplateReverse.updateOne({
+                        waitingForApproval: true,
+                        approvalMessageID: interaction.message.id,
+                        approved: false
+                    });
+                    await reverseUser.send({
+                        embeds: [
+                            new discord_js_1.EmbedBuilder()
+                                .setAuthor({ name: `Template Approval Reversed`, iconURL: interaction.guild.iconURL() || undefined })
+                                .setColor("Red")
+                                .setDescription(`Your template's status for ${approvalTemplateReverse.jobType.toLowerCase()} has been reversed, and is awaiting a decision.\n\nThis is likely due to staff error in approving your post.`)
+                                .setTimestamp()
+                        ]
+                    }).catch(() => { });
+                    const noteList3 = await UserMarketNote_1.default.find({
+                        userID: approvalTemplateReverse.userID
+                    });
+                    await interaction.editReply({
+                        content: `Template in ${approvalTemplateReverse.jobType.toLowerCase()} by: ${reverseUser.user.username} (${reverseUser.user.id} <@${reverseUser.user.id}>)\nUser joined <t:${Math.round(reverseUser.joinedAt.getTime() / 1000)}:R>\n${noteList3.length < 1 ? '' : `User has **${noteList3.length}** marketplace note(s)`}`,
+                        components: [approvalReverseButtons.toJSON()]
+                    });
+                    break;
+                }
                 case "edit_extras":
                     {
                         if (!interaction.inCachedGuild())
@@ -883,10 +880,6 @@ exports.default = {
                             extrasForm.addComponents(new discord_js_1.ActionRowBuilder().setComponents(arg));
                         }
                         await interaction.showModal(extrasForm);
-                        break;
-                    }
-                case 'delete':
-                    {
                         const thisPost = await Post_1.default.findOne({
                             messageId: interaction.message.id
                         });
@@ -1015,7 +1008,7 @@ exports.default = {
                                 ephemeral: true,
                                 content: `You already have an [active post in that category](<https://www.discord.com/channels/${thisChannel.guild.id}/${thisChannel.id}/${thisMessage.id}>). Please delete it to make a new post.\n\nClick the button below to have me delete this post for you.`,
                                 components: [
-                                    row
+                                    row.toJSON()
                                 ],
                                 fetchReply: true
                             });
@@ -1273,7 +1266,7 @@ exports.default = {
                             return;
                         }
                         const postMessageTalent = await generateEmbed(foundTemplateTalent, interaction.user, interaction.guild);
-                        await interaction.update({ embeds: [postMessageTalent.PostEmbed], content: postMessageTalent.PostMessage, components: postMessageTalent.PostButtons });
+                        await interaction.update({ embeds: [postMessageTalent.PostEmbed], content: postMessageTalent.PostMessage, components: postMessageTalent.PostButtons.map(btn => btn.toJSON()) });
                         break;
                     }
                 case "job_payment_modal": /*  ~ Job Payment Form ~ */
@@ -1333,7 +1326,7 @@ exports.default = {
                             return;
                         }
                         const postMessagePayment = await generateEmbed(foundTemplatePayment, interaction.user, interaction.guild);
-                        await interaction.editReply({ embeds: [postMessagePayment.PostEmbed], content: postMessagePayment.PostMessage, components: postMessagePayment.PostButtons });
+                        await interaction.editReply({ embeds: [postMessagePayment.PostEmbed], content: postMessagePayment.PostMessage, components: postMessagePayment.PostButtons.map(btn => btn.toJSON()) });
                         break;
                     }
                 case "job_images_modal": /*  ~ Job Image Modal ~ */
@@ -1384,7 +1377,7 @@ exports.default = {
                             return;
                         }
                         const postMessageImages = await generateEmbed(foundTemplateImages, interaction.user, interaction.guild);
-                        await interaction.editReply({ embeds: [postMessageImages.PostEmbed], content: postMessageImages.PostMessage, components: postMessageImages.PostButtons });
+                        await interaction.editReply({ embeds: [postMessageImages.PostEmbed], content: postMessageImages.PostMessage, components: postMessageImages.PostButtons.map(btn => btn.toJSON()) });
                         break;
                     }
                 case "reject_form": /*  ~ Reject Form ~ */
@@ -1553,7 +1546,7 @@ exports.default = {
                         }
                         await interaction.editReply({ content: `${config_1.config.loadingEmoji} Changes made! Sending you back to post editor...` });
                         const postMessageExtras = await generateEmbed(foundTemplateExtras, interaction.user, interaction.guild);
-                        await interaction.editReply({ embeds: [postMessageExtras.PostEmbed], content: postMessageExtras.PostMessage, components: postMessageExtras.PostButtons });
+                        await interaction.editReply({ embeds: [postMessageExtras.PostEmbed], content: postMessageExtras.PostMessage, components: postMessageExtras.PostButtons.map(btn => btn.toJSON()) });
                         break;
                     }
             }
