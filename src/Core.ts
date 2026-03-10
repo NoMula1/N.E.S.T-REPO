@@ -29,6 +29,8 @@ export const client = new CoreClient(config.clientID, {
 	]
 })
 
+client.setMaxListeners(50)
+
 if (process.env.NODE_ENV === "production")
 	client.trackSentry()
 else

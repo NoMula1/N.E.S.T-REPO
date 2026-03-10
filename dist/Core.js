@@ -65,6 +65,7 @@ exports.client = new CoreClient_1.default(config_1.config.clientID, {
         discord_js_1.Partials.Channel
     ]
 });
+exports.client.setMaxListeners(50);
 if (process.env.NODE_ENV === "production")
     exports.client.trackSentry();
 else
