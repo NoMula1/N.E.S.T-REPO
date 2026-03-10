@@ -12,11 +12,12 @@ import { scope } from "../bootstrap/GlobalScope"
 dotENV.config()
 
 export async function load(client: CoreClient) {
+	const fileExt = __filename.endsWith('.ts') ? '.ts' : '.js'
 	//SLASH COMMANDS
 	const commandPath = path.join(__dirname, "..", "commands", "slash")
 	const commandFolders = fs.readdirSync(commandPath)
 	for (const folder of commandFolders) {
-		const commandFiles = fs.readdirSync(`${commandPath}/${folder}`).filter(file => file.endsWith(".ts"))
+		const commandFiles = fs.readdirSync(`${commandPath}/${folder}`).filter(file => file.endsWith(fileExt))
 
 		for (const file of commandFiles) {
 			const command = (await import(`${commandPath}/${folder}/${file}`).catch(err => {
@@ -39,7 +40,7 @@ export async function load(client: CoreClient) {
 	const contextPath = path.join(__dirname, "..", "commands", "context")
 	const contextFolders = fs.readdirSync(contextPath)
 	for (const folder of contextFolders) {
-		const commandFiles = fs.readdirSync(`${contextPath}/${folder}`).filter(file => file.endsWith(".ts"))
+		const commandFiles = fs.readdirSync(`${contextPath}/${folder}`).filter(file => file.endsWith(fileExt))
 
 		for (const file of commandFiles) {
 			const command = (await import(`${contextPath}/${folder}/${file}`).catch(err => {

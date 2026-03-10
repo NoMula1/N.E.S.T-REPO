@@ -48,11 +48,12 @@ const GlobalScope_1 = require("../bootstrap/GlobalScope");
 dotenv_1.default.config();
 async function load(client) {
     var _a, _b;
+    const fileExt = __filename.endsWith('.ts') ? '.ts' : '.js';
     //SLASH COMMANDS
     const commandPath = path_1.default.join(__dirname, "..", "commands", "slash");
     const commandFolders = fs_1.default.readdirSync(commandPath);
     for (const folder of commandFolders) {
-        const commandFiles = fs_1.default.readdirSync(`${commandPath}/${folder}`).filter(file => file.endsWith(".ts"));
+        const commandFiles = fs_1.default.readdirSync(`${commandPath}/${folder}`).filter(file => file.endsWith(fileExt));
         for (const file of commandFiles) {
             const command = (_a = (await Promise.resolve(`${`${commandPath}/${folder}/${file}`}`).then(s => __importStar(require(s))).catch(err => {
                 logging_1.Log.error(`[Error] | Slash Command | ${file} | Unable to import: ${err}`);
@@ -72,7 +73,7 @@ async function load(client) {
     const contextPath = path_1.default.join(__dirname, "..", "commands", "context");
     const contextFolders = fs_1.default.readdirSync(contextPath);
     for (const folder of contextFolders) {
-        const commandFiles = fs_1.default.readdirSync(`${contextPath}/${folder}`).filter(file => file.endsWith(".ts"));
+        const commandFiles = fs_1.default.readdirSync(`${contextPath}/${folder}`).filter(file => file.endsWith(fileExt));
         for (const file of commandFiles) {
             const command = (_b = (await Promise.resolve(`${`${contextPath}/${folder}/${file}`}`).then(s => __importStar(require(s))).catch(err => {
                 logging_1.Log.error(`[Error] | Slash Command | ${file} | Unable to import: ${err}`);

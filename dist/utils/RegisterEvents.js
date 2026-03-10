@@ -43,8 +43,9 @@ const GlobalScope_1 = require("../bootstrap/GlobalScope");
 const glob_1 = require("glob");
 async function load(client) {
     var _a;
+    const fileExt = __filename.endsWith('.ts') ? '.ts' : '.js';
     const eventPath = path_1.default.join(__dirname, "..", "events");
-    const eventFiles = (0, glob_1.sync)('**/*.ts', {
+    const eventFiles = (0, glob_1.sync)(`**/*${fileExt}`, {
         cwd: eventPath,
         nodir: true,
         absolute: false

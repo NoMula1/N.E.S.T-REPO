@@ -16,8 +16,9 @@ export interface EventOptions {
 }
 
 export async function load(client: CoreClient) {
+	const fileExt = __filename.endsWith('.ts') ? '.ts' : '.js'
 	const eventPath = path.join(__dirname, "..", "events")
-	const eventFiles = sync('**/*.ts', {
+	const eventFiles = sync(`**/*${fileExt}`, {
 		cwd: eventPath,
 		nodir: true,
 		absolute: false
