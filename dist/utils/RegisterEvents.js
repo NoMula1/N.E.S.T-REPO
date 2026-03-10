@@ -66,7 +66,7 @@ async function load(client) {
             }
             for (const [eventName, eventFunc] of Object.entries(event)) {
                 if (eventName.startsWith("on") && typeof eventFunc === "function") {
-                    const formalEventName = eventName.substring(2, 2).toLowerCase() + eventName.substring(3);
+                    const formalEventName = eventName.substring(2, 3).toLowerCase() + eventName.substring(3);
                     client.on(formalEventName, (...args) => eventFunc(createOptions(client, ...args), ...args));
                 }
             }
