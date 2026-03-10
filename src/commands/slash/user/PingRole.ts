@@ -1,4 +1,4 @@
-import { EmbedBuilder, Message, TextChannel, roleMention } from "discord.js"
+import { EmbedBuilder, roleMention } from "discord.js"
 import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
 
 
@@ -29,7 +29,7 @@ export default new CommandExecutor()
 		{ Level: PermissionLevel.None }
 	)
 	.setExecutor(async (interaction) => {
-		if (!interaction.inCachedGuild) return
+		if (!interaction.inCachedGuild()) return
 		const role = interaction.options.getString("role")
 		const messageLink = interaction.options.getString("messagelink")
 		const userId = interaction.user.id
@@ -39,7 +39,6 @@ export default new CommandExecutor()
 			return
 		}
 
-
 		if (!role) {
 			interaction.reply({ content: "Help role is invalid", ephemeral: true })
 			return
@@ -48,22 +47,17 @@ export default new CommandExecutor()
 			interaction.reply({ content: "Invalid message link.", ephemeral: true })
 			return
 		}
-		const ValidatedMessage = await validateMessageLink(messageLink, (interaction.channel! as TextChannel))
-		if (typeof ValidatedMessage == 'string') {
-			interaction.reply({ content: ValidatedMessage, ephemeral: true })
+
+		const isValidLink = /^https?:\/\/(www\.)?discord(app)?\.com\/channels\/(\d{17,19})\/(\d{17,19})\/(\d{17,19})$/.test(messageLink)
+		if (!isValidLink) {
+			interaction.reply({ content: "Invalid message link.", ephemeral: true })
 			return
 		}
-		const roleid: string | undefined = role
 
-		console.log('role ID:', roleid)
-
-		if (!roleid) {
-			interaction.reply({ content: 'help role not found', ephemeral: true })
-			return
-		}
+		const roleid: string = role
 		const embed = new EmbedBuilder()
 			.setTitle("Help Requested!")
-			.setDescription(`**<@${interaction.user.id}>** has requested help from **<@&${roleid}>**.\n\n[Click here to visit the referenced message in this channel](${messageLink})`)
+			.setDescription(`**<@${interaction.user.id}>** has requested help from **<@&${roleid}>**.\n\n[Click here to view the referenced message](${messageLink})`)
 			.setColor(0x2F3136)
 
 		await interaction.reply({ embeds: [embed], content: roleMention(roleid), allowedMentions: { roles: [roleid] } })
@@ -71,26 +65,3 @@ export default new CommandExecutor()
 			userCD.delete(userId)
 		}, 3600000))
 	})
-
-
-async function validateMessageLink(link: string, channel: TextChannel): Promise<Message | string> {
-	const regResults = /^https?:\/\/(www\.)?discord(app)?\.com\/channels\/(\d{17,19})\/(\d{17,19})\/(\d{17,19})$/.test(link)
-	if (regResults == false) {
-		return "Invalid link."
-	}
-
-	const id = link.split('/')[link.split('/').length - 1]
-
-	try {
-		const found = await channel.messages.fetch(id)
-		if (!found) {
-			return "Unable to fetch message!"
-		}
-		return found
-	} catch (error) {
-		return "An error occurred while fetching the message."
-	}
-};
-
-
-
