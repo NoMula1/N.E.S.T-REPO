@@ -90,6 +90,7 @@ exports.default = {
         }
     },
     async onInteractionCreate(_, interaction) {
+        var _a;
         if (!interaction.isButton() && !interaction.isModalSubmit()) {
             return;
         }
@@ -169,14 +170,22 @@ exports.default = {
                                 return;
                             }
                             //const channel = client.channels.cache.get('1212593742423527454') as TextChannel;
-                            const channel = interaction.client.channels.cache.get((0, channels_1.default)(channels_1.Channel.MOD_MAIL));
-                            editLast(interaction.client.channels.cache.get(find.channelID), (0, channels_1.default)(channels_1.Channel.MOD_MAIL), confirmed);
+                            const modMailChannelId = (0, channels_1.default)(channels_1.Channel.MOD_MAIL);
+                            const channel = ((_a = interaction.client.channels.cache.get(modMailChannelId)) !== null && _a !== void 0 ? _a : await interaction.client.channels.fetch(modMailChannelId).catch(() => null));
+                            if (!channel) {
+                                logging_1.Log.error("Could not find or fetch MOD_MAIL channel");
+                                return;
+                            }
+                            editLast(interaction.client.channels.cache.get(find.channelID), modMailChannelId, confirmed);
                             await interaction.reply({ embeds: [sentEmbed], ephemeral: true });
-                            await channel.send({ embeds: [embed], components: [row] }).then(sentMessage => {
-                                find.messageID = sentMessage.id;
-                            }).catch((error) => {
+                            const sentMessage = await channel.send({ embeds: [embed], components: [row] }).catch((error) => {
                                 logging_1.Log.error("Failed to send embed: " + error);
+                                return null;
                             });
+                            if (sentMessage) {
+                                find.messageID = sentMessage.id;
+                                await find.save().catch(logging_1.Log.error);
+                            }
                         }
                         catch (error) {
                             (0, GenUtils_1.handleError)(error);
@@ -218,7 +227,7 @@ exports.default = {
             if (!interaction.message) {
                 return;
             }
-            const foundCase = await ModMail_1.default.findOneAndDelete({ count: mCount }).catch((error) => {
+            const foundCase = await ModMail_1.default.findOneAndDelete({ messageID: interaction.message.id }).catch((error) => {
                 (0, GenUtils_1.handleError)(error);
             });
             if (!foundCase) {

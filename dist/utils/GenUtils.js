@@ -63,14 +63,17 @@ function handleError(err) {
         logging_1.Log.warn("No error webhook URL was found! Could not send error embed.");
         return;
     }
-    const webhook = new discord_js_1.WebhookClient({ url: config_1.config.error_webhook_url });
-    const error = new discord_js_1.EmbedBuilder()
-        .setTitle("NEST Error!")
-        .setColor("Red")
-        .addFields({ name: "Error:", value: `\`\`\`${err.message}\`\`\`` });
-    webhook.send({ embeds: [error] }).catch(() => {
-        // Silently fail if webhook send fails (e.g., rate limited, invalid URL)
-    });
+    try {
+        const webhook = new discord_js_1.WebhookClient({ url: config_1.config.error_webhook_url });
+        const error = new discord_js_1.EmbedBuilder()
+            .setTitle("NEST Error!")
+            .setColor("Red")
+            .addFields({ name: "Error:", value: `\`\`\`${err.message}\`\`\`` });
+        webhook.send({ embeds: [error] }).catch(() => { });
+    }
+    catch (_a) {
+        logging_1.Log.warn("Invalid error webhook URL, could not send error embed.");
+    }
 }
 /**
  * Returns the current date an time in a string.

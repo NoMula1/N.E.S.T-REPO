@@ -144,15 +144,22 @@ export default {
 						}
 
 						//const channel = client.channels.cache.get('1212593742423527454') as TextChannel;
-						const channel = interaction.client.channels.cache.get(channelLookup(Channel.MOD_MAIL)) as TextChannel
-						editLast(interaction.client.channels.cache.get(find.channelID) as TextChannel, channelLookup(Channel.MOD_MAIL), confirmed)
-						await interaction.reply({ embeds: [sentEmbed], ephemeral: true })
-						await channel.send({ embeds: [embed], components: [row as any] }).then(sentMessage => {
-							find.messageID = sentMessage.id
-						}).catch((error) => {
-							Log.error("Failed to send embed: " + error)
-
-						})
+					const modMailChannelId = channelLookup(Channel.MOD_MAIL)
+					const channel = (interaction.client.channels.cache.get(modMailChannelId) ?? await interaction.client.channels.fetch(modMailChannelId).catch(() => null)) as TextChannel | null
+					if (!channel) {
+						Log.error("Could not find or fetch MOD_MAIL channel")
+						return
+					}
+					editLast(interaction.client.channels.cache.get(find.channelID) as TextChannel, modMailChannelId, confirmed)
+					await interaction.reply({ embeds: [sentEmbed], ephemeral: true })
+					const sentMessage = await channel.send({ embeds: [embed], components: [row as any] }).catch((error) => {
+						Log.error("Failed to send embed: " + error)
+						return null
+					})
+					if (sentMessage) {
+						find.messageID = sentMessage.id
+						await find.save().catch(Log.error)
+					}
 					} catch (error) {
 						handleError(error as Error)
 					}
@@ -195,7 +202,7 @@ export default {
 			if (!interaction.message) {
 				return
 			}
-			const foundCase = await ModMail.findOneAndDelete({ count: mCount }).catch((error: Error) => {
+			const foundCase = await ModMail.findOneAndDelete({ messageID: interaction.message.id }).catch((error: Error) => {
 				handleError(error)
 			})
 			if (!foundCase) {

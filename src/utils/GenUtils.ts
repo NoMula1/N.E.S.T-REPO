@@ -12,16 +12,18 @@ export function handleError(err: Error): void {
 		Log.warn("No error webhook URL was found! Could not send error embed.")
 		return
 	}
-	const webhook = new WebhookClient({ url: config.error_webhook_url })
-	const error = new EmbedBuilder()
-		.setTitle("NEST Error!")
-		.setColor("Red")
-		.addFields(
-			{ name: "Error:", value: `\`\`\`${err.message}\`\`\`` }
-		)
-	webhook.send({ embeds: [error] }).catch(() => {
-		// Silently fail if webhook send fails (e.g., rate limited, invalid URL)
-	})
+	try {
+		const webhook = new WebhookClient({ url: config.error_webhook_url })
+		const error = new EmbedBuilder()
+			.setTitle("NEST Error!")
+			.setColor("Red")
+			.addFields(
+				{ name: "Error:", value: `\`\`\`${err.message}\`\`\`` }
+			)
+		webhook.send({ embeds: [error] }).catch(() => { /* silently fail */ })
+	} catch {
+		Log.warn("Invalid error webhook URL, could not send error embed.")
+	}
 }
 
 /**
