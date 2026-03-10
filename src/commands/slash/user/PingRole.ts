@@ -1,5 +1,5 @@
 import { EmbedBuilder, roleMention } from "discord.js"
-import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
+import { CommandExecutor, PermissionLevel, RoleIDS } from "../../../utils/CommandExecutor"
 
 
 const userCD = new Map<string, NodeJS.Timeout>()
@@ -34,7 +34,10 @@ export default new CommandExecutor()
 		const messageLink = interaction.options.getString("messagelink")
 		const userId = interaction.user.id
 
-		if (userCD.has(userId)) {
+		const staffRoles = Object.values(RoleIDS)
+		const isStaff = staffRoles.some(id => interaction.member.roles.cache.has(id))
+
+		if (!isStaff && userCD.has(userId)) {
 			interaction.reply({ content: 'You are on cooldown, please wait before asking for help', ephemeral: true })
 			return
 		}
@@ -61,7 +64,9 @@ export default new CommandExecutor()
 			.setColor(0x2F3136)
 
 		await interaction.reply({ embeds: [embed], content: roleMention(roleid), allowedMentions: { roles: [roleid] } })
-		userCD.set(userId, setTimeout(() => {
-			userCD.delete(userId)
-		}, 3600000))
+		if (!isStaff) {
+			userCD.set(userId, setTimeout(() => {
+				userCD.delete(userId)
+			}, 3600000))
+		}
 	})

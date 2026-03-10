@@ -20,7 +20,9 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     const role = interaction.options.getString("role");
     const messageLink = interaction.options.getString("messagelink");
     const userId = interaction.user.id;
-    if (userCD.has(userId)) {
+    const staffRoles = Object.values(CommandExecutor_1.RoleIDS);
+    const isStaff = staffRoles.some(id => interaction.member.roles.cache.has(id));
+    if (!isStaff && userCD.has(userId)) {
         interaction.reply({ content: 'You are on cooldown, please wait before asking for help', ephemeral: true });
         return;
     }
@@ -43,7 +45,9 @@ exports.default = new CommandExecutor_1.CommandExecutor()
         .setDescription(`**<@${interaction.user.id}>** has requested help from **<@&${roleid}>**.\n\n[Click here to view the referenced message](${messageLink})`)
         .setColor(0x2F3136);
     await interaction.reply({ embeds: [embed], content: (0, discord_js_1.roleMention)(roleid), allowedMentions: { roles: [roleid] } });
-    userCD.set(userId, setTimeout(() => {
-        userCD.delete(userId);
-    }, 3600000));
+    if (!isStaff) {
+        userCD.set(userId, setTimeout(() => {
+            userCD.delete(userId);
+        }, 3600000));
+    }
 });
