@@ -1,7 +1,7 @@
 import { Client, ClientOptions, Collection, Events, GatewayIntentBits, Partials, REST, Routes } from "discord.js"
 import { Log } from "../utils/logging"
 import { scope, toString as scopeToString } from "./GlobalScope"
-import * as Sentry from "@sentry/bun"
+import * as Sentry from "@sentry/node"
 import { CommandExecutor } from "../utils/CommandExecutor"
 import { ContextCommandExecutor } from "../utils/ContextCommandExecutor"
 import { SimpleCommand } from "../utils/SimpleCommandExecutor"

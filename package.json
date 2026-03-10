@@ -21,6 +21,7 @@
 },
 "homepage": "https://github.com/Roblox-Developers/NEST-JS#readme",
 "dependencies": {
+"@sentry/node": "^8.35.0",
 "chart.js": "^4.4.7",
 "colors": "^1.4.0",
 "convert": "^4.13.2",
