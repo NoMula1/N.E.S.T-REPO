@@ -55,13 +55,16 @@ export async function checkTickets() {
 						Click \`Log Transcript\` to log the transcript.`)
 			.setColor("Green")
 			.setTimestamp()
-		ticketChannel.send({ embeds: [ticketClosed], components: [ticketRowReq as any] })
+
+		const ticketClosedDM = new EmbedBuilder()
 			.setAuthor({ name: "Ticket Closed", iconURL: guild.iconURL() || undefined })
 			.setDescription(`Ticket \`#${ticketChannel.name.split('-')[1]}\` has been closed!
 						
 						${config.bulletpointEmoji} **Reason:** Auto Close: Failure to respond to close request.`)
 			.setColor("Green")
 			.setTimestamp()
+
+		ticketChannel.send({ embeds: [ticketClosed], components: [ticketRowReq as any] })
 
 
 		await ticketChannel.edit({
@@ -73,13 +76,13 @@ export async function checkTickets() {
 		await ticketChannel.permissionOverwrites.edit(singleTicket.creatorID!, { ViewChannel: false, SendMessages: false, ReadMessageHistory: false })
 		const creator = CoreClient.instance.users.cache.get(singleTicket.creatorID!)
 		if (creator) {
-			creator.send({ embeds: [ticketClosedDM] }).catch(() => { })
+			creator.send({ embeds: [ticketClosedDM as any] }).catch(() => { })
 		}
 		for (const user of singleTicket.users) {
 			await ticketChannel.permissionOverwrites.edit(user, { ViewChannel: false, SendMessages: false, ReadMessageHistory: false })
 			const foundUser = CoreClient.instance.users.cache.get(user)
 			if (!foundUser) return
-			await foundUser.send({ embeds: [ticketClosedDM] }).catch(() => { })
+			await foundUser.send({ embeds: [ticketClosedDM as any] }).catch(() => { })
 		}
 
 	})

@@ -55,7 +55,6 @@ async function checkTickets() {
 						Click \`Log Transcript\` to log the transcript.`)
             .setColor("Green")
             .setTimestamp();
-        ticketChannel.send({ embeds: [ticketClosed], components: [ticketRowReq.toJSON()] });
         const ticketClosedDM = new discord_js_1.EmbedBuilder()
             .setAuthor({ name: "Ticket Closed", iconURL: guild.iconURL() || undefined })
             .setDescription(`Ticket \`#${ticketChannel.name.split('-')[1]}\` has been closed!
@@ -63,6 +62,7 @@ async function checkTickets() {
 						${config_1.config.bulletpointEmoji} **Reason:** Auto Close: Failure to respond to close request.`)
             .setColor("Green")
             .setTimestamp();
+        ticketChannel.send({ embeds: [ticketClosed], components: [ticketRowReq] });
         await ticketChannel.edit({
             name: `closed-${ticketChannel.name.split('-')[1]}`
         }).catch(async (err) => {

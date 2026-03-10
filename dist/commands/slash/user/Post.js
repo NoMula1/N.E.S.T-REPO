@@ -135,7 +135,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     await interaction.editReply({ content: `${config_1.config.loadingEmoji} Generating template embed...` });
     const templateEmbed = await generateEmbed(postTemplate, interaction.user, interaction.guild);
     await interaction.editReply({ content: `${config_1.config.loadingEmoji} Generating template buttons...` });
-    interaction.editReply({ content: templateEmbed.PostMessage, embeds: [templateEmbed.PostEmbed], components: templateEmbed.PostButtons.map(btn => btn.toJSON()) });
+    await interaction.editReply({ content: templateEmbed.PostMessage, embeds: [templateEmbed.PostEmbed], components: templateEmbed.PostButtons.map(btn => btn) });
 });
 async function generateEmbed(template, user, guild) {
     const settings = await Settings_1.default.findOne({

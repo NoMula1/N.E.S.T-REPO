@@ -214,7 +214,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
                 embeds: [
                     embed
                 ],
-                components: exports.defaultQueueInterfaceRows.map(row => row.toJSON())
+                components: exports.defaultQueueInterfaceRows.map(row => row)
             });
             break;
         }
@@ -295,7 +295,7 @@ async function attemptRegeneration(interaction) {
             embeds: [
                 preEmbed.PostEmbed
             ],
-            components: exports.defaultQueueInterfaceRows.map(row => row.toJSON())
+            components: exports.defaultQueueInterfaceRows.map(row => row)
         };
         if (interaction.isButton()) {
             await interaction.update(replyToEdit);

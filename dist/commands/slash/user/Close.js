@@ -48,5 +48,5 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     ];
     for (const input of postInputs)
         postForm.addComponents(new discord_js_1.ActionRowBuilder().setComponents(input));
-    await interaction.showModal(postForm.toJSON());
+    await interaction.showModal(postForm);
 });

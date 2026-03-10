@@ -423,7 +423,7 @@ exports.default = {
                 for (const arg of formInput) {
                     form.addComponents(new discord_js_1.ActionRowBuilder().setComponents(arg));
                 }
-                await interaction.showModal(form.toJSON());
+                await interaction.showModal(form);
                 break;
             }
             case "qi-template-release": {

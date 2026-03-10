@@ -114,7 +114,7 @@ exports.default = {
                     ];
                     for (const inputs of modalInputs)
                         modal.addComponents(new discord_js_1.ActionRowBuilder().setComponents(inputs));
-                    await interaction.showModal(modal.toJSON());
+                    await interaction.showModal(modal);
                     break;
                 }
                 case 'confirm':

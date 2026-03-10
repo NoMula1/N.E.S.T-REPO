@@ -277,7 +277,7 @@ exports.default = {
                             .setCustomId("prompt_no")
                             .setLabel("No")
                             .setStyle(discord_js_1.ButtonStyle.Success));
-                        await interaction.update({ content: `${config_1.config.warnEmoji} You are about to delete your post template for ${jobTypeDelete.toLowerCase()}. You will NOT be able to recover it. __Are you sure you wish to continue?__`, embeds: [], components: [deleteRow.toJSON()] });
+                        await interaction.update({ content: `${config_1.config.warnEmoji} You are about to delete your post template for ${jobTypeDelete.toLowerCase()}. You will NOT be able to recover it. __Are you sure you wish to continue?__`, embeds: [], components: [deleteRow] });
                         break;
                     }
                 case "delete_template_yes":
@@ -299,7 +299,7 @@ exports.default = {
                             .setLabel("No")
                             .setStyle(discord_js_1.ButtonStyle.Success)
                             .setDisabled(true));
-                        await interaction.update({ content: `${config_1.config.loadingEmoji} Deleting your post template.`, components: [deleteRowYes.toJSON()] });
+                        await interaction.update({ content: `${config_1.config.loadingEmoji} Deleting your post template.`, components: [deleteRowYes] });
                         await PostTemplates_1.default.findOneAndDelete({
                             userID: interaction.user.id,
                             guildID: interaction.guild.id,
@@ -352,7 +352,7 @@ exports.default = {
                             .setLabel("No")
                             .setStyle(discord_js_1.ButtonStyle.Success)
                             .setDisabled(true));
-                        await interaction.update({ content: `${config_1.config.loadingEmoji} Returning you back to the post template editor...`, components: [deleteRowNo.toJSON()] });
+                        await interaction.update({ content: `${config_1.config.loadingEmoji} Returning you back to the post template editor...`, components: [deleteRowNo] });
                         const postTemplateNo = await PostTemplates_1.default.findOne({
                             userID: interaction.user.id,
                             guildID: interaction.guild.id,
@@ -389,7 +389,7 @@ exports.default = {
                                     text: "NIGHTHAWK SERVERS Marketplace"
                                 })
                             ],
-                            components: [approvalRow.toJSON()],
+                            components: [approvalRow],
                             content: jobTypeApproval.toLowerCase()
                         });
                         // await interaction.update({ content: `${config.warnEmoji} You are about to submit your job template for ${jobTypeApproval.toLowerCase()} to be approved. You will NOT be able to edit your template until it has been answered. __Are you sure you wish to continue?__`, embeds: [], components: [approvalRow] });
@@ -448,7 +448,7 @@ exports.default = {
                             .setLabel("No")
                             .setStyle(discord_js_1.ButtonStyle.Success)
                             .setDisabled(true));
-                        await interaction.update({ content: `${config_1.config.loadingEmoji} Submitting your post for approval.`, components: [approveRowYes.toJSON()] });
+                        await interaction.update({ content: `${config_1.config.loadingEmoji} Submitting your post for approval.`, components: [approveRowYes] });
                         const approvalEmbed = await generateEmbed(foundTemplateApprovalYes, interaction.user, interaction.guild, true);
                         let approvalButtons = new discord_js_1.ActionRowBuilder()
                             .addComponents(new discord_js_1.ButtonBuilder()
@@ -469,7 +469,7 @@ exports.default = {
                         const noteListApprove = await UserMarketNote_1.default.find({
                             userID: foundTemplateApprovalYes.userID
                         });
-                        const message = await approvalChannel.send({ content: `Template in ${jobTypeApprovalYes} by: ${interaction.user.username} (${interaction.user.id} <@${interaction.user.id}>)\nUser joined <t:${Math.round(interaction.member.joinedAt.getTime() / 1000)}:R>\nTemplate ID: \`${foundTemplateApprovalYes._id}\`\n${noteListApprove.length < 1 ? '' : `User has **${noteListApprove.length}** marketplace note(s)`}`, embeds: [approvalEmbed.PostEmbed], components: [approvalButtons.toJSON()] }).catch(() => { });
+                        const message = await approvalChannel.send({ content: `Template in ${jobTypeApprovalYes} by: ${interaction.user.username} (${interaction.user.id} <@${interaction.user.id}>)\nUser joined <t:${Math.round(interaction.member.joinedAt.getTime() / 1000)}:R>\nTemplate ID: \`${foundTemplateApprovalYes._id}\`\n${noteListApprove.length < 1 ? '' : `User has **${noteListApprove.length}** marketplace note(s)`}`, embeds: [approvalEmbed.PostEmbed], components: [approvalButtons] }).catch(() => { });
                         await foundTemplateApprovalYes.updateOne({
                             waitingForApproval: true,
                             approvalMessageID: message.id,
@@ -512,7 +512,7 @@ exports.default = {
                         approvalMessageID: interaction.message.id
                     });
                     if (!template) {
-                        interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled.toJSON()] });
+                        interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled] });
                         return;
                     }
                     const user = (_e = await interaction.client.users.fetch(template.userID)) !== null && _e !== void 0 ? _e : interaction.client.users.cache.get(template.userID);
@@ -612,12 +612,12 @@ exports.default = {
                             approvalMessageID: interaction.message.id
                         });
                         if (!approvalTemplate) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled.toJSON()] });
+                            interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled] });
                             return;
                         }
                         const approveUser = interaction.guild.members.cache.get(approvalTemplate.userID);
                         if (!approveUser) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [approvalButtonsDisabled.toJSON()] });
+                            interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [approvalButtonsDisabled] });
                             await approvalTemplate.updateOne({
                                 waitingForApproval: false,
                                 approvalMessageID: "",
@@ -650,7 +650,7 @@ exports.default = {
                             });
                             localPostTemplateCache.set(interaction.message.id, new Date());
                         }
-                        await interaction.update({ content: `${config_1.config.loadingEmoji} Approving template...`, components: [approvalButtonsDisabled.toJSON()] });
+                        await interaction.update({ content: `${config_1.config.loadingEmoji} Approving template...`, components: [approvalButtonsDisabled] });
                         await approvalTemplate.updateOne({
                             approved: true,
                             waitingForApproval: false,
@@ -718,7 +718,7 @@ exports.default = {
                             approvalMessageID: interaction.message.id
                         });
                         if (!approvalTemplateNo) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabledNo.toJSON()] });
+                            interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabledNo] });
                             return;
                         }
                         const rejectForm = new discord_js_1.ModalBuilder()
@@ -781,7 +781,7 @@ exports.default = {
                         approvalMessageID: interaction.message.id
                     });
                     if (!approvalTemplateReverse) {
-                        interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] });
+                        interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalReverseButtonsDisabled] });
                         return;
                     }
                     if (approvalTemplateReverse.waitingForApproval === true) {
@@ -790,7 +790,7 @@ exports.default = {
                     }
                     const reverseUser = interaction.guild.members.cache.get(approvalTemplateReverse.userID);
                     if (!reverseUser) {
-                        interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Failed to reverse decision.`, embeds: [], components: [approvalReverseButtonsDisabled.toJSON()] });
+                        interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Failed to reverse decision.`, embeds: [], components: [approvalReverseButtonsDisabled] });
                         await approvalTemplateReverse.updateOne({
                             waitingForApproval: false,
                             approvalMessageID: "",
@@ -831,7 +831,7 @@ exports.default = {
                     });
                     await interaction.editReply({
                         content: `Template in ${approvalTemplateReverse.jobType.toLowerCase()} by: ${reverseUser.user.username} (${reverseUser.user.id} <@${reverseUser.user.id}>)\nUser joined <t:${Math.round(reverseUser.joinedAt.getTime() / 1000)}:R>\n${noteList3.length < 1 ? '' : `User has **${noteList3.length}** marketplace note(s)`}`,
-                        components: [approvalReverseButtons.toJSON()]
+                        components: [approvalReverseButtons]
                     });
                     break;
                 }
@@ -1008,7 +1008,7 @@ exports.default = {
                                 ephemeral: true,
                                 content: `You already have an [active post in that category](<https://www.discord.com/channels/${thisChannel.guild.id}/${thisChannel.id}/${thisMessage.id}>). Please delete it to make a new post.\n\nClick the button below to have me delete this post for you.`,
                                 components: [
-                                    row.toJSON()
+                                    row
                                 ],
                                 fetchReply: true
                             });
@@ -1266,7 +1266,7 @@ exports.default = {
                             return;
                         }
                         const postMessageTalent = await generateEmbed(foundTemplateTalent, interaction.user, interaction.guild);
-                        await interaction.update({ embeds: [postMessageTalent.PostEmbed], content: postMessageTalent.PostMessage, components: postMessageTalent.PostButtons.map(btn => btn.toJSON()) });
+                        await interaction.update({ embeds: [postMessageTalent.PostEmbed], content: postMessageTalent.PostMessage, components: postMessageTalent.PostButtons.map(btn => btn) });
                         break;
                     }
                 case "job_payment_modal": /*  ~ Job Payment Form ~ */
@@ -1326,7 +1326,7 @@ exports.default = {
                             return;
                         }
                         const postMessagePayment = await generateEmbed(foundTemplatePayment, interaction.user, interaction.guild);
-                        await interaction.editReply({ embeds: [postMessagePayment.PostEmbed], content: postMessagePayment.PostMessage, components: postMessagePayment.PostButtons.map(btn => btn.toJSON()) });
+                        await interaction.editReply({ embeds: [postMessagePayment.PostEmbed], content: postMessagePayment.PostMessage, components: postMessagePayment.PostButtons.map(btn => btn) });
                         break;
                     }
                 case "job_images_modal": /*  ~ Job Image Modal ~ */
@@ -1377,7 +1377,7 @@ exports.default = {
                             return;
                         }
                         const postMessageImages = await generateEmbed(foundTemplateImages, interaction.user, interaction.guild);
-                        await interaction.editReply({ embeds: [postMessageImages.PostEmbed], content: postMessageImages.PostMessage, components: postMessageImages.PostButtons.map(btn => btn.toJSON()) });
+                        await interaction.editReply({ embeds: [postMessageImages.PostEmbed], content: postMessageImages.PostMessage, components: postMessageImages.PostButtons.map(btn => btn) });
                         break;
                     }
                 case "reject_form": /*  ~ Reject Form ~ */
@@ -1410,7 +1410,7 @@ exports.default = {
                             approvalMessageID: interaction.message.id
                         });
                         if (!templateRej) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [postRejectedButtons.toJSON()] });
+                            interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [postRejectedButtons] });
                             return;
                         }
                         if (templateRej.approved === true) {
@@ -1418,7 +1418,7 @@ exports.default = {
                         }
                         const approveUser = interaction.guild.members.cache.get(templateRej.userID);
                         if (!approveUser) {
-                            interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [postRejectedButtons.toJSON()] });
+                            interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [postRejectedButtons] });
                             await templateRej.updateOne({
                                 waitingForApproval: false,
                             });
@@ -1476,7 +1476,7 @@ exports.default = {
                                 logging_1.Log.error(err);
                             });
                         }
-                        await interaction.update({ content: `${config_1.config.loadingEmoji} Rejecting template...`, components: [postRejectedButtons.toJSON()] });
+                        await interaction.update({ content: `${config_1.config.loadingEmoji} Rejecting template...`, components: [postRejectedButtons] });
                         await templateRej.updateOne({
                             approved: false,
                             waitingForApproval: false,
@@ -1546,7 +1546,7 @@ exports.default = {
                         }
                         await interaction.editReply({ content: `${config_1.config.loadingEmoji} Changes made! Sending you back to post editor...` });
                         const postMessageExtras = await generateEmbed(foundTemplateExtras, interaction.user, interaction.guild);
-                        await interaction.editReply({ embeds: [postMessageExtras.PostEmbed], content: postMessageExtras.PostMessage, components: postMessageExtras.PostButtons.map(btn => btn.toJSON()) });
+                        await interaction.editReply({ embeds: [postMessageExtras.PostEmbed], content: postMessageExtras.PostMessage, components: postMessageExtras.PostButtons.map(btn => btn) });
                         break;
                     }
             }

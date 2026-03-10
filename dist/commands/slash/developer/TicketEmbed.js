@@ -48,6 +48,6 @@ exports.default = new CommandExecutor_1.CommandExecutor()
             + ` **Use this feature to report staff misconduct or other staff grievances.**`
     })
         .setColor("Green");
-    webhook.send({ embeds: [ticketEmbed], components: [ticketsButton.toJSON()] }).catch(() => { });
+    webhook.send({ embeds: [ticketEmbed], components: [ticketsButton] }).catch(() => { });
     interaction.reply({ content: "Embed sent!" });
 });
