@@ -175,6 +175,7 @@ export default {
 					await interaction.showModal(jobForm as any)
 					break
 				}
+				case "edit_payment":
 				case "add_payment": {
 					if (!interaction.inCachedGuild()) return
 
