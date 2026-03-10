@@ -573,7 +573,7 @@ export default {
 				case "view_notes": {
 					if (!interaction.inCachedGuild()) return
 
-					if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial marketplace moderator")?.position!) {
+					if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
 						interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 						return
 					}
@@ -677,7 +677,7 @@ export default {
 				case "approved_auto_reject":
 					if (!interaction.inCachedGuild()) return
 
-					if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial marketplace moderator")?.position!) {
+					if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
 						interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 						return
 					}
@@ -686,7 +686,7 @@ export default {
 					{
 						if (!interaction.inCachedGuild()) return
 
-						if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial marketplace moderator")?.position! || interaction.member.roles.cache.find((r: Role) => r.name.toLowerCase() === "knowiel test role")) {
+						if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
 							interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 							return
 						}
@@ -814,6 +814,11 @@ export default {
 					{
 						if (!interaction.inCachedGuild()) return
 
+						if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
+							interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
+							return
+						}
+
 						const approvalButtonsDisabledNo = new ActionRowBuilder<ButtonBuilder>()
 							.addComponents(
 								new ButtonBuilder()
@@ -871,7 +876,7 @@ export default {
 			case "approved_reverse_approval": {
 				if (!interaction.inCachedGuild()) return
 
-				if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial marketplace moderator")?.position!) {
+				if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
 					interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 					return
 				}
@@ -1591,7 +1596,7 @@ export default {
 					{
 						if (!interaction.inCachedGuild()) return
 
-						if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "market moderator")?.position!) {
+						if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
 							interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 							return
 						}

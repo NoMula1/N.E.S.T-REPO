@@ -318,7 +318,7 @@ export default {
 			// TODO: Implement all other buttons
 			case 'qi-accept': {
 				Log.debug('Received post Accept interaction')
-				if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial marketplace moderator")?.position!) {
+				if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
 					interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 					return
 				}
@@ -408,7 +408,7 @@ export default {
 				break
 			}
 			case 'qi-reject': {
-				if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial marketplace moderator")?.position!) {
+				if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
 					interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 					return
 				}
@@ -446,7 +446,7 @@ export default {
 				break
 			}
 			case "qi-template-release": {
-				if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial marketplace moderator")?.position!) {
+				if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
 					interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 					return
 				}
