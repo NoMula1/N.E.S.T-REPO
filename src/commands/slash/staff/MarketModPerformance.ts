@@ -228,7 +228,10 @@ export default new CommandExecutor()
 	.setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
 	.setBasePermission({
 		Level: PermissionLevel.Administrator,
-		HasRole: ["1203545090132283402"]
+		HasRole: ["1480435906044362814"]
+		/**
+		 * 1480435906044362814 = Marketplace Manager
+		 */
 	})
 	.setExecutor(async (interaction) => {
 		if (!interaction.inCachedGuild()) { interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true }); return }

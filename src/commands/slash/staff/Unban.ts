@@ -22,10 +22,12 @@ export default new CommandExecutor()
 	.setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
 	.setBasePermission({
 		Level: PermissionLevel.Moderator,
-		HasRole: ['1192313412340940841', '1203545488008155136'],
+		HasRole: ['1480435758845395045', '1474515140841046231', '1474515390418780330', '1474514887609680124'],
 		/**
-		 * 1192313412340940841 = Marketplace Moderator
-		 * 1203545488008155136 = Scam Investigator
+		 * 1480435758845395045 = Marketplace Moderator
+		 * 1474515140841046231 = Scam Investigator
+		 * 1474515390418780330 = Trial Scam Investigator
+		 * 1474514887609680124 = Scam Investigations Manager
 		 */
 		Scope: Scope.Admin
 	})

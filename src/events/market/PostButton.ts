@@ -1051,7 +1051,7 @@ export default {
 					if (interaction.user.id !== thisPost.userID && !(interaction.member?.permissions as PermissionsBitField).has(PermissionFlagsBits.ManageMessages)) {
 						await interaction.user.send(`The post you've tried to delete is not your own.`).catch(() => { })
 						return
-					} else if ((interaction.member!.roles! as GuildMemberRoleManager).cache.hasAny("1203900675965325332", "1138680448248188948")) {
+					} else if ((interaction.member!.roles! as GuildMemberRoleManager).cache.hasAny("1480436503187423342", "1390774033586458745")) {
 						// staff deletion; invalidate post template
 						const foundPostTemplate = await PostTemplates.findOne({
 							userID: postMember.user.id,

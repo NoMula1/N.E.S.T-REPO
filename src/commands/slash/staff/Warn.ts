@@ -20,10 +20,12 @@ export default new CommandExecutor()
 	)
 	.setBasePermission({
 		Level: PermissionLevel.AssistantModerator,
-		HasRole: ['1243687914865557546', '1203545550448885871'] 
+		HasRole: ['1480437092361175163', '1474515140841046231', '1474515390418780330', '1474514887609680124']
 		/**
-		 * 1243687914865557546 = Trial Help Moderator
-		 * 1203545550448885871 = Senior Scam Investigator
+		 * 1480437092361175163 = Trial Help Forums Moderator
+		 * 1474515140841046231 = Scam Investigator
+		 * 1474515390418780330 = Trial Scam Investigator
+		 * 1474514887609680124 = Scam Investigations Manager
 		*/
 	})
 	.setExecutor(async (interaction) => {

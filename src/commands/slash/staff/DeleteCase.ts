@@ -16,9 +16,9 @@ export default new CommandExecutor()
 	)
 	.setBasePermission({
 		Level: PermissionLevel.Administrator,
-		HasRole: ["1210559673791553587", "1203545417648967720"],
+		HasRole: ["1210559673791553587", "1480436823984705557"],
 		/*
-			1203545417648967720 = Help Forums Manager
+			1480436823984705557 = Help Forums Manager
 		*/
 		Scope: Scope.Admin
 	})
