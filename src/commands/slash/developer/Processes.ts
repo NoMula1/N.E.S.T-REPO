@@ -8,7 +8,7 @@ export default new CommandExecutor()
 	.setDescription("Get NEST's running processes")
 	.setBasePermission({
 		Level: PermissionLevel.Developer,
-		HasRole: ["1177007392668536873"]
+		IsUser: ["1149913737558499358"]
 	})
 	.setExecutor(async (interaction) => {
 		await interaction.deferReply()
