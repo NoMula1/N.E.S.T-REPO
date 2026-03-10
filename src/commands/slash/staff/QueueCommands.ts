@@ -247,7 +247,7 @@ export default new CommandExecutor()
 					embeds: [
 						embed
 					],
-					components: defaultQueueInterfaceRows.map(row => row.toJSON())
+					components: defaultQueueInterfaceRows.map(row => row as any)
 				})
 				break
 			}
@@ -337,7 +337,7 @@ export async function attemptRegeneration(interaction: ButtonInteraction<"cached
 			embeds: [
 				preEmbed.PostEmbed
 			],
-			components: defaultQueueInterfaceRows.map(row => row.toJSON())
+			components: defaultQueueInterfaceRows.map(row => row as any)
 		}
 		
 		if (interaction.isButton()) {

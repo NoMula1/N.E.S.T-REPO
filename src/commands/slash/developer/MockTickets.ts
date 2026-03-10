@@ -70,7 +70,7 @@ export default new CommandExecutor()
 				embed
 			],
 			components: [
-				actionRow.toJSON()
+				actionRow as any
 			]
 		})
 		await (interaction.channel as TextChannel|null)?.send({
@@ -78,7 +78,7 @@ export default new CommandExecutor()
 				embed2
 			],
 			components: [
-				actionRow2.toJSON()
+				actionRow2 as any
 			]
 		})
 	})

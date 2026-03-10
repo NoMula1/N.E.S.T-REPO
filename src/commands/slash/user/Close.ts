@@ -43,5 +43,5 @@ export default new CommandExecutor()
 		]
 		for (const input of postInputs)
 			postForm.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(input))
-	await interaction.showModal(postForm.toJSON())
+	await interaction.showModal(postForm as any)
 	})

@@ -197,7 +197,7 @@ export default {
 						.setDescription(`Thank you for taking the time to open an Internal Affair Report, where you can report staff misconduct or any other staff related grievances. Please describe the following in detail so we can work on your case as fast as possible:\n\n- Which staff are you reporting?\n- What are you reporting them for?\n- What proof do you have regarding this report?\n- What would you hope is done about this matter?\n- Any other information?\n\nAll content in this report is as confidential as possible between you, internal reviewers, and server managers.`)
 						.setTimestamp()
 						.setFooter({ text: "Ticket transcripts are saved permanently and are viewable by non-internal reviewers." })
-					newChannel.send({ content: `<@${interaction.user.id}> <@&1203544976030437397>`, embeds: [ticketEmbed], components: [ticketRow.toJSON()] })
+					newChannel.send({ content: `<@${interaction.user.id}> <@&1203544976030437397>`, embeds: [ticketEmbed], components: [ticketRow as any] })
 
 					const newTicket = new Tickets({
 						guildID: interaction.guild.id,
@@ -349,7 +349,7 @@ export default {
 								If you opened this ticket by mistake, leave a short response and close the ticket.`)
 							.setTimestamp()
 							.setFooter({ text: "Ticket transcripts are saved permanently." })
-						newChannel.send({ content: `<@${interaction.user.id}> <@&1050243383999864852> https://nohello.net`, embeds: [ticketEmbed], components: [ticketRow.toJSON()] })
+					newChannel.send({ content: `<@${interaction.user.id}> <@&1050243383999864852> https://nohello.net`, embeds: [ticketEmbed], components: [ticketRow as any] })
 
 						const newTicket = new Tickets({
 							guildID: interaction.guild.id,
@@ -395,7 +395,7 @@ export default {
 					]
 					for (const input of postInputs)
 						postForm.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(input))
-					await interaction.showModal(postForm.toJSON())
+					await interaction.showModal(postForm as any)
 					break
 				case "log_transcript":
 					await interaction.deferReply({ ephemeral: true })
@@ -426,7 +426,7 @@ export default {
 								.setLabel("Delete Ticket")
 								.setEmoji("🗑"),
 						)
-					await interaction.message.edit({ components: [ticketRow2.toJSON()] })
+					await interaction.message.edit({ components: [ticketRow2 as any] })
 					interaction.editReply({ content: "Transcript logged." })
 					break
 				case "delete_ticket":
@@ -456,7 +456,7 @@ export default {
 								.setDisabled(true)
 								.setEmoji("🗑"),
 						)
-					await interaction.message.edit({ components: [ticketRow3.toJSON()] })
+					await interaction.message.edit({ components: [ticketRow3 as any] })
 
 					await interaction.editReply({ content: "Ticket file deleted, deleting channel soon." })
 					setTimeout(async () => {

@@ -55,6 +55,6 @@ export default new CommandExecutor()
 				}
 			)
 			.setColor("Green")
-		webhook.send({ embeds: [ticketEmbed], components: [ticketsButton.toJSON()] }).catch(() => { })
+		webhook.send({ embeds: [ticketEmbed], components: [ticketsButton as any] }).catch(() => { })
 		interaction.reply({ content: "Embed sent!" })
 	})

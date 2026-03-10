@@ -85,7 +85,7 @@ export default {
 					]
 					for (const inputs of modalInputs)
 						modal.addComponents(new ActionRowBuilder<TextInputBuilder>().setComponents(inputs))
-				await interaction.showModal(modal.toJSON())
+				await interaction.showModal(modal as any)
 					break
 				}
 				case 'confirm': {

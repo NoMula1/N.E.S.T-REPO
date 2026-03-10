@@ -45,7 +45,7 @@ async function CheckPosts() {
 				])
 			await channel.send({
 				embeds: [embed],
-			components: [actionrow.toJSON()]
+					components: [actionrow as any]
 			}).catch(err => Log.error("AutomaticPostBacklog " + err))
 		})
 
