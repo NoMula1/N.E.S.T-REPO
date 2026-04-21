@@ -20,7 +20,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setBasePermission({
     Level: CommandExecutor_1.PermissionLevel.Administrator,
     /*
-        1203545417648967720 = Help Forums Manager
+        1480436823984705557 = Help Forums Manager
     */
     Scope: GlobalScope_1.Scope.Admin
 })

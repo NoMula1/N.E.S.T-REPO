@@ -8,17 +8,27 @@ export default new CommandExecutor()
 	.setDescription("Get NEST's running processes")
 	.setBasePermission({
 		Level: PermissionLevel.Developer,
-		IsUser: ["1149913737558499358"]
+		IsUser: ["1149913737558499358", "1009717580270948372"]
 	})
 	.setExecutor(async (interaction) => {
 		await interaction.deferReply()
-		exec('npx pm2 jlist', async (err, stdout) => {
+		exec('npx pm2 --silent jlist', async (err, stdout) => {
 			if (err) {
 				await interaction.editReply(err)
 				handleError(err)
 				return
 			}
-			const procs = JSON.parse(stdout) as any[]
+			const rawOutput = (stdout ?? '').trim()
+			let procs: any[] = []
+			if (rawOutput.length > 0) {
+				try {
+					procs = JSON.parse(rawOutput) as any[]
+				} catch (parseErr) {
+					await interaction.editReply('Failed to parse pm2 output. Please check the pm2 process list manually.')
+					handleError(parseErr as Error)
+					return
+				}
+			}
 			let embeds: EmbedBuilder[]
 			if (procs instanceof Array)
 				embeds = procs.map((proc) => {

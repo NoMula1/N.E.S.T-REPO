@@ -13,7 +13,7 @@ export default (new CommandExecutor()
 			.setDescription("If the process will be killed instead")) as CommandExecutor)
 	.setBasePermission({
 		Level: PermissionLevel.Developer,
-		IsUser: ["1149913737558499358"]
+		IsUser: ["1149913737558499358", "1009717580270948372"]
 	})
 	.setExecutor(async (interaction: ChatInputCommandInteraction) => {
 		const resultMessage: Message = await interaction.deferReply({ fetchReply: true })

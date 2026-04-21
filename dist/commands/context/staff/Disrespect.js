@@ -23,7 +23,7 @@ exports.default = new ContextCommandExecutor_1.MessageContextCommandExecutor()
             embeds: [
                 new discord_js_1.EmbedBuilder()
                     .setTitle(`Disrespectful Content`)
-                    .setDescription(`Please remember to follow our [Server Rules](https://canary.discord.com/channels/489424959270158356/753682979284451368/796282622497521704)`
+                    .setDescription(`Please remember to follow our [Server Rules](https://discord.com/channels/813997998245150721/1390771765117976718)`
                     + '\n\nYour message has been flagged for as disrespectful. Messages that disrespect another member or their race, culture, religion, etc, are not allowed.'
                     + '\nFurther rule violations may lead to a more severe punishment! Thank you for keeping NIGHTHAWK SERVERS safe.')
                     .setFooter({

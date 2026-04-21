@@ -17,7 +17,7 @@ exports.default = {
     name: discord_js_1.Events.InteractionCreate,
     once: false,
     async execute(_, interaction) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         if (!interaction.inCachedGuild())
             return;
         if (interaction.isModalSubmit()) {
@@ -114,7 +114,7 @@ exports.default = {
                             break;
                         }
                     }
-                    // Now we know if the current tag is selected by the MM, now we need to check if it's already in the template data
+                    // Now we know if the current tagg is selected by the MM, now we need to check if it's already in the template data
                     if ((freezeTemplateTags & BigInt(tempTagBits)) !== BigInt(0)) {
                         if (!found) {
                             // MM deselected tag; remove from data
@@ -171,11 +171,11 @@ exports.default = {
             let response = "Unknown Reason";
             switch (val) {
                 case 'a-1': {
-                    response = "> Hiring advertisements must adhere to the minimum payment threshold of $2.50 and/or 200R$, and should not propose a percentage-only compensation unless accompanied by a minimum payment or as an additional option. A specific value must be stated. If a Marketplace Moderator deems your workload to be significantly too heavy for the offered pay, your post will be declined due to our [Quality Control Procedures](https://docs.google.com/document/d/1Lljpo-xQvaADE1buWXPPqfnaSJeF6X3qnDsiA-zPOKA/edit?usp=sharing).";
+                    response = "> Hiring advertisements must adhere to the minimum payment threshold of $2.50 and/or 200R$, and should not propose a percentage-only compensation unless accompanied by a minimum payment or as an additional option. A specific value must be stated. If a Marketplace Moderator deems your workload to be significantly too heavy for the offered pay, your post will be declined due to our [Quality Control Procedures](https://docs.google.com/document/d/1SZa6tq7FCNTPBu7EOdnia1YzMih9a1wWG1T-sAKZmSE/edit?usp=sharing).";
                     break;
                 }
                 case 'a-2': {
-                    response = "> You must write a detailed Client-Freelancer Agreement, similar to a Terms of Service. This includes every detail of how the functionality of the deal will work. You are welcome to use one of our [RD standard templates](https://pastebin.com/zqCpGHnh), but it must be specified within your post. You **MUST DISCLAIM** at the bottom of your post either \"RD Standard Agreement\" (or something similar) or your own agreement. RD's rules supercede an Agreement in all contexts, and predatory Agreements are as bannable as scams.";
+                    response = "> You must write a detailed Client-Freelancer Agreement, similar to a Terms of Service. This includes every detail of how the functionality of the deal will work. You are welcome to use one of our [NH standard templates](https://pastebin.com/a8PqCeUW), but it must be specified within your post. You **MUST DISCLAIM** at the bottom of your post either \"NH Standard Agreement\" (or something similar) or your own agreement. RD's rules supercede an Agreement in all contexts, and predatory Agreements are as bannable as scams.";
                     break;
                 }
                 case 'a-3': {
@@ -187,7 +187,7 @@ exports.default = {
                     break;
                 }
                 case 'b-2': {
-                    response = "> You must have a listed portfolio within your post. Accepted links are listed in the [RD QCP](https://docs.google.com/document/d/1Lljpo-xQvaADE1buWXPPqfnaSJeF6X3qnDsiA-zPOKA/edit?usp=sharing).";
+                    response = "> You must have a listed portfolio within your post. Accepted links are listed in the [NH MQCP](https://docs.google.com/document/d/1Lljpo-xQvaADE1buWXPPqfnaSJeF6X3qnDsiA-zPOKA/edit?usp=sharing).";
                     break;
                 }
                 case 'c-1': {
@@ -211,7 +211,7 @@ exports.default = {
                     break;
                 }
                 case 'h-1': {
-                    response = "~ *Please uphold a respectful demeanor towards all Members, including within private messages and external platforms. Adherence to the code of conduct outlined in [#rules](<https://discord.com/channels/489424959270158356/753682979284451368>) is expected, along with the exercise of sound judgement. **DMs are fully moderateable in any circumstance, no exceptions.***\n\n> - This includes any form of baseless slander against our Members; whether it be within chat, external locations, such as DMs, or even other servers. Accusations must be made with **tangible proof in hand**.";
+                    response = "~ *Please uphold a respectful demeanor towards all Members, including within private messages and external platforms. Adherence to the code of conduct outlined in [#rules](<https://discord.com/channels/813997998245150721/1390771765117976718>) is expected, along with the exercise of sound judgement. **DMs are fully moderateable in any circumstance, no exceptions.***\n\n> - This includes any form of baseless slander against our Members; whether it be within chat, external locations, such as DMs, or even other servers. Accusations must be made with **tangible proof in hand**.";
                     break;
                 }
                 case 'i-1': {
@@ -308,7 +308,7 @@ exports.default = {
             // TODO: Implement all other buttons
             case 'qi-accept': {
                 logging_1.Log.debug('Received post Accept interaction');
-                if (interaction.member.roles.highest.position < ((_g = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial marketplace moderator")) === null || _g === void 0 ? void 0 : _g.position)) {
+                if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
                     interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
                     return;
                 }
@@ -334,7 +334,7 @@ exports.default = {
                     await PostTemplateChanges_1.default.create({
                         marketModerator: interaction.user.id,
                         userId: approveUser.user.id,
-                        templateChannel: (_h = resolvedPost.jobType) !== null && _h !== void 0 ? _h : "UNKNOWN",
+                        templateChannel: (_g = resolvedPost.jobType) !== null && _g !== void 0 ? _g : "UNKNOWN",
                         templateType: "APPROVE",
                         templateCreatedAt: resolvedPost.createdAt,
                         templateChangedAt: resolvedPost.updatedAt,
@@ -345,7 +345,7 @@ exports.default = {
                     await PostTemplateChanges_1.default.create({
                         marketModerator: interaction.user.id,
                         userId: approveUser.user.id,
-                        templateChannel: (_j = resolvedPost.jobType) !== null && _j !== void 0 ? _j : "UNKNOWN",
+                        templateChannel: (_h = resolvedPost.jobType) !== null && _h !== void 0 ? _h : "UNKNOWN",
                         templateType: "APPROVE",
                         templateCreatedAt: resolvedPost.createdAt,
                         templateChangedAt: resolvedPost.updatedAt,
@@ -395,7 +395,7 @@ exports.default = {
                 break;
             }
             case 'qi-reject': {
-                if (interaction.member.roles.highest.position < ((_k = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial marketplace moderator")) === null || _k === void 0 ? void 0 : _k.position)) {
+                if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
                     interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
                     return;
                 }
@@ -427,7 +427,7 @@ exports.default = {
                 break;
             }
             case "qi-template-release": {
-                if (interaction.member.roles.highest.position < ((_l = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial marketplace moderator")) === null || _l === void 0 ? void 0 : _l.position)) {
+                if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
                     interaction.reply({ content: `${config_1.config.failedEmoji} You do not have permission to do this.`, ephemeral: true });
                     return;
                 }

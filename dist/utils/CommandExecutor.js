@@ -17,13 +17,18 @@ const discord_js_1 = require("discord.js");
 const config_1 = require("../utils/config");
 const GlobalScope_1 = require("../bootstrap/GlobalScope");
 exports.RoleIDS = {
-    MarketStaff: '1480436503187423342', // Market department staff
+    MarketStaff: '1480436503187423342', // Marketplace Department (base staff role)
     TrialHelpModerator: '1480437092361175163', // Trial Help Moderator
     HelpModerator: '1480436761938104380', // Help Moderator
-    MarketModerator: '1480435758845395045', // Market Moderator
-    HelpManager: '1480436823984705557', // Help Forums Manger
-    AssistantModerator: '1392220113909846018', // '489428524298534942', //   Trial
-    Moderator: '1406065795464822917', // Community Moderator
+    MarketModerator: '1480435758845395045', // Marketplace Moderator
+    MarketManager: '1480435906044362814', // Marketplace Manager
+    HelpManager: '1480436823984705557', // Help Forums Manager
+    ScamInvestigator: '1474515140841046231', // Scam Investigator
+    TrialScamInvestigator: '1474515390418780330', // Trial Scam Investigator
+    ScamInvestigationsManager: '1474514887609680124', // Scam Investigations Manager
+    AssistantModerator: '1392220113909846018', // Trial Moderator
+    Moderator: '1406065795464822917', // Moderator
+    SeniorModerator: '1413957083598164008', // Senior Moderator
     SeniorMarketModerator: '1480436288296583228', // Senior Marketplace Moderator
     AssistantAdministrator: '1390774033586458745', // Senior Community Moderator / Assistant Administrator
     Administrator: '1473948752720040087', // Server Manager / Administrator
@@ -50,16 +55,18 @@ var PermissionLevel;
     PermissionLevel[PermissionLevel["AssistantModerator"] = 6] = "AssistantModerator";
     /** Requires the Moderator role. */
     PermissionLevel[PermissionLevel["Moderator"] = 7] = "Moderator";
+    /** Requires the Senior Moderator role. */
+    PermissionLevel[PermissionLevel["SeniorModerator"] = 8] = "SeniorModerator";
     /** Requires the Senior Market Moderator role. */
-    PermissionLevel[PermissionLevel["SeniorMarketModerator"] = 8] = "SeniorMarketModerator";
+    PermissionLevel[PermissionLevel["SeniorMarketModerator"] = 9] = "SeniorMarketModerator";
     /** Requires the Assistant Administrator role. */
-    PermissionLevel[PermissionLevel["AssistantAdministrator"] = 9] = "AssistantAdministrator";
+    PermissionLevel[PermissionLevel["AssistantAdministrator"] = 10] = "AssistantAdministrator";
     /** Requires the Market Manager role. */
-    PermissionLevel[PermissionLevel["MarketManager"] = 10] = "MarketManager";
+    PermissionLevel[PermissionLevel["MarketManager"] = 11] = "MarketManager";
     /** Requires the Administrator role. */
-    PermissionLevel[PermissionLevel["Administrator"] = 11] = "Administrator";
+    PermissionLevel[PermissionLevel["Administrator"] = 12] = "Administrator";
     /** Must be a part of the devs array in config.json. */
-    PermissionLevel[PermissionLevel["Developer"] = 12] = "Developer";
+    PermissionLevel[PermissionLevel["Developer"] = 13] = "Developer";
 })(PermissionLevel || (exports.PermissionLevel = PermissionLevel = {}));
 /** A user-facing command. */
 class CommandExecutor extends discord_js_1.SlashCommandBuilder {
@@ -311,11 +318,19 @@ class CommandExecutor extends discord_js_1.SlashCommandBuilder {
                     };
                 }
                 break;
+            case PermissionLevel.SeniorModerator:
+                if (!interaction.member.roles.cache.has(exports.RoleIDS.SeniorModerator)) {
+                    return {
+                        success: false,
+                        content: "You must be Senior Moderator and up to use this command."
+                    };
+                }
+                break;
             case PermissionLevel.SeniorMarketModerator:
                 if (!interaction.member.roles.cache.has(exports.RoleIDS.SeniorMarketModerator)) {
                     return {
                         success: false,
-                        content: "You must be Assistant Moderator and up to use this command."
+                        content: "You must be Senior Market Moderator and up to use this command."
                     };
                 }
                 break;

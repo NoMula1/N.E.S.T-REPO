@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { EmbedBuilder, Events, Message, MessageReaction, PermissionFlagsBits, User } from "discord.js"
+/* import { EmbedBuilder, Events, Message, MessageReaction, PermissionFlagsBits, User } from "discord.js"
 import { Log, LogLevel } from "../../utils/logging"
 import { getRoleByReaction } from "../../utils/RoleReactions"
 import { sendModLogs } from "../../utils/GenUtils"
@@ -58,7 +58,7 @@ export default {
 		})
 
 	}
-}
+}*/
 /* 
 Congratulations! A moderator in **NIGHTHAWK SERVERS** has awarded you with <$RELATED_EMOJI$> **<$ROLE_NAME$>** from [this messages](<$MESSAGE_URL$>)
 <FIELD_NAME> What does this mean from us? </FIELD_NAME>

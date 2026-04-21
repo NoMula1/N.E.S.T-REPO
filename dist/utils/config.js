@@ -27,7 +27,7 @@ exports.config = {
     bulletpointEmoji: ((_h = (_g = configFile.bulletpointEmoji) !== null && _g !== void 0 ? _g : process.env.BULLETPOINT_EMOJI) !== null && _h !== void 0 ? _h : "•"),
     loadingEmoji: ((_k = (_j = configFile.loadingEmoji) !== null && _j !== void 0 ? _j : process.env.LOADING_EMOJI) !== null && _k !== void 0 ? _k : "↻"),
     warnEmoji: ((_m = (_l = configFile.warnEmoji) !== null && _l !== void 0 ? _l : process.env.WARN_EMOJI) !== null && _m !== void 0 ? _m : "⚠️"),
-    devs: (configFile.devs || ["1149913737558499358"]),
+    devs: (configFile.devs || ["1149913737558499358", "1009717580270948372"]),
     mongo_uri: process.env.MONGO_URI,
     error_webhook_url: process.env.ERROR_WEBHOOK_URL,
     // Default

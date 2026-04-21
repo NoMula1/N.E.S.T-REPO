@@ -1,6 +1,6 @@
 Template notes will be a way for marketplace moderators to store quick information about members in their posts. Often referred to as "User Market Notes".
 
-Invocation: https://discord.com/channels/489424959270158356/1193040410847756288/1208483134006370385
+Invocation: UNKNOWNLINKREPLACE
 
 # Limits and Restraints
 *"Limits and Restraints" relative to data schemas; restraints may change based on database demand*

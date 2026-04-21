@@ -11,7 +11,12 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setDefaultMemberPermissions(discord_js_1.PermissionFlagsBits.BanMembers)
     .setBasePermission({
     Level: CommandExecutor_1.PermissionLevel.AssistantModerator,
-    HasRole: ['1192313412340940841']
+    HasRole: ['1480435758845395045', '1480436288296583228', '1480435906044362814']
+    /**
+     * 1480435758845395045 = Marketplace Moderator
+     * 1480436288296583228 = Senior Marketplace Moderator
+     * 1480435906044362814 = Marketplace Manager
+     */
 })
     .setExecutor(async (interaction) => {
     if (!interaction.inCachedGuild()) {

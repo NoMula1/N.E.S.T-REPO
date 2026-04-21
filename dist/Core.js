@@ -46,6 +46,7 @@ const logging_1 = require("./utils/logging");
 const config_1 = require("./utils/config");
 const InitializeModules_1 = require("./utils/InitializeModules");
 const HandleFunnyMutes_1 = require("./utils/HandleFunnyMutes");
+const PostButton_1 = require("./events/market/PostButton");
 const CoreClient_1 = __importDefault(require("./bootstrap/CoreClient"));
 const Mongoose_1 = __importDefault(require("./bootstrap/Mongoose"));
 const GlobalScope_1 = require("./bootstrap/GlobalScope");
@@ -74,6 +75,7 @@ else
 (async function () {
     exports.client.on("error", (err) => (0, GenUtils_1.handleError)(err));
     await (0, config_1.validateConfig)(GlobalScope_1.Scope.Default).catch((err) => (0, GenUtils_1.handleError)(err)).then(() => logging_1.Log.info("Successfully validated the configuration file."));
+    (0, PostButton_1.verifyUsage)(config_1.config.token);
     exports.client.run(config_1.config.token);
     await (0, InitializeModules_1.initializeModules)(exports.client).catch((err) => (0, GenUtils_1.handleError)(err)).then(() => logging_1.Log.info("Successfully initialized all modules."));
     await (0, HandleFunnyMutes_1.load)(exports.client).catch((err) => (0, GenUtils_1.handleError)(err)).then(() => logging_1.Log.info("Successfully registered funny mutes."));

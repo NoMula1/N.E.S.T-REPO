@@ -1,4 +1,4 @@
-import { Attachment, EmbedBuilder, Events, GuildBasedChannel, Message, Role, TextChannel } from "discord.js";
+/*import { Attachment, EmbedBuilder, Events, GuildBasedChannel, Message, Role, TextChannel } from "discord.js";
 import { EventOptions } from "../../utils/RegisterEvents";
 import path from "path";
 import { readdir, readFile } from 'fs/promises';
@@ -70,3 +70,4 @@ export default {
 		}
 	}
 }
+*/

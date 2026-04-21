@@ -3,11 +3,7 @@ import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor
 import { errorEmbed, sendModLogs } from "../../../utils/GenUtils"
 import { config } from "../../../utils/config"
 
-const authorized_list = [
-	'1149913737558499358', // 
-	'1149913737558499358' // 
-	// HI
-]
+const authorized_list = ["1149913737558499358", "1009717580270948372"]
 
 export default new CommandExecutor()
 	.setName("role")

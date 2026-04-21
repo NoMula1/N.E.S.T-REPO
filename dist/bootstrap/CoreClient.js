@@ -115,7 +115,7 @@ class CoreClient extends discord_js_1.Client {
     }
     trackSentry() {
         Sentry.init({
-            dsn: "https://337753ad7c1fc754e6e82204055b6061@o4508180113915904.ingest.us.sentry.io/4508180116144128",
+            dsn: "https://ff0cde4561994bbe547fa7c140ca3b14@o4509086172184576.ingest.us.sentry.io/4509129559638016",
             environment: __classPrivateFieldGet(this, _CoreClient_clientId, "f"),
             // Tracing
             tracesSampleRate: 1.0, //  Capture 100% of the transactions

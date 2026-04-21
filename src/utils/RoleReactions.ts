@@ -17,26 +17,26 @@ type reactionRoleChunk = {
 export const ReactionRoleConfig: reactionRoleChunk[] = [
 	{
 		name: 'Novice Educator',
-		roleid: '999381854471848126',
-		reactionid: '1255640175736782991',
+		roleid: '',
+		reactionid: '',
 		congratulatory: true
 	},
 	{
 		name: 'Intermediate Educator',
-		roleid: '1242606206808358973',
-		reactionid: '1255641090413822077',
+		roleid: '',
+		reactionid: '',
 		congratulatory: true
 	},
 	{
 		name: 'Expert Educator',
-		roleid: '1162978239522811934',
-		reactionid: '1255641116834005023',
+		roleid: '',
+		reactionid: '',
 		congratulatory: true
 	},
 	{
 		name: 'Master Educator',
-		roleid: '1193331902380249168',
-		reactionid: '1255645992439517224',
+		roleid: '',
+		reactionid: '',
 		congratulatory: true
 	},
 	/*{ // Does not exist. Retired role?
