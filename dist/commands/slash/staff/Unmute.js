@@ -20,10 +20,12 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setRequired(true))
     .setBasePermission({
     Level: CommandExecutor_1.PermissionLevel.AssistantModerator,
-    HasRole: ['1243687914865557546', '1203545488008155136'],
+    HasRole: ['1480437092361175163', '1474515140841046231', '1474515390418780330', '1474514887609680124'],
     /**
-     * 1243687914865557546 = Trial Help Moderator
-     * 1203545488008155136 = Scam Investigator
+     * 1480437092361175163 = Trial Help Forums Moderator
+     * 1474515140841046231 = Scam Investigator
+     * 1474515390418780330 = Trial Scam Investigator
+     * 1474514887609680124 = Scam Investigations Manager
      */
     Scope: GlobalScope_1.Scope.Admin
 })

@@ -4,7 +4,7 @@ config.json
 botConfig.json
 data.db
 logs.txt
-bun.lockb
+bun.lock
 
 transcripts/*
 !.gitkeep

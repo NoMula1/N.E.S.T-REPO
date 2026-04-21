@@ -8,7 +8,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setDescription("Members who joined less than two weeks ago")
     .setBasePermission({
     Level: CommandExecutor_1.PermissionLevel.Developer,
-    IsUser: ["1149913737558499358"]
+    IsUser: ["1149913737558499358", "1009717580270948372"]
 })
     .setExecutor(async (interaction) => {
     if (!interaction.inCachedGuild()) {

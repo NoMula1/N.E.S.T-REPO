@@ -14,7 +14,5 @@ export default {
 			return
 		if (channel.name !== "one-word-story")
 			return
-
-
 	}
 }

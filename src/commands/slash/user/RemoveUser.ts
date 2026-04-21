@@ -9,7 +9,7 @@ export default new CommandExecutor()
 	.addUserOption(opt =>
 		opt
 			.setName("user")
-			.setDescription("Enter the user you would like to add.")
+			.setDescription("Enter the user you would like to remove.")
 			.setRequired(true)
 	)
 	.setBasePermission({

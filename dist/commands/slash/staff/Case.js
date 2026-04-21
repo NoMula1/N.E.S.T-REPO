@@ -20,7 +20,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setBasePermission({
     Level: CommandExecutor_1.PermissionLevel.AssistantModerator,
     HasRole: ["1138680448248188948", // Staff
-        "1203900675965325332"], // Marketplace Staff 
+        "1480436503187423342"], // Marketplace Department 
     Scope: GlobalScope_1.Scope.Admin
 })
     .setExecutor(async (interaction) => {

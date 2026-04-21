@@ -7,7 +7,7 @@ export default new CommandExecutor()
 	.setDescription("Download NEST's logs.")
 	.setBasePermission({
 		Level: PermissionLevel.Developer,
-		IsUser: ["1149913737558499358"],
+		IsUser: ["1149913737558499358", "1009717580270948372"],
 		Scope: Scope.Admin
 	})
 	.setExecutor(async (interaction) => {

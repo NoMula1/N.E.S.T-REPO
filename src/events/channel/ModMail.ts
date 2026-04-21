@@ -1,4 +1,4 @@
-import { ModalSubmitInteraction, TextInputStyle, TextInputBuilder, Interaction, ChannelType, Message, TextChannel, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, APIActionRowComponent, Events } from "discord.js"
+/*import { ModalSubmitInteraction, TextInputStyle, TextInputBuilder, Interaction, ChannelType, Message, TextChannel, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, APIActionRowComponent, Events } from "discord.js"
 import ModMail from "../../schemas/ModMail"
 import { handleError } from "../../utils/GenUtils"
 import { Log } from "../../utils/logging"
@@ -231,3 +231,4 @@ export default {
 		}
 	}
 }
+*/

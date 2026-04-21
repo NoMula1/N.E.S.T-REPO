@@ -11,7 +11,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setDescription("Remove users from a ticket.")
     .addUserOption(opt => opt
     .setName("user")
-    .setDescription("Enter the user you would like to add.")
+    .setDescription("Enter the user you would like to remove.")
     .setRequired(true))
     .setBasePermission({
     Level: CommandExecutor_1.PermissionLevel.None,

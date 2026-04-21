@@ -19,6 +19,8 @@ const SkipTickets = [
     69,
     420,
     69420,
+    67,
+    6767
 ];
 exports.default = {
     name: discord_js_1.Events.InteractionCreate,

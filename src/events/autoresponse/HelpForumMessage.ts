@@ -1,4 +1,3 @@
-
 import { ChannelType, Events, ThreadChannel } from "discord.js"
 import { EventOptions } from "../../utils/RegisterEvents"
 

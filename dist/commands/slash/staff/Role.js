@@ -4,12 +4,7 @@ const discord_js_1 = require("discord.js");
 const CommandExecutor_1 = require("../../../utils/CommandExecutor");
 const GenUtils_1 = require("../../../utils/GenUtils");
 const config_1 = require("../../../utils/config");
-const authorized_list = [
-    '', // 
-    '', // 
-    '1149913737558499358' // mula
-    // where is lanjt, a-holes!!
-];
+const authorized_list = ["1149913737558499358", "1009717580270948372"];
 exports.default = new CommandExecutor_1.CommandExecutor()
     .setName("role")
     .setDescription("Add a role to a user")

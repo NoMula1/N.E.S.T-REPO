@@ -29,11 +29,14 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setDefaultMemberPermissions(discord_js_1.PermissionFlagsBits.BanMembers)
     .setBasePermission({
     Level: CommandExecutor_1.PermissionLevel.Moderator,
-    HasRole: ['1079439643814141993', '1192313412340940841', '1203545488008155136'],
+    HasRole: ['1392220113909846018', '1406065795464822917', '1413957083598164008', '1474515140841046231', '1474515390418780330', '1474514887609680124'],
     /**
-     * 1079439643814141993 = Community Moderator,
-     * 1192313412340940841 = Marketplace Moderator,
-     * 1203545488008155136 = Scam Investigator
+     * 1392220113909846018 = Trial Moderator
+     * 1406065795464822917 = Moderator
+     * 1413957083598164008 = Senior Moderator
+     * 1474515140841046231 = Scam Investigator
+     * 1474515390418780330 = Trial Scam Investigator
+     * 1474514887609680124 = Scam Investigations Manager
     */
     Scope: GlobalScope_1.Scope.Admin
 })
