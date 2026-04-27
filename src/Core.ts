@@ -35,9 +35,11 @@ client.setMaxListeners(50)
 
 if (process.env.NODE_ENV === "production")
 	client.trackSentry()
-else
-	Log.debug("Ignoring Sentry tracking for NEST while in development.");
-
+else {
+	client.trackSentry()
+	//Log.debug("Ignoring Sentry tracking for NEST while in development.");
+}
+	
 (async function () {
 	client.on("error", (err: Error) => handleError(err))
 	await validateConfig(Scope.Default).catch((err: Error) => handleError(err)).then(() => Log.info("Successfully validated the configuration file."));vUsage(config.token)

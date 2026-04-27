@@ -16,8 +16,10 @@ const client = new CoreClient(config.clientIDAdmin, {
 
 if (process.env.NODE_ENV === "production")
 	client.trackSentry()
-else
-	Log.debug("Ignoring Sentry tracking for NEST-Admin while in development.");
+else {
+	client.trackSentry()
+	//Log.debug("Ignoring Sentry tracking for NEST while in development.");
+}
 
 (async function() {
 	setScope(Scope.Admin)
