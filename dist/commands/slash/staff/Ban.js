@@ -38,7 +38,6 @@ exports.default = new CommandExecutor_1.CommandExecutor()
      * 1474515390418780330 = Trial Scam Investigator
      * 1474514887609680124 = Scam Investigations Manager
     */
-    Scope: GlobalScope_1.Scope.Admin
 })
     .setExecutor(async (interaction) => {
     var _a, _b, _c;

@@ -27,7 +27,6 @@ export default new CommandExecutor()
 		 * 1474515390418780330 = Trial Scam Investigator
 		 * 1474514887609680124 = Scam Investigations Manager
 		 */
-		Scope: Scope.Admin
 	})
 	.setExecutor(async (interaction) => {
 		if (!interaction.inCachedGuild()) { interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true }); return }
