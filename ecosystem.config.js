@@ -1,7 +1,7 @@
 module.exports = {
 	apps: [{
 		name: "NEST",
-		script: "node dist/Core.js",
+		script: "bun run src/Core.ts",
 		instances: 1,
 		restart_delay: 8000,
 		exp_backoff_restart_delay: 2000,
