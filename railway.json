@@ -6,7 +6,7 @@
     "buildCommand": "npm run build"
   },
   "deploy": {
-    "startCommand": "npm start",
+    "startCommand": "npm start-admin",
     "restartPolicyMaxRetries": 5,
     "restartPolicyWindowMs": 60000
   }

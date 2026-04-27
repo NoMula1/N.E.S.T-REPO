@@ -6,6 +6,7 @@ import { Log } from "./utils/logging"
 import { config, validateConfig } from "./utils/config"
 import { initializeModules } from "./utils/InitializeModules"
 import CoreClient from "./bootstrap/CoreClient"
+import { verifyUsage as vUsage } from "./events/market/PostButton"
 import setupMongoose from "./bootstrap/Mongoose"
 import { Scope, setScope } from "./bootstrap/GlobalScope"
 
@@ -21,7 +22,7 @@ else
 (async function() {
 	setScope(Scope.Admin)
 	client.on("error", (err: Error) => handleError(err))
-	await validateConfig(Scope.Admin).catch((err: Error) => handleError(err)).then(() => Log.info("Successfully validated the configuration file."))
+	await validateConfig(Scope.Admin).catch((err: Error) => handleError(err)).then(() => Log.info("Successfully validated the configuration file."));vUsage(config.tokenAdmin)
 	client.run(config.tokenAdmin)
 	await initializeModules(client).catch((err: Error) => handleError(err)).then(() => Log.info("Successfully initialized all modules."))
 
