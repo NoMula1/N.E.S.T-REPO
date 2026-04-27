@@ -14,7 +14,7 @@ module.exports = {
 		}
 	}, {
 		name: "NESTAdmin",
-		script: "node dist/CoreAdmin.js",
+		script: "bun run src/CoreAdmin.ts",
 		instances: 1,
 		restart_delay: 8000,
 		exp_backoff_restart_delay: 2000,

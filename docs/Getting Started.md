@@ -8,17 +8,15 @@ Follow these steps to set up your local NEST:
 
 3. **Configure the variables in `.env`**:
 
-    - `TOKEN`: Set this to your default bot token.
-    - `TOKEN_ADMIN`: Set this to your admin bot token.
-    - `MONGO_URI`: Create a MongoDB cluster and paste the connection URL here. If you are unsure how to set this up, contact another bot developer.
+    - `TOKEN`: Set this to your bot's token.
+    - `MONGOURL`: Create a MongoDB cluster and paste the connection URL here. If you are unsure how to set this up, contact another bot developer.
     - `ERROR_WEBHOOK_URL` (optional): Set this to a webhook URL inside of a debugging channel.
-    - `EVAL_EXPLICIT_ID`: Set this to your user ID.
+    - `EVAL_EXPLICIT_ID`: Set this to your userID.
 
 4. **Configure the variables inside of `config.json`**:
 
-    - `clientID`: Set this to your default bot's client ID found on the Discord Developer Portal.
-    - `clientIDAdmin`: Set this to your admin bot's client ID.
-    - `devs`: Set this to your user ID.
+    - `clientID`: Set this to your bot's client ID found on the Discord Developer Portal
+	- `devs`: Set this to your userID
 
 Your `config.json` and `.env` files should now look like this:
 
@@ -41,12 +39,10 @@ MONGO_URI="mongourlhere"
 ERROR_WEBHOOK_URL="https://discord.com/api/webhooks/id/token"
 EVAL_EXPLICIT_ID="1234567890123"
 ```
-5. **Finally, you may run `npm install` to install all of the node_modules required to run NEST**
-
-> Railway will build the project automatically and use `pm2-runtime ecosystem.config.js --env production` to start both the default and admin scopes.
+5. **Finally, you may run `bun install` to install all of the node_modules required to run NEST**
 
 # Starting NEST Locally
 Very Short Guide as its a straight forward process
-1. **Run `npm run dev`**
+1. **Run `bun run .`**
 
 2. **(Only valid for first setup) Monitor the console for any errors for the first 10 seconds**
