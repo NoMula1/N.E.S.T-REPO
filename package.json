@@ -6,7 +6,8 @@
     "build": "tsc",
     "start": "node dist/Core.js",
     "dev": "ts-node src/Core.ts",
-    "start-admin": "ts-node src/CoreAdmin.ts",
+    "start-admin": "node dist/CoreAdmin.js",
+    "start:pm2": "pm2-runtime ecosystem.config.js --env production",
     "test": "mocha",
     "lint": "eslint"
   },
