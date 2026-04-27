@@ -8,7 +8,7 @@ const CommandExecutor_1 = require("../../../utils/CommandExecutor");
 const GenUtils_1 = require("../../../utils/GenUtils");
 const Case_1 = __importDefault(require("../../../schemas/Case"));
 const config_1 = require("../../../utils/config");
-const GlobalScope_1 = require("../../../bootstrap/GlobalScope");
+const FastFlag_1 = __importDefault(require("../../../schemas/FastFlag"));
 exports.default = new CommandExecutor_1.CommandExecutor()
     .setName("kick")
     .setDescription("Kick a user from the server.")
@@ -27,11 +27,15 @@ exports.default = new CommandExecutor_1.CommandExecutor()
      * 1474515390418780330 = Trial Scam Investigator
      * 1474514887609680124 = Scam Investigations Manager
      */
-    Scope: GlobalScope_1.Scope.Admin
 })
     .setExecutor(async (interaction) => {
     if (!interaction.inCachedGuild()) {
         interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true });
+        return;
+    }
+    const moderationDisabled = await FastFlag_1.default.findOne({ refName: "DisableModerationCommands", enabled: true });
+    if (moderationDisabled) {
+        await interaction.reply({ content: "Moderation commands are currently disabled. Please try again later.", ephemeral: true });
         return;
     }
     const user = interaction.options.getUser("user");

@@ -3,6 +3,7 @@ import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor
 import { errorEmbed, getLengthFromString, handleError, incrimentCase, sendModLogs } from "../../../utils/GenUtils"
 import Case from "../../../schemas/Case"
 import { config } from "../../../utils/config"
+import FastFlag from "../../../schemas/FastFlag"
 
 export default new CommandExecutor()
 	.setName("mute")
@@ -37,6 +38,12 @@ export default new CommandExecutor()
 	})
 	.setExecutor(async (interaction) => {
 		if (!interaction.inCachedGuild()) { interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true }); return }
+
+		const moderationDisabled = await FastFlag.findOne({ refName: "DisableModerationCommands", enabled: true })
+		if (moderationDisabled) {
+			await interaction.reply({ content: "Moderation commands are currently disabled. Please try again later.", ephemeral: true })
+			return
+		}
 
 		const user = interaction.options.getUser("user")
 		const member = interaction.options.getMember("user")

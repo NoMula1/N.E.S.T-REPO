@@ -4,6 +4,7 @@ import { errorEmbed, handleError, incrimentCase, sendModLogs } from "../../../ut
 import Case from "../../../schemas/Case"
 import { config } from "../../../utils/config"
 import { Scope } from "../../../bootstrap/GlobalScope"
+import FastFlag from "../../../schemas/FastFlag"
 
 export default new CommandExecutor()
 	.setName("unmute")
@@ -31,6 +32,12 @@ export default new CommandExecutor()
 	})
 	.setExecutor(async (interaction) => {
 		if (!interaction.inCachedGuild()) { interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true }); return }
+
+		const moderationDisabled = await FastFlag.findOne({ refName: "DisableModerationCommands", enabled: true })
+		if (moderationDisabled) {
+			await interaction.reply({ content: "Moderation commands are currently disabled. Please try again later.", ephemeral: true })
+			return
+		}
 
 		const user = interaction.options.getMember("user")
 		const reason = interaction.options.getString("reason")

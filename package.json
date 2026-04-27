@@ -6,7 +6,6 @@
     "build": "tsc",
     "start": "node dist/Core.js",
     "dev": "ts-node src/Core.ts",
-    "start-admin": "ts-node src/CoreAdmin.ts",
     "test": "mocha",
     "lint": "eslint"
   },

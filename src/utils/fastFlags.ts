@@ -12,6 +12,11 @@ export const fastFlagList = [
 		description: 'Disable members from opening tickets'
 	},
 	{
+		refName: 'DisableModerationCommands',
+		enabled: false,
+		description: 'Disable moderation slash commands: ban, kick, mute, unban, unmute.'
+	},
+	{
 		refName: 'DoPostExpiration',
 		enabled: true,
 		description: 'Should NEST periodically iterate through saved posts to check for (and delete) expired data'

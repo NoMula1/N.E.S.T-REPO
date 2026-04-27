@@ -9,6 +9,7 @@ const GenUtils_1 = require("../../../utils/GenUtils");
 const Case_1 = __importDefault(require("../../../schemas/Case"));
 const config_1 = require("../../../utils/config");
 const GlobalScope_1 = require("../../../bootstrap/GlobalScope");
+const FastFlag_1 = __importDefault(require("../../../schemas/FastFlag"));
 exports.default = new CommandExecutor_1.CommandExecutor()
     .setName("unmute")
     .setDescription("Remove a mute from a user.")
@@ -32,6 +33,11 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setExecutor(async (interaction) => {
     if (!interaction.inCachedGuild()) {
         interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true });
+        return;
+    }
+    const moderationDisabled = await FastFlag_1.default.findOne({ refName: "DisableModerationCommands", enabled: true });
+    if (moderationDisabled) {
+        await interaction.reply({ content: "Moderation commands are currently disabled. Please try again later.", ephemeral: true });
         return;
     }
     const user = interaction.options.getMember("user");
