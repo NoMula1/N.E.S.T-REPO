@@ -1,5 +1,5 @@
-import { APIButtonComponent, ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ChatInputCommandInteraction, Role } from "discord.js"
-import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
+import { APIButtonComponent, ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ChatInputCommandInteraction } from "discord.js"
+import { CommandExecutor, PermissionLevel, RoleIDS } from "../../../utils/CommandExecutor"
 import Case from "../../../schemas/Case"
 import lodash from "lodash"
 import { errorEmbed } from "../../../utils/GenUtils"
@@ -25,9 +25,8 @@ export default new CommandExecutor()
 
 		let user = interaction.options.getUser("user")
 		const showMod = interaction.options.getBoolean("showmod") ?? true
-		if (!user ||
-			(!interaction.member.roles.cache.has('1195598692569337918') &&
-				interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial community staff")?.position! > interaction.member.roles.highest.position)) {
+		const isStaff = interaction.member.roles.cache.has('1195598692569337918') || interaction.member.roles.cache.has(RoleIDS.AssistantModerator)
+		if (!user || !isStaff) {
 			user = interaction.user
 		}
 
@@ -40,7 +39,7 @@ export default new CommandExecutor()
 		for (const foundCase of cases) {
 			if (!foundCase.caseNumber) return
 			let pusher = `\n\n__Case #${foundCase.caseNumber}__`
-			if (foundCase.modID && (showMod) && (interaction.member.roles.cache.has('1195598692569337918') || interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "trial community staff")?.position! <= interaction.member.roles.highest.position)) {
+			if (foundCase.modID && (showMod) && isStaff) {
 				pusher = pusher + `\n**Mod:** <@${foundCase.modID}>`
 			}
 			if (foundCase.active !== null || foundCase.active !== undefined && foundCase.caseType !== "UNBAN" && foundCase.caseType !== "UNMUTE" && foundCase.caseType !== "KICK") {

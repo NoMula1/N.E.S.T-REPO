@@ -1,5 +1,5 @@
-import { ApplicationCommandType, ContextMenuCommandBuilder, ContextMenuCommandInteraction, InteractionReplyOptions, MessageContextMenuCommandInteraction, PermissionsBitField, Role, UserContextMenuCommandInteraction, ContextMenuCommandType } from "discord.js"
-import { Permission, PermissionLevel } from "./CommandExecutor"
+import { ApplicationCommandType, ContextMenuCommandBuilder, ContextMenuCommandInteraction, InteractionReplyOptions, MessageContextMenuCommandInteraction, PermissionsBitField, UserContextMenuCommandInteraction, ContextMenuCommandType } from "discord.js"
+import { Permission, PermissionLevel, RoleIDS } from "./CommandExecutor"
 import { config } from "../utils/config"
 import { Scope, scope, toString as scopeToString } from "../bootstrap/GlobalScope"
 
@@ -109,8 +109,48 @@ export class ContextCommandExecutor<T> extends ContextMenuCommandBuilder {
 		}
 		// Check base permissions
 		switch (this.#base_permission.Level) {
+			case PermissionLevel.MarketStaff:
+				if (!interaction.member.roles.cache.has(RoleIDS.MarketStaff)) {
+					return {
+						success: false,
+						content: "You must be Trial Market Moderator and up to use this command."
+					}
+				}
+				break
+			case PermissionLevel.TrialHelpModerator:
+				if (!interaction.member.roles.cache.has(RoleIDS.TrialHelpModerator)) {
+					return {
+						success: false,
+						content: "You must be Trial Help Moderator and up to use this command."
+					}
+				}
+				break
+			case PermissionLevel.HelpModerator:
+				if (!interaction.member.roles.cache.has(RoleIDS.HelpModerator)) {
+					return {
+						success: false,
+						content: "You must be Help Moderator and up to use this command."
+					}
+				}
+				break
+			case PermissionLevel.MarketModerator:
+				if (!interaction.member.roles.cache.has(RoleIDS.MarketModerator)) {
+					return {
+						success: false,
+						content: "You must be Market Moderator and up to use this command."
+					}
+				}
+				break
+			case PermissionLevel.HelpManager:
+				if (!interaction.member.roles.cache.has(RoleIDS.HelpManager)) {
+					return {
+						success: false,
+						content: "You must be Help Manager and up to use this command."
+					}
+				}
+				break
 			case PermissionLevel.AssistantModerator:
-				if (interaction.member.roles.highest.position < interaction.member.guild.roles.cache.find((r: Role) => r.name.toLowerCase() === "assistant moderator")?.position!) {
+				if (!interaction.member.roles.cache.has(RoleIDS.AssistantModerator)) {
 					return {
 						success: false,
 						content: "You must be Assistant Moderator and up to use this command."
@@ -118,23 +158,47 @@ export class ContextCommandExecutor<T> extends ContextMenuCommandBuilder {
 				}
 				break
 			case PermissionLevel.Moderator:
-				if (interaction.member.roles.cache.find((r: Role) => r.name.toLowerCase() === "moderator")?.position! > interaction.member.roles.highest.position) {
+				if (!interaction.member.roles.cache.has(RoleIDS.Moderator)) {
 					return {
 						success: false,
 						content: "You must be Moderator and up to use this command."
+					}
+				}
+				break
+			case PermissionLevel.SeniorModerator:
+				if (!interaction.member.roles.cache.has(RoleIDS.SeniorModerator)) {
+					return {
+						success: false,
+						content: "You must be Senior Moderator and up to use this command."
+					}
+				}
+				break
+			case PermissionLevel.SeniorMarketModerator:
+				if (!interaction.member.roles.cache.has(RoleIDS.SeniorMarketModerator)) {
+					return {
+						success: false,
+						content: "You must be Senior Market Moderator and up to use this command."
 					}
 				}
 				break
 			case PermissionLevel.AssistantAdministrator:
-				if (interaction.member.roles.cache.find((r: Role) => r.name.toLowerCase() === "assistant administrator")?.position! > interaction.member.roles.highest.position) {
+				if (!interaction.member.roles.cache.has(RoleIDS.AssistantAdministrator)) {
 					return {
 						success: false,
-						content: "You must be Moderator and up to use this command."
+						content: "You must be Assistant Administrator and up to use this command."
+					}
+				}
+				break
+			case PermissionLevel.MarketManager:
+				if (!interaction.member.roles.cache.has(RoleIDS.MarketManager)) {
+					return {
+						success: false,
+						content: "You must be Market Manager and up to use this command."
 					}
 				}
 				break
 			case PermissionLevel.Administrator:
-				if (interaction.member.roles.cache.find((r: Role) => r.name.toLowerCase() === "administrator")?.position! > interaction.member.roles.highest.position) {
+				if (!interaction.member.roles.cache.has(RoleIDS.Administrator)) {
 					return {
 						success: false,
 						content: "You must be Administrator and up to use this command."
@@ -156,9 +220,12 @@ export class ContextCommandExecutor<T> extends ContextMenuCommandBuilder {
 					}
 				}
 				break
+			case PermissionLevel.None:
+				break
 			default:
 				return {
-					success: true
+					success: false,
+					content: "You aren't authorized to use this command."
 				}
 		}
 
