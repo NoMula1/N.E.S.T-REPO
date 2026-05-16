@@ -11,13 +11,20 @@ export default new MessageContextCommandExecutor()
 	})
 	.setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
 	.setExecutor(async (interaction: MessageContextMenuCommandInteraction) => {
-		await interaction.targetMessage.reply({
-			content: `Hey! This is the wrong channel to market in, please read <#1243129204770603018> then use \`/post\` when you're ready!`
-		})
-		await interaction.targetMessage.delete().catch(() => { })
-		await interaction.reply({
-			content: `Successfully issued a verbal warning to \`${interaction.targetMessage.author.username}\``,
-			ephemeral: true
-		}).catch(() => { })
-		await sendModLogs({ guild: interaction.guild!, mod: await interaction.guild!.members.fetch(interaction.member!.user.id), action: "Market Warn" }, { title: "Context Command", actionInfo: `**Market Misuse** by <@${interaction.targetMessage.member?.id}>\n> **Message**:\n> ${interaction.targetMessage} `, channel: interaction.channel || undefined })
+		if (interaction.targetMessage.member?.roles.highest.rawPosition! < ((await interaction.guild?.members.fetch(interaction.member?.user?.id!))?.roles.highest.rawPosition ?? 0)) {
+			await interaction.targetMessage.reply({
+				content: `Hey! This is the wrong channel to market in, please read <#1243129204770603018> then use \`/post\` when you're ready!`
+			})
+			await interaction.targetMessage.delete().catch(() => { })
+			await interaction.reply({
+				content: `Successfully issued a verbal warning to \`${interaction.targetMessage.author.username}\``,
+				ephemeral: true
+			}).catch(() => { })
+			await sendModLogs({ guild: interaction.guild!, mod: await interaction.guild!.members.fetch(interaction.member!.user.id), action: "Market Warn" }, { title: "Context Command", actionInfo: `**Market Misuse** by <@${interaction.targetMessage.member?.id}>\n> **Message**:\n> ${interaction.targetMessage} `, channel: interaction.channel || undefined })
+		} else {
+			await interaction.reply({
+				content: `You cannot issue a warning to a user with a higher role than you.`,
+				ephemeral: true
+			})
+		}
 	})
