@@ -11,6 +11,7 @@ import { resolveTicketStatusEmbed, ticketStatus, updateTicketStatus } from './Ti
 import FastFlag from "../../schemas/FastFlag"
 import { EventOptions } from "../../utils/RegisterEvents"
 import { getGuildConfig } from "../../utils/GuildConfigCache"
+import { GuildChannels } from "../../schemas/GuildConfig"
 
 const SkipTickets = [
 	1488,
@@ -29,6 +30,118 @@ export default {
 		if (!interaction.inCachedGuild()) return
 		if (interaction.isButton()) {
 			const buttonID = interaction.customId
+
+			/* ── Shared handler for all ticket-category buttons ── */
+			const TICKET_TYPE_MAP: Partial<Record<string, { configKey: keyof GuildChannels; channelPrefix: string }>> = {
+				'open_ticket':          { configKey: 'ticketsCategoryGeneral',  channelPrefix: 'ticket' },
+				'open_ticket_general':  { configKey: 'ticketsCategoryGeneral',  channelPrefix: 'ticket' },
+				'open_ticket_trading':  { configKey: 'ticketsCategoryTrading',  channelPrefix: 'report' },
+				'open_ticket_market':   { configKey: 'ticketsCategoryMarket',   channelPrefix: 'market' },
+				'open_ticket_business': { configKey: 'ticketsCategoryBusiness', channelPrefix: 'inquiry' },
+			}
+
+			if (TICKET_TYPE_MAP[buttonID]) {
+				const { configKey, channelPrefix } = TICKET_TYPE_MAP[buttonID]!
+				await interaction.deferReply({ ephemeral: true })
+
+				const guildCfg = await getGuildConfig(interaction.guildId!)
+
+				if (guildCfg?.features?.tickets === false) {
+					await interaction.editReply({ content: 'Tickets are currently disabled. Please try again later.' })
+					return
+				}
+				const ticketsDisabled = await FastFlag.findOne({ refName: 'DisableTicketOpening', enabled: true })
+				if (ticketsDisabled) {
+					await interaction.editReply({ content: 'Tickets are currently disabled. Please try again later.' })
+					return
+				}
+				if (interaction.member.roles.cache.find((r: Role) => r.name.toLowerCase() === 'ticket banned')) {
+					await interaction.editReply(errorEmbed('You are banned from opening tickets.') as InteractionEditReplyOptions)
+					return
+				}
+
+				const findTicket = await Tickets.findOne({ guildID: interaction.guild.id, creatorID: interaction.user.id, status: true })
+				if (findTicket) {
+					const existing = interaction.guild.channels.cache.get(findTicket.channelID!)
+					if (existing) {
+						await interaction.editReply(errorEmbed('You already have a ticket open.') as InteractionEditReplyOptions)
+						return
+					}
+					await findTicket.deleteOne()
+				}
+
+				const catId = guildCfg?.channels?.[configKey]
+				const category = (catId ? interaction.guild.channels.cache.get(catId) : null) as CategoryChannel | undefined
+				if (!category) {
+					await interaction.editReply(errorEmbed('This ticket category isn\'t configured yet. Please contact an administrator.') as InteractionEditReplyOptions)
+					return
+				}
+
+				const staffRoleId = guildCfg?.roles?.AssistantModerator || guildCfg?.roles?.Moderator || null
+				let ticketNum = await incrimentTicket(interaction.guild)
+				if (SkipTickets.find(t => t === ticketNum)) {
+					Log.debug(`Ticket #${ticketNum} has been skipped.`)
+					ticketNum = await incrimentTicket(interaction.guild)
+				}
+
+				const permOverwrites: any[] = [
+					{ id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
+					{ id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles] },
+				]
+				if (staffRoleId) permOverwrites.push({ id: staffRoleId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] })
+
+				const newChannel = await interaction.guild.channels.create({
+					name: `${channelPrefix}-${ticketNum}`,
+					type: ChannelType.GuildText,
+					permissionOverwrites: permOverwrites,
+					reason: `Ticket opened by ${interaction.user.username}.`,
+					parent: category,
+				}).catch(async (err: Error) => {
+					await interaction.editReply(errorEmbed('Unable to create ticket channel! Please try again.') as InteractionEditReplyOptions)
+					Log.error(err)
+					return
+				})
+				if (!newChannel) return
+
+				const transcriptPath = path.join(__dirname, '../..', 'transcripts', newChannel.id)
+				try {
+					mkdirSync(transcriptPath, { recursive: true })
+					writeFileSync(`${transcriptPath}/ticket_meta.json`, JSON.stringify({ creator: interaction.user.id, ticketID: newChannel.id, date: new Date() }))
+					writeFileSync(`${transcriptPath}/ticket_transcript.md`, '')
+					writeFileSync(`${transcriptPath}/ticket_transcript.txt`, '')
+					mkdirSync(path.join(transcriptPath, 'media'), { recursive: true })
+				} catch (err) {
+					interaction.editReply(errorEmbed('Unable to create ticket transcript!') as InteractionEditReplyOptions)
+					Log.error(err)
+					rmSync(transcriptPath, { recursive: true, force: true })
+					newChannel.delete().catch(() => {})
+					return
+				}
+
+				const ticketRow = new ActionRowBuilder<ButtonBuilder>()
+					.addComponents(new ButtonBuilder().setCustomId('close_ticket').setStyle(ButtonStyle.Danger).setLabel('Close Ticket').setEmoji('✖'))
+
+				const ticketEmbed = new EmbedBuilder()
+					.setAuthor({ name: `${interaction.user.username}'s Ticket`, iconURL: interaction.user.displayAvatarURL() || undefined })
+					.setColor('Green')
+					.setDescription('Please describe why you opened this ticket, a staff member will be with you shortly.\n\nIf you opened this ticket by mistake, leave a short response and close the ticket.')
+					.setTimestamp()
+					.setFooter({ text: 'Ticket transcripts are saved permanently.' })
+
+				newChannel.send({ content: `<@${interaction.user.id}> https://nohello.net`, embeds: [ticketEmbed], components: [ticketRow as any] })
+
+				const newTicket = new Tickets({
+					guildID: interaction.guild.id, creatorID: interaction.user.id, users: [],
+					channelID: newChannel.id, claimedID: 'None', closeReason: 'None', status: true, autoClose: 0,
+				})
+				newTicket.save().catch(async (err: Error) => {
+					await interaction.editReply(errorEmbed('Failed to create ticket file!') as InteractionEditReplyOptions)
+					newChannel.delete().catch((e: Error) => { Log.error('Failed to delete ticket channel!\n\n' + e.stack) })
+				})
+				await interaction.editReply({ content: `Your ticket has been created. <#${newChannel.id}>` })
+				return
+			}
+
 			switch (buttonID) {
 				case "open_internal_affair": {
 					const internalAffairEmbed = new EmbedBuilder()
@@ -159,24 +272,8 @@ export default {
 						return
 					}
 
-					// const transcriptPath1 = path.join(__dirname, "../..", "transcripts");
-					// if (existsSync(transcriptPath1)) {
-					// 	await interaction.editReply(errorEmbed(`I had an error with the transcripts! Please contact an administrator with a screenshot of this message. \`T-${ticketNum}\``));
-					// 	return;
-					// }
 					const transcriptPath = path.join(__dirname, "../..", "transcripts", `${newChannel.id}`)
 
-
-					try {
-						mkdirSync(transcriptPath)
-					} catch (err) {
-						interaction.editReply(errorEmbed("Unable to create ticket transcript!") as InteractionEditReplyOptions)
-						Log.error(err)
-						newChannel.delete().catch((err) => {
-							Log.error(err)
-						})
-						return
-					}
 
 					const meta = {
 						creator: interaction.user.id,
@@ -184,10 +281,11 @@ export default {
 						date: new Date()
 					}
 					try {
+						mkdirSync(transcriptPath, { recursive: true })
 						writeFileSync(`${transcriptPath}/ticket_meta.json`, JSON.stringify(meta))
 						writeFileSync(`${transcriptPath}/ticket_transcript.md`, "")
 						writeFileSync(`${transcriptPath}/ticket_transcript.txt`, "")
-						mkdirSync(path.join(__dirname, "../..", "transcripts", `${newChannel.id}`, "media"))
+						mkdirSync(path.join(__dirname, "../..", "transcripts", `${newChannel.id}`, "media"), { recursive: true })
 					} catch (err) {
 						interaction.editReply(errorEmbed("Unable to create ticket transcript!") as InteractionEditReplyOptions)
 						Log.error(err)
@@ -211,7 +309,7 @@ export default {
 						.setDescription(`Thank you for taking the time to open an Internal Affair Report, where you can report staff misconduct or any other staff related grievances. Please describe the following in detail so we can work on your case as fast as possible:\n\n- Which staff are you reporting?\n- What are you reporting them for?\n- What proof do you have regarding this report?\n- What would you hope is done about this matter?\n- Any other information?\n\nAll content in this report is as confidential as possible between you, internal reviewers, and server managers.`)
 						.setTimestamp()
 						.setFooter({ text: "Ticket transcripts are saved permanently and are viewable by non-internal reviewers." })
-					newChannel.send({ content: `<@${interaction.user.id}> <@&1203544976030437397>`, embeds: [ticketEmbed], components: [ticketRow as any] })
+					newChannel.send({ content: `<@${interaction.user.id}>`, embeds: [ticketEmbed], components: [ticketRow as any] })
 
 					const newTicket = new Tickets({
 						guildID: interaction.guild.id,
@@ -233,173 +331,6 @@ export default {
 
 					break
 				}
-				case "open_ticket":
-					{
-						await interaction.deferReply({ ephemeral: true })
-
-						const guildCfg = await getGuildConfig(interaction.guildId!)
-
-						// Check features.tickets toggle from NEST dashboard
-						if (guildCfg?.features?.tickets === false) {
-							await interaction.editReply({ content: 'Tickets are currently disabled. Please try again later.' })
-							return
-						}
-
-						const ticketsDisabled = await FastFlag.findOne({
-							refName: 'DisableTicketOpening',
-							enabled: true
-						})
-						if (ticketsDisabled) {
-							await interaction.editReply({
-								content: 'Tickets are currently disabled. Please try again later.'
-							})
-							return
-						}
-
-						if (interaction.member.roles.cache.find((r: Role) => r.name.toLowerCase() === "ticket banned")) {
-							await interaction.editReply(errorEmbed("You are banned from opening tickets.") as InteractionEditReplyOptions)
-							return
-						}
-
-						const findTicket = await Tickets.findOne({
-							guildID: interaction.guild.id,
-							creatorID: interaction.user.id,
-							status: true,
-						})
-						if (findTicket) {
-							const ticketChannel = interaction.guild.channels.cache.get(findTicket.channelID!)
-							if (ticketChannel) {
-								await interaction.editReply(errorEmbed("You already have a ticket open.") as InteractionEditReplyOptions)
-								return
-							} else {
-								await findTicket.deleteOne()
-							}
-						}
-
-						const ticketsCatId = guildCfg?.channels?.ticketsCategory
-						const category = (ticketsCatId
-							? interaction.guild.channels.cache.get(ticketsCatId)
-							: interaction.guild.channels.cache.find(c => c.name.toLowerCase() === 'tickets' && c.type === ChannelType.GuildCategory)
-						) as CategoryChannel | undefined
-						if (!category) {
-							await interaction.editReply(errorEmbed("No Tickets category configured. Set it in the NEST dashboard or create a category named \"Tickets\".") as InteractionEditReplyOptions)
-							return
-						}
-
-						// Use configured staff role from NEST dashboard instead of hardcoded ID
-						const staffRoleId = guildCfg?.roles?.AssistantModerator || guildCfg?.roles?.Moderator || null
-
-						let ticketNum = await incrimentTicket(interaction.guild)
-						if (SkipTickets.find(t => { t === ticketNum })) {
-							Log.debug(`Ticket #${ticketNum} has been skipped.`)
-							ticketNum = await incrimentTicket(interaction.guild)
-						}
-
-						const permOverwrites: any[] = [
-							{
-								id: interaction.guild.id,
-								deny: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-							},
-							{
-								id: interaction.user.id,
-								allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles]
-							},
-						]
-						if (staffRoleId) {
-							permOverwrites.push({
-								id: staffRoleId,
-								allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-							})
-						}
-
-						const newChannel = await interaction.guild.channels.create({
-							name: `ticket-${ticketNum}`,
-							type: ChannelType.GuildText,
-							permissionOverwrites: permOverwrites,
-							reason: `Ticket opened by ${interaction.user.username}.`,
-							parent: category,
-						}).catch(async (err: Error) => {
-							await interaction.editReply(errorEmbed("Unable to create ticket channel! Please try again.") as InteractionEditReplyOptions)
-							Log.error(err)
-							return
-						})
-						if (!newChannel) {
-							await interaction.editReply(errorEmbed("Unable to create ticket channel! Please try again.") as InteractionEditReplyOptions)
-							return
-						}
-
-						// const transcriptPath1 = path.join(__dirname, "../..", "transcripts");
-						// if (existsSync(transcriptPath1)) {
-						// 	await interaction.editReply(errorEmbed(`I had an error with the transcripts! Please contact an administrator with a screenshot of this message. \`T-${ticketNum}\``));
-						// 	return;
-						// }
-						const transcriptPath = path.join(__dirname, "../..", "transcripts", `${newChannel.id}`)
-
-
-						try {
-							mkdirSync(transcriptPath)
-						} catch (err) {
-							interaction.editReply(errorEmbed("Unable to create ticket transcript!") as InteractionEditReplyOptions)
-							Log.error(err)
-							newChannel.delete().catch(() => { })
-							return
-						}
-
-						const meta = {
-							creator: interaction.user.id,
-							ticketID: newChannel.id,
-							date: new Date()
-						}
-						try {
-							writeFileSync(`${transcriptPath}/ticket_meta.json`, JSON.stringify(meta))
-							writeFileSync(`${transcriptPath}/ticket_transcript.md`, "")
-							writeFileSync(`${transcriptPath}/ticket_transcript.txt`, "")
-							mkdirSync(path.join(__dirname, "../..", "transcripts", `${newChannel.id}`, "media"))
-						} catch (err) {
-							interaction.editReply(errorEmbed("Unable to create ticket transcript!") as InteractionEditReplyOptions)
-							Log.error(err)
-							rmSync(path.join(__dirname, "../..", "transcripts", `${newChannel.id}`), { recursive: true, force: true })
-							newChannel.delete().catch(() => { })
-							return
-						}
-
-						const ticketRow = new ActionRowBuilder<ButtonBuilder>()
-							.addComponents(
-								new ButtonBuilder()
-									.setCustomId("close_ticket")
-									.setStyle(ButtonStyle.Danger)
-									.setLabel("Close Ticket")
-									.setEmoji("✖")
-							)
-
-						const ticketEmbed = new EmbedBuilder()
-							.setAuthor({ name: `${interaction.user.username}'s Ticket`, iconURL: interaction.user.displayAvatarURL() || undefined })
-							.setColor("Green")
-							.setDescription(`Please describe why you opened this ticket, a staff member will be with you shortly.
-								
-								If you opened this ticket by mistake, leave a short response and close the ticket.`)
-							.setTimestamp()
-							.setFooter({ text: "Ticket transcripts are saved permanently." })
-					newChannel.send({ content: `<@${interaction.user.id}> <@&1050243383999864852> https://nohello.net`, embeds: [ticketEmbed], components: [ticketRow as any] })
-
-						const newTicket = new Tickets({
-							guildID: interaction.guild.id,
-							creatorID: interaction.user.id,
-							users: [],
-							channelID: newChannel.id,
-							claimedID: "None",
-							closeReason: "None",
-							status: true,
-							autoClose: 0,
-						})
-						newTicket.save().catch(async (err: Error) => {
-							await interaction.editReply(errorEmbed("Failed to create ticket file!") as InteractionEditReplyOptions)
-							newChannel.delete().catch((error: Error) => { Log.error("Failed to delete ticket channel!\n\n" + error.stack) })
-							return
-						})
-						await interaction.editReply({ content: `Your ticket has been created. <#${newChannel.id}>` })
-						break
-					}
 				case "close_ticket":
 					const findingTicket = await Tickets.findOne({
 						guildID: interaction.guild.id,

@@ -25,7 +25,10 @@ export interface GuildChannels {
   hiring?: string;
   selling?: string;
   internalAffairs?: string;
-  ticketsCategory?: string;
+  ticketsCategoryGeneral?: string;
+  ticketsCategoryTrading?: string;
+  ticketsCategoryMarket?: string;
+  ticketsCategoryBusiness?: string;
 }
 
 export interface GuildFeatures {
@@ -80,7 +83,10 @@ const guildChannelsSchema = new mongoose.Schema<GuildChannels>({
   hiring: String,
   selling: String,
   internalAffairs: String,
-  ticketsCategory: String,
+  ticketsCategoryGeneral: String,
+  ticketsCategoryTrading: String,
+  ticketsCategoryMarket: String,
+  ticketsCategoryBusiness: String,
 }, { _id: false })
 
 const guildFeaturesSchema = new mongoose.Schema<GuildFeatures>({
