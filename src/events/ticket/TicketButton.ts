@@ -105,9 +105,13 @@ export default {
 							await findTicket.deleteOne()
 						}
 					}
-					const category = interaction.guild.channels.cache.find(c => c.name.toLowerCase() == "internal affairs" && c.type === ChannelType.GuildCategory) as CategoryChannel
+					const iaCategoryId = (await getGuildConfig(interaction.guildId!))?.channels?.internalAffairs
+					const category = (iaCategoryId
+						? interaction.guild.channels.cache.get(iaCategoryId)
+						: interaction.guild.channels.cache.find(c => c.name.toLowerCase() === 'internal affairs' && c.type === ChannelType.GuildCategory)
+					) as CategoryChannel | undefined
 					if (!category) {
-						await interaction.editReply(errorEmbed("No affair category found. Please contact an administrator!") as InteractionEditReplyOptions)
+						await interaction.editReply(errorEmbed("No Internal Affairs category configured. Set it in the NEST dashboard or create a category named \"Internal Affairs\".") as InteractionEditReplyOptions)
 						return
 					}
 					const internalReviewer = interaction.guild.roles.cache.find(r => r.name === "Internal Reviewer")
