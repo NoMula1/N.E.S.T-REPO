@@ -114,7 +114,11 @@ export default {
 						await interaction.editReply(errorEmbed("No Internal Affairs category configured. Set it in the NEST dashboard or create a category named \"Internal Affairs\".") as InteractionEditReplyOptions)
 						return
 					}
-					const internalReviewer = interaction.guild.roles.cache.find(r => r.name === "Internal Reviewer")
+					const iaGuildCfg = await getGuildConfig(interaction.guildId!)
+					const internalReviewerRoleId = iaGuildCfg?.roles?.InternalReviewer
+					const internalReviewer = internalReviewerRoleId
+						? interaction.guild.roles.cache.get(internalReviewerRoleId)
+						: interaction.guild.roles.cache.find(r => r.name === "Internal Reviewer")
 
 					let ticketNum = await incrimentTicket(interaction.guild)
 					if (SkipTickets.find(t => t === ticketNum)) {

@@ -13,6 +13,7 @@ export interface GuildRoles {
   SeniorMarketModerator?: string;
   AssistantAdministrator?: string;
   Administrator?: string;
+  InternalReviewer?: string;
 }
 
 export interface GuildChannels {
@@ -67,6 +68,7 @@ const guildRolesSchema = new mongoose.Schema<GuildRoles>({
   SeniorMarketModerator: String,
   AssistantAdministrator: String,
   Administrator: String,
+  InternalReviewer: String,
 }, { _id: false })
 
 const guildChannelsSchema = new mongoose.Schema<GuildChannels>({
