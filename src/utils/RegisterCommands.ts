@@ -8,7 +8,6 @@ import { createNewGuildFile, handleError } from "../utils/GenUtils"
 import Settings from "../schemas/Settings"
 import { ContextCommandExecutor } from "./ContextCommandExecutor"
 import CoreClient from "../bootstrap/CoreClient"
-import { scope } from "../bootstrap/GlobalScope"
 dotENV.config()
 
 export async function load(client: CoreClient) {
@@ -26,7 +25,6 @@ export async function load(client: CoreClient) {
 			}))?.default as CommandExecutor | null
 			await new Promise((resolve) => setTimeout(resolve, 10)) // delay
 			if (!command) continue
-			if (command.scope !== scope) continue
 
 			//Log.debug(`[Get] | Slash Command | ${file}`);
 
@@ -49,7 +47,6 @@ export async function load(client: CoreClient) {
 			}))?.default as ContextCommandExecutor<unknown> | null
 			await new Promise((resolve) => setTimeout(resolve, 10)) // delay
 			if (!command) continue
-			if (command.scope !== scope) continue
 
 			//Log.debug(`[Get] | Context Command | ${file}`);
 
