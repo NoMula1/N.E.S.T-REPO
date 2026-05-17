@@ -10,6 +10,7 @@ import TicketStatus from "../../schemas/TicketStatus"
 import { resolveTicketStatusEmbed, ticketStatus, updateTicketStatus } from './TicketStatusUpdate'
 import FastFlag from "../../schemas/FastFlag"
 import { EventOptions } from "../../utils/RegisterEvents"
+import { getGuildConfig } from "../../utils/GuildConfigCache"
 
 const SkipTickets = [
 	1488,
@@ -111,30 +112,33 @@ export default {
 					}
 					const internalReviewer = interaction.guild.roles.cache.find(r => r.name === "Internal Reviewer")
 
-
 					let ticketNum = await incrimentTicket(interaction.guild)
 					if (SkipTickets.find(t => t === ticketNum)) {
 						Log.debug(`Ticket #${ticketNum} has been skipped.`)
 						ticketNum = await incrimentTicket(interaction.guild)
 					}
 
+					const iaOverwrites: any[] = [
+						{
+							id: interaction.guild.id,
+							deny: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
+						},
+						{
+							id: interaction.user.id,
+							allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles]
+						},
+					]
+					if (internalReviewer) {
+						iaOverwrites.push({
+							id: internalReviewer.id,
+							allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
+						})
+					}
+
 					const newChannel = await interaction.guild.channels.create({
 						name: `internal-affair-${ticketNum}`,
 						type: ChannelType.GuildText,
-						permissionOverwrites: [
-							{
-								id: interaction.guild.id,
-								deny: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-							},
-							{
-								id: interaction.user.id,
-								allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles]
-							},
-							{
-								id: internalReviewer!.id,
-								allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-							}
-						],
+						permissionOverwrites: iaOverwrites,
 						reason: `Ticket opened by ${interaction.user.username}.`,
 						parent: category,
 					}).catch(async (err: Error) => {
@@ -225,6 +229,14 @@ export default {
 					{
 						await interaction.deferReply({ ephemeral: true })
 
+						const guildCfg = await getGuildConfig(interaction.guildId!)
+
+						// Check features.tickets toggle from NEST dashboard
+						if (guildCfg?.features?.tickets === false) {
+							await interaction.editReply({ content: 'Tickets are currently disabled. Please try again later.' })
+							return
+						}
+
 						const ticketsDisabled = await FastFlag.findOne({
 							refName: 'DisableTicketOpening',
 							enabled: true
@@ -261,8 +273,9 @@ export default {
 							await interaction.editReply(errorEmbed("No ticket category found. Please contact an administrator!") as InteractionEditReplyOptions)
 							return
 						}
-						const juniorMod = interaction.guild.roles.cache.find(r => r.name === "Trial Community Moderator")
-						const srMarketMod = interaction.guild.roles.cache.find(r => r.name === "Senior Marketplace Moderator")
+
+						// Use configured staff role from NEST dashboard instead of hardcoded ID
+						const staffRoleId = guildCfg?.roles?.AssistantModerator || guildCfg?.roles?.Moderator || null
 
 						let ticketNum = await incrimentTicket(interaction.guild)
 						if (SkipTickets.find(t => { t === ticketNum })) {
@@ -270,23 +283,27 @@ export default {
 							ticketNum = await incrimentTicket(interaction.guild)
 						}
 
+						const permOverwrites: any[] = [
+							{
+								id: interaction.guild.id,
+								deny: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
+							},
+							{
+								id: interaction.user.id,
+								allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles]
+							},
+						]
+						if (staffRoleId) {
+							permOverwrites.push({
+								id: staffRoleId,
+								allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
+							})
+						}
+
 						const newChannel = await interaction.guild.channels.create({
 							name: `ticket-${ticketNum}`,
 							type: ChannelType.GuildText,
-							permissionOverwrites: [
-								{
-									id: interaction.guild.id,
-									deny: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-								},
-								{
-									id: interaction.user.id,
-									allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles]
-								},
-								{
-									id: "1203545488008155136",
-									allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-								},
-							],
+							permissionOverwrites: permOverwrites,
 							reason: `Ticket opened by ${interaction.user.username}.`,
 							parent: category,
 						}).catch(async (err: Error) => {
