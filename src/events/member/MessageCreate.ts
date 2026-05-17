@@ -58,11 +58,21 @@ export default {
 		if (!(message.channel instanceof TextChannel)) return
 		if (!message.guildId) return
 		const guildCfg = await getGuildConfig(message.guildId)
-		const ticketsCatId = guildCfg?.channels?.ticketsCategory
-		const ticketCategory = ticketsCatId
-			? message.guild?.channels.cache.get(ticketsCatId)
-			: message.guild?.channels.cache.find(c => c.name.toLowerCase() === 'tickets' && c.type === ChannelType.GuildCategory)
-		if (!ticketCategory || message.channel.parentId !== ticketCategory.id) return
+		const configuredCatIds = [
+			guildCfg?.channels?.ticketsCategoryGeneral,
+			guildCfg?.channels?.ticketsCategoryTrading,
+			guildCfg?.channels?.ticketsCategoryMarket,
+			guildCfg?.channels?.ticketsCategoryBusiness,
+			guildCfg?.channels?.internalAffairs,
+		].filter((id): id is string => !!id)
+		let isInTicketCategory = false
+		if (configuredCatIds.length > 0) {
+			isInTicketCategory = configuredCatIds.includes(message.channel.parentId ?? '')
+		} else {
+			const fallbackCat = message.guild?.channels.cache.find(c => c.name.toLowerCase() === 'tickets' && c.type === ChannelType.GuildCategory)
+			isInTicketCategory = !!fallbackCat && message.channel.parentId === fallbackCat.id
+		}
+		if (!isInTicketCategory) return
 		const ticketID = message.channel.id
 		const ticketPath = path.join(__dirname, "../..", "transcripts", `${ticketID}`)
 
