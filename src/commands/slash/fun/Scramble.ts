@@ -1,5 +1,6 @@
 import { GuildMember, Role } from "discord.js"
-import { CommandExecutor, PermissionLevel, RoleIDS } from "../../../utils/CommandExecutor"
+import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
+import { getGuildConfig } from "../../../utils/GuildConfigCache"
 import { Log } from "../../../utils/logging"
 const lineReader = require("line-reader")
 
@@ -20,7 +21,11 @@ export default new CommandExecutor()
 		const member = interaction.options.getMember("user") || interaction.member
 
 		//check for perms if non - admin
-		if (interaction.guild.roles.cache.find((r: Role) => r.id === RoleIDS.Administrator)?.position! > interaction.member.roles.highest.position && member) {
+		const scrambleCfg = await getGuildConfig(interaction.guildId!)
+		const adminRoleId = scrambleCfg?.roles?.Administrator
+		const adminRole = adminRoleId ? interaction.guild.roles.cache.get(adminRoleId) : null
+		const isAdmin = adminRole ? interaction.member.roles.highest.position >= adminRole.position : false
+		if (!isAdmin && member !== interaction.member) {
 			await interaction.reply({
 				content: "You can only run this command on yourself!",
 				ephemeral: true

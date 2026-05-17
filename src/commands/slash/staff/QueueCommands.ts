@@ -5,7 +5,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, ChatInputCommandInteraction, Colors, EmbedBuilder, ModalSubmitInteraction, StringSelectMenuBuilder, StringSelectMenuInteraction, StringSelectMenuOptionBuilder, Interaction, InteractionType } from 'discord.js';
-import { CommandExecutor, PermissionLevel, RoleIDS } from "../../../utils/CommandExecutor"
+import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
+import { getGuildConfig } from "../../../utils/GuildConfigCache"
 import PostTemplates from "../../../schemas/PostTemplates"
 import FastFlag from "../../../schemas/FastFlag"
 import { claimOwnership, getNextInQueue, getQueueLength, getUserInformation, validateAllQueues } from "../../../utils/queue"
@@ -203,7 +204,9 @@ export default new CommandExecutor()
 			case 'info_user': {
 				const user = interaction.options.getUser('user') ?? interaction.user
 
-				if (user !== interaction.user && !interaction.member.roles.cache.has(RoleIDS.MarketManager)) {
+				const queueCfg = await getGuildConfig(interaction.guildId!)
+				const marketManagerRole = queueCfg?.roles?.MarketManager
+				if (user !== interaction.user && (!marketManagerRole || !interaction.member.roles.cache.has(marketManagerRole))) {
 					await interaction.reply({
 						ephemeral: true,
 						content: `Only market managers can check the queue info of user other than themselves.`

@@ -1,5 +1,6 @@
 import { EmbedBuilder, roleMention } from "discord.js"
-import { CommandExecutor, PermissionLevel, RoleIDS } from "../../../utils/CommandExecutor"
+import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
+import { getGuildConfig } from "../../../utils/GuildConfigCache"
 
 
 const userCD = new Map<string, NodeJS.Timeout>()
@@ -34,8 +35,9 @@ export default new CommandExecutor()
 		const messageLink = interaction.options.getString("messagelink")
 		const userId = interaction.user.id
 
-		const staffRoles = Object.values(RoleIDS)
-		const isStaff = staffRoles.some(id => interaction.member.roles.cache.has(id))
+		const guildCfg = await getGuildConfig(interaction.guildId!)
+		const staffRoleIds = Object.values(guildCfg?.roles ?? {}).filter(Boolean) as string[]
+		const isStaff = staffRoleIds.length > 0 && staffRoleIds.some(id => interaction.member.roles.cache.has(id))
 
 		if (!isStaff && userCD.has(userId)) {
 			interaction.reply({ content: 'You are on cooldown, please wait before asking for help', ephemeral: true })

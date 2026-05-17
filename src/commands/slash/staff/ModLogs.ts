@@ -1,5 +1,6 @@
 import { APIButtonComponent, ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, EmbedBuilder, ChatInputCommandInteraction } from "discord.js"
-import { CommandExecutor, PermissionLevel, RoleIDS } from "../../../utils/CommandExecutor"
+import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
+import { getGuildConfig } from "../../../utils/GuildConfigCache"
 import Case from "../../../schemas/Case"
 import lodash from "lodash"
 import { errorEmbed } from "../../../utils/GenUtils"
@@ -25,7 +26,9 @@ export default new CommandExecutor()
 
 		let user = interaction.options.getUser("user")
 		const showMod = interaction.options.getBoolean("showmod") ?? true
-		const isStaff = interaction.member.roles.cache.has('1195598692569337918') || interaction.member.roles.cache.has(RoleIDS.AssistantModerator)
+		const modlogsCfg = await getGuildConfig(interaction.guildId!)
+		const assistantModRole = modlogsCfg?.roles?.AssistantModerator
+		const isStaff = !!(assistantModRole && interaction.member.roles.cache.has(assistantModRole))
 		if (!user || !isStaff) {
 			user = interaction.user
 		}
