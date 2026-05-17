@@ -4,6 +4,7 @@ import path, { resolve } from "path"
 import RoleBans from "../../schemas/RoleBans"
 import { EventOptions } from "../../utils/RegisterEvents"
 import { Log } from "../../utils/logging"
+import { getGuildConfig } from "../../utils/GuildConfigCache"
 
 function addSpacesToEachLine(str: string) {
 	return str.split("\n").map(line => "    " + line).join("\n")
@@ -55,7 +56,13 @@ export default {
 			}
 		}
 		if (!(message.channel instanceof TextChannel)) return
-		if (message.channel.parentId !== (message.guild?.channels.cache.find(c => c.name.toLowerCase() == "tickets" && c.type === ChannelType.GuildCategory) as CategoryChannel).id) return
+		if (!message.guildId) return
+		const guildCfg = await getGuildConfig(message.guildId)
+		const ticketsCatId = guildCfg?.channels?.ticketsCategory
+		const ticketCategory = ticketsCatId
+			? message.guild?.channels.cache.get(ticketsCatId)
+			: message.guild?.channels.cache.find(c => c.name.toLowerCase() === 'tickets' && c.type === ChannelType.GuildCategory)
+		if (!ticketCategory || message.channel.parentId !== ticketCategory.id) return
 		const ticketID = message.channel.id
 		const ticketPath = path.join(__dirname, "../..", "transcripts", `${ticketID}`)
 

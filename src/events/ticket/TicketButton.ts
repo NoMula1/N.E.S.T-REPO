@@ -272,9 +272,13 @@ export default {
 							}
 						}
 
-						const category = interaction.guild.channels.cache.find(c => c.name.toLowerCase() == "tickets" && c.type === ChannelType.GuildCategory) as CategoryChannel
+						const ticketsCatId = guildCfg?.channels?.ticketsCategory
+						const category = (ticketsCatId
+							? interaction.guild.channels.cache.get(ticketsCatId)
+							: interaction.guild.channels.cache.find(c => c.name.toLowerCase() === 'tickets' && c.type === ChannelType.GuildCategory)
+						) as CategoryChannel | undefined
 						if (!category) {
-							await interaction.editReply(errorEmbed("No ticket category found. Please contact an administrator!") as InteractionEditReplyOptions)
+							await interaction.editReply(errorEmbed("No Tickets category configured. Set it in the NEST dashboard or create a category named \"Tickets\".") as InteractionEditReplyOptions)
 							return
 						}
 
