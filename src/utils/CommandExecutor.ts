@@ -254,11 +254,16 @@ export class CommandExecutor extends SlashCommandBuilder {
 
 		const level = this.#base_permission.Level
 		if (level === PermissionLevel.None) return { success: true }
+
+		// Developers bypass all role-level checks
+		if (config.devs.includes(interaction.user.id)) return { success: true }
+
 		if (level === PermissionLevel.Developer) {
-			const isDev = config.devs.includes(interaction.user.id)
-			if (!isDev) return { success: false, content: 'You must be a NEST developer to use this command.' }
-			return { success: true }
+			return { success: false, content: 'You must be a NEST developer to use this command.' }
 		}
+
+		// Discord Administrators bypass NEST role checks
+		if (interaction.memberPermissions?.has('Administrator')) return { success: true }
 
 		const mapping = LEVEL_ROLE_MAP[level]
 		if (!mapping) return { success: false, content: "You aren't authorized to use this command." }
