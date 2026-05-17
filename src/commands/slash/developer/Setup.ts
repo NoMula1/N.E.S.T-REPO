@@ -50,7 +50,7 @@ export default new CommandExecutor()
 		const updatedConfig = await GuildConfigModel.findOne({ guildId }).lean()
 		const linked = updatedConfig?.linked ?? false
 
-		const portalBase = process.env.PORTAL_URL?.replace(/\/$/, '') ?? 'https://devsecnetwork.org'
+		const portalBase = process.env.PORTAL_URL?.replace(/\/$/, '') ?? 'https://nighthawkorg-production.up.railway.app'
 		const setupUrl = `${portalBase}/member/nest/setup?token=${linkToken}&guild=${guildId}`
 
 		const embed = new EmbedBuilder()
