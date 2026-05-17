@@ -24,6 +24,7 @@ export interface GuildChannels {
   forHire?: string;
   hiring?: string;
   selling?: string;
+  helpForum?: string;
   internalAffairs?: string;
   ticketsCategoryGeneral?: string;
   ticketsCategoryTrading?: string;
@@ -82,6 +83,7 @@ const guildChannelsSchema = new mongoose.Schema<GuildChannels>({
   forHire: String,
   hiring: String,
   selling: String,
+  helpForum: String,
   internalAffairs: String,
   ticketsCategoryGeneral: String,
   ticketsCategoryTrading: String,
