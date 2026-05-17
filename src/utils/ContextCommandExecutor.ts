@@ -1,7 +1,8 @@
 import { ApplicationCommandType, ContextMenuCommandBuilder, ContextMenuCommandInteraction, InteractionReplyOptions, MessageContextMenuCommandInteraction, PermissionsBitField, UserContextMenuCommandInteraction, ContextMenuCommandType } from "discord.js"
-import { Permission, PermissionLevel, RoleIDS } from "./CommandExecutor"
+import { Permission, PermissionLevel } from "./CommandExecutor"
 import { config } from "../utils/config"
-import { Scope, scope, toString as scopeToString } from "../bootstrap/GlobalScope"
+import { getGuildConfig } from '../utils/GuildConfigCache'
+import { GuildRoles } from '../schemas/GuildConfig'
 
 /** The main action of a command. */
 export type ContextInteraction = MessageContextMenuCommandInteraction|UserContextMenuCommandInteraction
@@ -10,6 +11,21 @@ export type ContextInteraction = MessageContextMenuCommandInteraction|UserContex
 /** The results of checking user permissions. */
 interface PermissionsResult extends InteractionReplyOptions {
 	success: boolean;
+}
+
+const LEVEL_ROLE_MAP: Partial<Record<PermissionLevel, { key: keyof GuildRoles; message: string }>> = {
+	[PermissionLevel.MarketStaff]:            { key: 'MarketStaff',            message: 'You must be Trial Market Moderator and up to use this command.' },
+	[PermissionLevel.TrialHelpModerator]:     { key: 'TrialHelpModerator',     message: 'You must be Trial Help Moderator and up to use this command.' },
+	[PermissionLevel.HelpModerator]:          { key: 'HelpModerator',          message: 'You must be Help Moderator and up to use this command.' },
+	[PermissionLevel.MarketModerator]:        { key: 'MarketModerator',        message: 'You must be Market Moderator and up to use this command.' },
+	[PermissionLevel.HelpManager]:            { key: 'HelpManager',            message: 'You must be Help Manager and up to use this command.' },
+	[PermissionLevel.AssistantModerator]:     { key: 'AssistantModerator',     message: 'You must be Assistant Moderator and up to use this command.' },
+	[PermissionLevel.Moderator]:              { key: 'Moderator',              message: 'You must be Moderator and up to use this command.' },
+	[PermissionLevel.SeniorModerator]:        { key: 'SeniorModerator',        message: 'You must be Senior Moderator and up to use this command.' },
+	[PermissionLevel.SeniorMarketModerator]:  { key: 'SeniorMarketModerator',  message: 'You must be Senior Market Moderator and up to use this command.' },
+	[PermissionLevel.AssistantAdministrator]: { key: 'AssistantAdministrator', message: 'You must be Assistant Administrator and up to use this command.' },
+	[PermissionLevel.MarketManager]:          { key: 'MarketManager',          message: 'You must be Market Manager and up to use this command.' },
+	[PermissionLevel.Administrator]:          { key: 'Administrator',          message: 'You must be Administrator and up to use this command.' },
 }
 
 export class ContextCommandExecutor<T> extends ContextMenuCommandBuilder {
@@ -60,22 +76,6 @@ export class ContextCommandExecutor<T> extends ContextMenuCommandBuilder {
 		if (!this.#base_permission.HasRole) this.#base_permission.HasRole = []
 		if (!this.#base_permission.IsUser) this.#base_permission.IsUser = []
 
-		// Check toggle
-		// TODO: Implement the togglestatus
-		// if (!(interaction.member?.permissions as Readonly<PermissionsBitField>)?.has(PermissionsBitField.Flags.Administrator)) {
-		//     return {
-		//         success: false,
-		//         content: 'This command was disabled by an administrator.',
-		//         ephemeral: true
-		//     }
-		// }
-
-		if (this.scope !== scope) {
-			return {
-				success: false,
-				content: `You are not allowed to run a ${scopeToString(this.scope)} command in the ${scopeToString(scope)} scope.`
-			}
-		}
 		for (const user of this.#base_permission.NotUser) {
 			if (interaction.user.id === user) {
 				return {
@@ -107,148 +107,28 @@ export class ContextCommandExecutor<T> extends ContextMenuCommandBuilder {
 				}
 			}
 		}
-		// Check base permissions
-		switch (this.#base_permission.Level) {
-			case PermissionLevel.MarketStaff:
-				if (!interaction.member.roles.cache.has(RoleIDS.MarketStaff)) {
-					return {
-						success: false,
-						content: "You must be Trial Market Moderator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.TrialHelpModerator:
-				if (!interaction.member.roles.cache.has(RoleIDS.TrialHelpModerator)) {
-					return {
-						success: false,
-						content: "You must be Trial Help Moderator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.HelpModerator:
-				if (!interaction.member.roles.cache.has(RoleIDS.HelpModerator)) {
-					return {
-						success: false,
-						content: "You must be Help Moderator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.MarketModerator:
-				if (!interaction.member.roles.cache.has(RoleIDS.MarketModerator)) {
-					return {
-						success: false,
-						content: "You must be Market Moderator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.HelpManager:
-				if (!interaction.member.roles.cache.has(RoleIDS.HelpManager)) {
-					return {
-						success: false,
-						content: "You must be Help Manager and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.AssistantModerator:
-				if (!interaction.member.roles.cache.has(RoleIDS.AssistantModerator)) {
-					return {
-						success: false,
-						content: "You must be Assistant Moderator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.Moderator:
-				if (!interaction.member.roles.cache.has(RoleIDS.Moderator)) {
-					return {
-						success: false,
-						content: "You must be Moderator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.SeniorModerator:
-				if (!interaction.member.roles.cache.has(RoleIDS.SeniorModerator)) {
-					return {
-						success: false,
-						content: "You must be Senior Moderator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.SeniorMarketModerator:
-				if (!interaction.member.roles.cache.has(RoleIDS.SeniorMarketModerator)) {
-					return {
-						success: false,
-						content: "You must be Senior Market Moderator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.AssistantAdministrator:
-				if (!interaction.member.roles.cache.has(RoleIDS.AssistantAdministrator)) {
-					return {
-						success: false,
-						content: "You must be Assistant Administrator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.MarketManager:
-				if (!interaction.member.roles.cache.has(RoleIDS.MarketManager)) {
-					return {
-						success: false,
-						content: "You must be Market Manager and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.Administrator:
-				if (!interaction.member.roles.cache.has(RoleIDS.Administrator)) {
-					return {
-						success: false,
-						content: "You must be Administrator and up to use this command."
-					}
-				}
-				break
-			case PermissionLevel.Developer:
-				let response = false
-				for (const dev of config.devs) {
-					if (dev === interaction.user.id) {
-						response = true
-						break
-					}
-				}
-				if (response == false) {
-					return {
-						success: false,
-						content: "You must be a NEST developer to use this command."
-					}
-				}
-				break
-			case PermissionLevel.None:
-				break
-			default:
-				return {
-					success: false,
-					content: "You aren't authorized to use this command."
-				}
+
+		const level = this.#base_permission.Level
+		if (level === PermissionLevel.None) return { success: true }
+		if (level === PermissionLevel.Developer) {
+			const isDev = config.devs.includes(interaction.user.id)
+			if (!isDev) return { success: false, content: 'You must be a NEST developer to use this command.' }
+			return { success: true }
 		}
 
-		// if (!this.#base_permission(interaction)) {
-		//     return {
-		//         success: false,
-		//         content: "You aren't authorized to use this command."
-		//     }
-		// }
+		const mapping = LEVEL_ROLE_MAP[level]
+		if (!mapping) return { success: false, content: "You aren't authorized to use this command." }
 
-		// Success
-		return {
-			success: true
-		}
+		const guildConfig = await getGuildConfig(interaction.guildId!)
+		const roleId = guildConfig?.roles?.[mapping.key]
+		if (!roleId) return { success: false, content: `This server hasn't configured the ${mapping.key} role yet. Run /setup or configure roles in the NEST dashboard.` }
+		if (!interaction.member.roles.cache.has(roleId)) return { success: false, content: mapping.message }
+		return { success: true }
 	}
 
 	/** Runs the current {@link Executor}. */
 	execute(interaction: T): Promise<unknown> {
 		return this.#executor(interaction) ?? Promise.resolve()
-	}
-
-	get scope(): Scope {
-		return this.#base_permission.Scope ?? Scope.Default
 	}
 }
 
