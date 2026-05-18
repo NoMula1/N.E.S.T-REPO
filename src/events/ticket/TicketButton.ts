@@ -13,6 +13,7 @@ import {
 	Message,
 	MessageFlags,
 	ModalBuilder,
+	OverwriteData,
 	OverwriteType,
 	PermissionsBitField,
 	Role,
@@ -50,7 +51,7 @@ const transcriptDir = (channelId: string) =>
    Always pass actual Role / GuildMember objects so Discord.js
    never has to resolve raw string IDs from the cache.
 ──────────────────────────────────────────────────────────────── */
-function baseOverwrites(guild: import('discord.js').Guild, member: import('discord.js').GuildMember) {
+function baseOverwrites(guild: import('discord.js').Guild, member: import('discord.js').GuildMember): OverwriteData[] {
 	// @everyone deny — use the cached Role object, never a raw string
 	return [
 		{
@@ -76,7 +77,7 @@ function baseOverwrites(guild: import('discord.js').Guild, member: import('disco
 	]
 }
 
-function roleOverwrite(role: Role) {
+function roleOverwrite(role: Role): OverwriteData {
 	return {
 		id:    role,
 		type:  OverwriteType.Role,
