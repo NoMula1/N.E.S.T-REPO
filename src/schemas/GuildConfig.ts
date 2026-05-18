@@ -14,6 +14,7 @@ export interface GuildRoles {
   AssistantAdministrator?: string;
   Administrator?: string;
   InternalReviewer?: string;
+  ServerBooster?: string;
 }
 
 export interface GuildChannels {
@@ -30,6 +31,9 @@ export interface GuildChannels {
   ticketsCategoryTrading?: string;
   ticketsCategoryMarket?: string;
   ticketsCategoryBusiness?: string;
+  templateApprovals?: string;
+  templateApprovalLog?: string;
+  reports?: string;
 }
 
 export interface GuildFeatures {
@@ -73,6 +77,7 @@ const guildRolesSchema = new mongoose.Schema<GuildRoles>({
   AssistantAdministrator: String,
   Administrator: String,
   InternalReviewer: String,
+  ServerBooster: String,
 }, { _id: false })
 
 const guildChannelsSchema = new mongoose.Schema<GuildChannels>({
@@ -89,6 +94,9 @@ const guildChannelsSchema = new mongoose.Schema<GuildChannels>({
   ticketsCategoryTrading: String,
   ticketsCategoryMarket: String,
   ticketsCategoryBusiness: String,
+  templateApprovals: String,
+  templateApprovalLog: String,
+  reports: String,
 }, { _id: false })
 
 const guildFeaturesSchema = new mongoose.Schema<GuildFeatures>({

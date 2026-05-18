@@ -8,7 +8,6 @@ import { existsSync, readFileSync } from "fs"
 import { dirname, join } from "path"
 import PostTemplates, { PostTemplateType } from "../../schemas/PostTemplates"
 import { handleError } from "../../utils/GenUtils"
-import Settings from "../../schemas/Settings"
 import FastFlag from "../../schemas/FastFlag"
 import Post from "../../schemas/Post"
 import { timetostring } from "../../utils/timeFuncs"
@@ -20,6 +19,7 @@ import { EventOptions } from "../../utils/RegisterEvents"
 import { TagAssociation } from "../../utils/BitwiseTagHelpers"
 import { Dictionary } from "lodash"
 import { AnyArray } from "mongoose"
+import { getGuildConfig } from "../../utils/GuildConfigCache"
 const ILLEGAL_CHAR_BLACKLIST = [ // A compiled list of characters that are intended to be annoying / take up an exceptional amount of space - tl;dr: banned chars
 	"꧅",
 	"𒐫",
@@ -36,6 +36,56 @@ const BOOSTER_COOLDOWN_DURATION = 3600000 // 1 hour
 
 const localPostTemplateCache = new Map<string, Date>()
 const TALENT_HUB_REGEX = /(?:https:\/\/)?create\.roblox\.com\/talent\/creators\/\d+/gm
+
+/* ── Multi-server helpers ─────────────────────────────────────────────────
+   All role / channel resolution goes through GuildConfig so the bot works
+   in any linked server without hardcoded IDs.
+─────────────────────────────────────────────────────────────────────────── */
+
+const isSnowflake = (id: string | null | undefined): id is string =>
+	typeof id === 'string' && /^\d{17,20}$/.test(id)
+
+/** Resolve a channel from the in-process cache then fall back to a REST fetch. */
+async function resolveChannel(guild: Guild, channelId: string | null | undefined): Promise<TextChannel | null> {
+	if (!isSnowflake(channelId)) return null
+	const cached = guild.channels.cache.get(channelId) as TextChannel | undefined
+	if (cached) return cached
+	return guild.channels.fetch(channelId).catch(() => null) as Promise<TextChannel | null>
+}
+
+/**
+ * Return true if the member holds any market-staff-or-above role configured
+ * for this guild, OR has the ManageMessages permission (always counts as staff).
+ */
+async function checkIsMarketMod(guildId: string, member: GuildMember): Promise<boolean> {
+	if (member.permissions.has(PermissionFlagsBits.ManageMessages)) return true
+	const cfg = await getGuildConfig(guildId)
+	const roleIds = [
+		cfg?.roles?.MarketStaff,
+		cfg?.roles?.MarketModerator,
+		cfg?.roles?.MarketManager,
+		cfg?.roles?.SeniorMarketModerator,
+		cfg?.roles?.AssistantModerator,
+		cfg?.roles?.Moderator,
+	].filter(isSnowflake)
+	if (roleIds.length === 0) return false
+	return member.roles.cache.hasAny(...(roleIds as [string, ...string[]]))
+}
+
+/**
+ * Return true if the member is a server booster (or has a booster-adjacent
+ * role) according to the guild's configured ServerBooster role.
+ * Falls back to a name-match if no role is configured.
+ */
+async function checkIsBooster(guildId: string, member: GuildMember): Promise<boolean> {
+	const cfg = await getGuildConfig(guildId)
+	const boosterId = cfg?.roles?.ServerBooster
+	if (isSnowflake(boosterId) && member.roles.cache.has(boosterId)) return true
+	// Name-based fallback if the guild hasn't configured the booster role yet
+	return !!member.roles.cache.find(r =>
+		r.name.toLowerCase().includes('booster') || r.name.toLowerCase() === 'booster benefits pass'
+	)
+}
 
 const allRelatedRankedRoles = {
 	Master: [
@@ -99,11 +149,7 @@ export default {
 				case "edit_desc": /*  ~ Button: Edit Description ~ */
 					{
 						if (!interaction.inCachedGuild()) return
-						const premiumRole = interaction.guild?.roles.cache.find((r: Role) => r.name.toLowerCase().includes("booster"))
-						let hasPremium = false
-						if (premiumRole && interaction.member.roles.cache.has(premiumRole.id) || interaction.member.roles.cache.find((r: Role) => { r.name.toLowerCase() === "staff" }) || interaction.member.roles.cache.find((r: Role) => { r.name.toLowerCase() === "booster benefits pass" })) {
-							hasPremium = true
-						}
+						const hasPremium = await checkIsBooster(interaction.guildId!, interaction.member as GuildMember)
 
 						const jobType = getJobType(interaction)
 						if (!jobType) {
@@ -323,7 +369,7 @@ export default {
 							guildID: interaction.guild.id,
 							userID: interaction.user.id,
 							jobType: jobTypeDeleteYes,
-							approved: (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281")),
+							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
 						})
 						newPostTemplate.save().catch(async (err: Error) => {
 							handleError(err)
@@ -435,18 +481,12 @@ export default {
 							return
 						}
 
-						const approvalChannel = interaction.guild.channels.cache.find((c: Channel) => {
-							if (c.type === ChannelType.GuildText) {
-								if (c.name === "template-approvals") {
-									return c
-								}
-							}
-						})
+						const guildCfgApprove = await getGuildConfig(interaction.guildId!)
+						const approvalChannel = await resolveChannel(interaction.guild, guildCfgApprove?.channels?.templateApprovals)
 						if (!approvalChannel) {
-							await interaction.update({ content: `${config.failedEmoji} Unable to find post approving channel. If this error persists please contact a bot developer.`, embeds: [], components: [] })
+							await interaction.update({ content: `${config.failedEmoji} The template approvals channel hasn't been configured for this server. Please contact an administrator.`, embeds: [], components: [] })
 							return
 						}
-						if (approvalChannel.type !== ChannelType.GuildText) return
 
 						const foundTemplateApprovalYes = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -537,7 +577,7 @@ export default {
 				case "view_notes": {
 					if (!interaction.inCachedGuild()) return
 
-					if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
+					if (!await checkIsMarketMod(interaction.guildId!, interaction.member as GuildMember)) {
 						interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 						return
 					}
@@ -641,7 +681,7 @@ export default {
 				case "approved_auto_reject":
 					if (!interaction.inCachedGuild()) return
 
-					if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
+					if (!await checkIsMarketMod(interaction.guildId!, interaction.member as GuildMember)) {
 						interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 						return
 					}
@@ -649,7 +689,7 @@ export default {
 				case "approved_yes": {
 					if (!interaction.inCachedGuild()) return
 
-					if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
+					if (!await checkIsMarketMod(interaction.guildId!, interaction.member as GuildMember)) {
 						interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 						return
 					}
@@ -731,35 +771,28 @@ export default {
 							waitingForApproval: false,
 						})
 
-						const logChannel = interaction.guild.channels.cache.find((c: Channel) => {
-							if (c.type === ChannelType.GuildText) {
-								if (c.name === "template-approval-log") {
-									return c
-								}
-							}
-						})
+						const guildCfgLog = await getGuildConfig(interaction.guildId!)
+						const logChannel = await resolveChannel(interaction.guild, guildCfgLog?.channels?.templateApprovalLog)
+						const botCmdsId = guildCfgLog?.channels?.botCommands
+						const postChannelRef = isSnowflake(botCmdsId) ? `<#${botCmdsId}>` : 'the bot-commands channel'
 						if (logChannel) {
-							await (logChannel as TextChannel).send({
+							await logChannel.send({
 								content: `<@${approveUser.id}>`,
 								embeds: [
 									new EmbedBuilder()
 										.setTitle('Template Approved')
 										.setColor("Green")
-										.setFooter({
-											text: `NIGHTHAWK SERVERS Marketplace · Approved by ${interaction.user.username}`
-										})
+										.setFooter({ text: `Marketplace · Approved by ${interaction.user.username}` })
 										.setTimestamp()
-										.setDescription(`Your template for __${approvalTemplate.jobType.toLowerCase()}__ has been approved! You may now post to the marketplace.\n\nRun \`/post\` in https://discord.com/channels/813997998245150721/1403396269589794827 to post!`)
+										.setDescription(`Your template for __${approvalTemplate.jobType.toLowerCase()}__ has been approved! You may now post to the marketplace.\n\nRun \`/post\` in ${postChannelRef} to post!`)
 								]
-							}).catch((err) => {
-								Log.error(err)
-							})
+							}).catch((err) => { Log.error(err) })
 						}
 
 						const yourPostHasBeenApproved = new EmbedBuilder()
 							.setAuthor({ name: `Template Approved!`, iconURL: interaction.guild.iconURL() || undefined })
 							.setColor("Green")
-							.setDescription(`Your template for __${approvalTemplate.jobType.toLowerCase()}__ has been approved! You may now post to the Marketplace! Run \`/post\` in https://discord.com/channels/813997998245150721/1403396269589794827 again to post!\n\nWe very highly recommend the utilization of our [Middlemanning Services](https://discord.gg/UWnmc2rFve); with a minimal 10% fee (negotiable for repeat users), we offer;\n\n- **In-depth verification** and research on your Freelancer / Employer prior to the job\n- **Active guidance and counselling** throughout the entire transaction\n- **Logging of the entire job** inside of our Middlemanning ticket system\n- A **guaranteed 100% payback** (custom tailored to every specific instance) in the event of a scam\n\n*Feel free to ping NoMula for any assistance you may need*`)
+							.setDescription(`Your template for __${approvalTemplate.jobType.toLowerCase()}__ has been approved! You may now post to the Marketplace! Run \`/post\` in ${postChannelRef} to post!`)
 							.setTimestamp()
 						await approveUser.send({ embeds: [yourPostHasBeenApproved] }).catch((err) => {
 							Log.error(err)
@@ -776,7 +809,7 @@ export default {
 					{
 						if (!interaction.inCachedGuild()) return
 
-						if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
+						if (!await checkIsMarketMod(interaction.guildId!, interaction.member as GuildMember)) {
 							interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 							return
 						}
@@ -838,7 +871,7 @@ export default {
 				case "approved_reverse_approval": {
 				if (!interaction.inCachedGuild()) return
 
-				if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
+				if (!await checkIsMarketMod(interaction.guildId!, interaction.member as GuildMember)) {
 					interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 					return
 				}
@@ -964,9 +997,8 @@ export default {
 						Log.error(err)
 					})! as GuildMember
 
-					const hasStaffRole = (interaction.member!.roles! as GuildMemberRoleManager).cache.hasAny("1480435758845395045", "1480436503187423342")
 					const hasManageMessages = (interaction.member?.permissions as PermissionsBitField).has(PermissionFlagsBits.ManageMessages)
-					const isStaff = hasStaffRole || hasManageMessages
+					const isStaff = hasManageMessages || await checkIsMarketMod(interaction.guildId!, interaction.member as GuildMember)
 
 					if (interaction.user.id !== thisPost.userID && !isStaff) {
 						await interaction.user.send(`The post you've tried to delete is not your own.`).catch(() => { })
@@ -1007,8 +1039,8 @@ export default {
 				case "edit_extras":
 					{
 						if (!interaction.inCachedGuild()) return
-						if (!interaction.member.roles.cache.find((r: Role) => r.name.toLowerCase().includes("booster")) || interaction.member.roles.cache.find((r: Role) => { r.name.toLowerCase() === "booster benefits pass" })) {
-							interaction.reply({ content: "You must boost the server to access this.", ephemeral: true })
+						if (!await checkIsBooster(interaction.guildId!, interaction.member as GuildMember)) {
+							interaction.reply({ content: "You must be a server booster to access this.", ephemeral: true })
 							return
 						}
 
@@ -1126,31 +1158,33 @@ export default {
 						await interaction.update({ content: templateEditor.PostMessage, embeds: [templateEditor.PostEmbed], components: templateEditor.PostButtons.map(btn => btn as any) })
 					}
 
-					const serverSettings = await Settings.findOne({
-						guildID: interaction.guildId
-					})!
+					const guildCfgPost = await getGuildConfig(interaction.guildId!)
 
-					let jobChannelId = ''
+					let jobChannelId: string | undefined
 					switch (sendPostTemplate.jobType.toLowerCase()) {
-						case 'hiring': {
-							jobChannelId = serverSettings?.hiringChannel!
-							break
-						}
-						case 'for_hire': {
-							jobChannelId = serverSettings?.forHireChannel!
-							break
-						}
-						case 'selling': {
-							jobChannelId = serverSettings?.sellingChannel!
-							break
-						}
+						case 'hiring':   { jobChannelId = guildCfgPost?.channels?.hiring;   break }
+						case 'for_hire': { jobChannelId = guildCfgPost?.channels?.forHire;  break }
+						case 'selling':  { jobChannelId = guildCfgPost?.channels?.selling;  break }
 					}
 
-					const jobChannel = await interaction.client.channels.fetch(jobChannelId)
-					if (!jobChannel)
+					if (!isSnowflake(jobChannelId)) {
+						await interaction.reply({
+							ephemeral: true,
+							content: `${config.failedEmoji} The posting channel for **${sendPostTemplate.jobType}** hasn't been configured for this server. Please contact an administrator.`
+						})
 						return
+					}
 
-					const isBooster = (interaction.member!.roles as GuildMemberRoleManager).cache.find((pre) => { return pre.name === "Epic Boosters" }) || (interaction.member!.roles as GuildMemberRoleManager).cache.find((r: Role) => { return r.name.toLowerCase() === "booster benefits pass" })
+					const jobChannel = await interaction.client.channels.fetch(jobChannelId).catch(() => null)
+					if (!jobChannel) {
+						await interaction.reply({
+							ephemeral: true,
+							content: `${config.failedEmoji} Unable to find the posting channel. Please contact an administrator.`
+						})
+						return
+					}
+
+					const isBooster = await checkIsBooster(interaction.guildId!, interaction.member as GuildMember)
 
 					// eslint-disable-next-line @typescript-eslint/no-explicit-any
 					const recentPost: any = await Post.findOne({
@@ -1242,7 +1276,7 @@ export default {
 						};
 					};
 
-					if (!(interaction.member!.roles as unknown as GuildMemberRoleManager).cache?.find((r: Role) => r.name.toLowerCase().includes("booster")) && !((interaction.member!.roles as GuildMemberRoleManager).cache.find((r: Role) => r.name.toLowerCase() === "booster benefits pass"))) {
+					if (!isBooster) {
 						if (sendPostTemplate.embedColor !== "Green" || sendPostTemplate.author !== interaction.user.username || sendPostTemplate.footer?.text !== "NIGHTHAWK SERVERS Marketplace" || sendPostTemplate.footer?.icon !== interaction.user.avatarURL()) {
 							await (interaction.member! as GuildMember).user!.send({
 								embeds: [
@@ -1415,9 +1449,8 @@ export default {
 						Log.error(err)
 					})! as GuildMember
 
-					const hasStaffRole = (interaction.member!.roles! as GuildMemberRoleManager).cache.hasAny("1480435758845395045", "1480436503187423342")
 					const hasManageMessages = (interaction.member?.permissions as PermissionsBitField).has(PermissionFlagsBits.ManageMessages)
-					const isStaff = hasStaffRole || hasManageMessages
+					const isStaff = hasManageMessages || await checkIsMarketMod(interaction.guildId!, interaction.member as GuildMember)
 
 					if (!isStaff) {
 						await interaction.editReply({
@@ -1426,7 +1459,7 @@ export default {
 						return
 					}
 
-					if (hasStaffRole) {
+					if (isStaff) {
 						const foundPostTemplate = await PostTemplates.findOne({
 							userID: postMember.user.id,
 							guildID: interaction.guildId,
@@ -1497,7 +1530,7 @@ Reason: ${deleteReason}`).catch((err) => {
 							jobType: jobType,
 						}, {
 							description: description,
-							approved: (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281")),
+							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
 						})
 						const foundTemplateDesc = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -1538,7 +1571,7 @@ Reason: ${deleteReason}`).catch((err) => {
 							jobType: jobTypeTalent,
 						}, {
 							talentHubLink: matched[0] || "",
-							approved: (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281")),
+							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
 						})
 						const foundTemplateTalent = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -1604,7 +1637,7 @@ Reason: ${deleteReason}`).catch((err) => {
 								money: paymentMoney,
 								other: paymentOther,
 							},
-							approved: (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281")),
+							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
 						})
 						const foundTemplatePayment = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -1663,7 +1696,7 @@ Reason: ${deleteReason}`).catch((err) => {
 						}, {
 							image: postImage || undefined,
 							thumbnail: postThumbnail || undefined,
-							approved: (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281")),
+							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
 						})
 						const foundTemplateImages = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -1685,7 +1718,7 @@ Reason: ${deleteReason}`).catch((err) => {
 					{
 						if (!interaction.inCachedGuild()) return
 
-						if (!interaction.member.roles.cache.hasAny("1480435906044362814", "1480436288296583228", "1480436503187423342", "1481021796298915972")) {
+						if (!await checkIsMarketMod(interaction.guildId!, interaction.member as GuildMember)) {
 							interaction.reply({ content: `${config.failedEmoji} You do not have permission to do this.`, ephemeral: true })
 							return
 						}
@@ -1767,15 +1800,10 @@ Reason: ${deleteReason}`).catch((err) => {
 							localPostTemplateCache.set(interaction.message.id, new Date())
 						}
 
-						const logChannel = interaction.guild.channels.cache.find((c: Channel) => {
-							if (c.type === ChannelType.GuildText) {
-								if (c.name === "template-approval-log") {
-									return c
-								}
-							}
-						})
+						const guildCfgReject = await getGuildConfig(interaction.guildId!)
+						const logChannel = await resolveChannel(interaction.guild, guildCfgReject?.channels?.templateApprovalLog)
 						if (logChannel) {
-							await (logChannel as TextChannel).send({
+							await logChannel.send({
 								content: `<@${approveUser.id}>`,
 								embeds: [
 									new EmbedBuilder()
@@ -1856,7 +1884,7 @@ Reason: ${deleteReason}`).catch((err) => {
 							},
 							author: templateTitle || "",
 							embedColor: templateColor || "",
-							approved: (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281")),
+							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
 						})
 						const foundTemplateExtras = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -1981,9 +2009,8 @@ export async function generateNotesInterface(template: PostTemplateType, user: U
 }
 
 export async function generateEmbed(template: PostTemplateType, user: User, guild: Guild, forPost?: boolean): Promise<{ PostEmbed: EmbedBuilder; PostMessage: string; PostButtons: ActionRowBuilder<ButtonBuilder>[]; }> {
-	const settings = await Settings.findOne({
-		guildID: guild.id
-	})
+	const guildCfg = await getGuildConfig(guild.id)
+	const requireApproval = guildCfg?.requirePostApproval ?? true
 	let postEmoji = config.successEmoji
 	let issuesFound = 0
 	let postIssues = ``
@@ -1997,7 +2024,7 @@ export async function generateEmbed(template: PostTemplateType, user: User, guil
 		postIssues = postIssues + "\n> No payments set."
 		postEmoji = config.failedEmoji
 	}
-	if (template.approved == false && settings?.requirePostApproval == true && !template.waitingForApproval) {
+	if (template.approved == false && requireApproval && !template.waitingForApproval) {
 		issuesFound++
 		postIssues = postIssues + "\n> You must submit your template for approval."
 		postEmoji = config.failedEmoji
@@ -2068,16 +2095,16 @@ export async function generateEmbed(template: PostTemplateType, user: User, guil
 				.setEmoji("👑")
 				.setStyle(ButtonStyle.Primary),
 		)
-	if (template.approved == false && settings?.requirePostApproval == true) {
+	if (template.approved == false && requireApproval) {
 		templateRow.components[0].setLabel("Submit for Approval")
 			.setCustomId("send_approval")
 			.setEmoji("🗳")
 			.setStyle(ButtonStyle.Primary)
 	}
-	if (issuesFound > 1 && template.approved == false && settings?.requirePostApproval == true) {
+	if (issuesFound > 1 && template.approved == false && requireApproval) {
 		templateRow.components[0].setDisabled(true)
 	}
-	if (issuesFound > 0 && settings?.requirePostApproval == false) {
+	if (issuesFound > 0 && !requireApproval) {
 		templateRow.components[0].setDisabled(true)
 	}
 
