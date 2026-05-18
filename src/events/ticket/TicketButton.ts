@@ -1,5 +1,5 @@
 import { Log } from "../../utils/logging"
-import { APIButtonComponent, ActionRowBuilder, ButtonBuilder, ButtonStyle, CategoryChannel, ChannelType, EmbedBuilder, Events, Interaction, InteractionEditReplyOptions, Message, ModalBuilder, PermissionsBitField, Role, TextChannel, TextInputBuilder, TextInputStyle, ThreadAutoArchiveDuration } from "discord.js"
+import { APIButtonComponent, ActionRowBuilder, ButtonBuilder, ButtonStyle, CategoryChannel, ChannelType, EmbedBuilder, Events, Interaction, InteractionEditReplyOptions, Message, MessageFlags, ModalBuilder, OverwriteType, PermissionsBitField, Role, TextChannel, TextInputBuilder, TextInputStyle, ThreadAutoArchiveDuration } from "discord.js"
 import { errorEmbed, handleError, incrimentTicket } from "../../utils/GenUtils"
 import Tickets from "../../schemas/Tickets"
 import { mkdirSync, writeFileSync, readdirSync, readFileSync, rmSync } from "fs"
@@ -42,7 +42,7 @@ export default {
 
 			if (TICKET_TYPE_MAP[buttonID]) {
 				const { configKey, channelPrefix } = TICKET_TYPE_MAP[buttonID]!
-				await interaction.deferReply({ ephemeral: true })
+				await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 
 				const guildCfg = await getGuildConfig(interaction.guildId!)
 
@@ -91,7 +91,10 @@ export default {
 					return
 				}
 
-				const staffRoleId = guildCfg?.roles?.AssistantModerator || guildCfg?.roles?.Moderator || null
+				const isSnowflake = (id: string | null | undefined): id is string => typeof id === 'string' && /^\d{17,20}$/.test(id)
+				const rawStaffId = guildCfg?.roles?.AssistantModerator || guildCfg?.roles?.Moderator || null
+				const staffRoleId = isSnowflake(rawStaffId) ? rawStaffId : null
+
 				let ticketNum = await incrimentTicket(interaction.guild)
 				if (SkipTickets.find(t => t === ticketNum)) {
 					Log.debug(`Ticket #${ticketNum} has been skipped.`)
@@ -99,10 +102,10 @@ export default {
 				}
 
 				const permOverwrites: any[] = [
-					{ id: interaction.guild.id, deny: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
-					{ id: interaction.user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles] },
+					{ id: interaction.guild.id,   type: OverwriteType.Role,   deny:  [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
+					{ id: interaction.user.id,    type: OverwriteType.Member, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles] },
 				]
-				if (staffRoleId) permOverwrites.push({ id: staffRoleId, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] })
+				if (staffRoleId) permOverwrites.push({ id: staffRoleId, type: OverwriteType.Role, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] })
 
 				const newChannel = await interaction.guild.channels.create({
 					name: `${channelPrefix}-${ticketNum}`,
@@ -374,7 +377,7 @@ export default {
 					await interaction.showModal(postForm as any)
 					break
 				case "log_transcript":
-					await interaction.deferReply({ ephemeral: true })
+					await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 
 					if (interaction.member.roles.cache.find((r: Role) => r.name.toLowerCase() === "assistant moderator")?.position! > interaction.member.roles.highest.position || interaction.member.roles.cache.find((r: Role) => r.name.toLowerCase() === "senior marketplace moderator")?.position! > interaction.member.roles.highest.position) {
 						interaction.editReply(errorEmbed("You must be an Assistant Moderator to use this!") as InteractionEditReplyOptions)
@@ -441,7 +444,7 @@ export default {
 					}, 10000)
 					break
 				case "req_close":
-					await interaction.deferReply({ ephemeral: true })
+					await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 					const reqTicket = await Tickets.findOne({
 						guildID: interaction.guild.id,
 						channelID: interaction.channel?.id,
@@ -522,7 +525,7 @@ export default {
 					break
 				case "req_keep_open":
 
-					await interaction.deferReply({ ephemeral: true })
+					await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 					const reqTicket2 = await Tickets.findOne({
 						guildID: interaction.guild.id,
 						channelID: interaction.channel?.id,
@@ -590,7 +593,7 @@ export default {
 
 			switch (customID) {
 				case "modal_close_reason":
-					await interaction.deferReply({ ephemeral: true })
+					await interaction.deferReply({ flags: MessageFlags.Ephemeral })
 
 					const foundTicket = await Tickets.findOne({
 						guildID: interaction.guild.id,

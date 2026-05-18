@@ -23,9 +23,8 @@ export default {
 			for (const [guildId] of client.guilds.cache) {
 				try {
 					const config = await getGuildConfig(guildId)
-					if (!config?.features?.qotd || !config?.channels?.qotd) continue
-
-					const channelId = config.channels.qotd
+					const channelId = config?.channels?.qotd
+					if (!config?.features?.qotd || !channelId || !/^\d{17,20}$/.test(channelId)) continue
 					let channel = client.channels.cache.get(channelId) as TextChannel | undefined
 					if (!channel) {
 						channel = await client.channels.fetch(channelId).catch(() => null) as TextChannel | null ?? undefined
