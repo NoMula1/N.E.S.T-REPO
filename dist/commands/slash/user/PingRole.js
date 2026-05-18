@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const CommandExecutor_1 = require("../../../utils/CommandExecutor");
+const GuildConfigCache_1 = require("../../../utils/GuildConfigCache");
 const userCD = new Map();
 exports.default = new CommandExecutor_1.CommandExecutor()
     .setName("pingrole")
@@ -15,13 +16,15 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setRequired(true))
     .setBasePermission({ Level: CommandExecutor_1.PermissionLevel.None })
     .setExecutor(async (interaction) => {
+    var _a;
     if (!interaction.inCachedGuild())
         return;
     const role = interaction.options.getString("role");
     const messageLink = interaction.options.getString("messagelink");
     const userId = interaction.user.id;
-    const staffRoles = Object.values(CommandExecutor_1.RoleIDS);
-    const isStaff = staffRoles.some(id => interaction.member.roles.cache.has(id));
+    const guildCfg = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
+    const staffRoleIds = Object.values((_a = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.roles) !== null && _a !== void 0 ? _a : {}).filter(Boolean);
+    const isStaff = staffRoleIds.length > 0 && staffRoleIds.some(id => interaction.member.roles.cache.has(id));
     if (!isStaff && userCD.has(userId)) {
         interaction.reply({ content: 'You are on cooldown, please wait before asking for help', ephemeral: true });
         return;

@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const CommandExecutor_1 = require("../../../utils/CommandExecutor");
+const GuildConfigCache_1 = require("../../../utils/GuildConfigCache");
 const Case_1 = __importDefault(require("../../../schemas/Case"));
 const lodash_1 = __importDefault(require("lodash"));
 const GenUtils_1 = require("../../../utils/GenUtils");
@@ -21,16 +22,17 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     Level: CommandExecutor_1.PermissionLevel.None
 })
     .setExecutor(async (interaction) => {
-    var _a, _b, _c;
+    var _a, _b;
     if (!interaction.inCachedGuild()) {
         interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true });
         return;
     }
     let user = interaction.options.getUser("user");
     const showMod = (_a = interaction.options.getBoolean("showmod")) !== null && _a !== void 0 ? _a : true;
-    if (!user ||
-        (!interaction.member.roles.cache.has('1195598692569337918') &&
-            ((_b = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial community staff")) === null || _b === void 0 ? void 0 : _b.position) > interaction.member.roles.highest.position)) {
+    const modlogsCfg = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
+    const assistantModRole = (_b = modlogsCfg === null || modlogsCfg === void 0 ? void 0 : modlogsCfg.roles) === null || _b === void 0 ? void 0 : _b.AssistantModerator;
+    const isStaff = !!(assistantModRole && interaction.member.roles.cache.has(assistantModRole));
+    if (!user || !isStaff) {
         user = interaction.user;
     }
     const cases = await Case_1.default.find({
@@ -42,7 +44,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
         if (!foundCase.caseNumber)
             return;
         let pusher = `\n\n__Case #${foundCase.caseNumber}__`;
-        if (foundCase.modID && (showMod) && (interaction.member.roles.cache.has('1195598692569337918') || ((_c = interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "trial community staff")) === null || _c === void 0 ? void 0 : _c.position) <= interaction.member.roles.highest.position)) {
+        if (foundCase.modID && (showMod) && isStaff) {
             pusher = pusher + `\n**Mod:** <@${foundCase.modID}>`;
         }
         if (foundCase.active !== null || foundCase.active !== undefined && foundCase.caseType !== "UNBAN" && foundCase.caseType !== "UNMUTE" && foundCase.caseType !== "KICK") {

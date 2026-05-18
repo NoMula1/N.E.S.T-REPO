@@ -44,7 +44,6 @@ const path_1 = __importDefault(require("path"));
 const logging_1 = require("../utils/logging");
 const GenUtils_1 = require("../utils/GenUtils");
 const Settings_1 = __importDefault(require("../schemas/Settings"));
-const GlobalScope_1 = require("../bootstrap/GlobalScope");
 dotenv_1.default.config();
 async function load(client) {
     var _a, _b;
@@ -61,8 +60,6 @@ async function load(client) {
             }))) === null || _a === void 0 ? void 0 : _a.default;
             await new Promise((resolve) => setTimeout(resolve, 10)); // delay
             if (!command)
-                continue;
-            if (command.scope !== GlobalScope_1.scope)
                 continue;
             //Log.debug(`[Get] | Slash Command | ${file}`);
             client.slashcommands.set(command.name, command);
@@ -81,8 +78,6 @@ async function load(client) {
             }))) === null || _b === void 0 ? void 0 : _b.default;
             await new Promise((resolve) => setTimeout(resolve, 10)); // delay
             if (!command)
-                continue;
-            if (command.scope !== GlobalScope_1.scope)
                 continue;
             //Log.debug(`[Get] | Context Command | ${file}`);
             client.contextcommands.set(command.name, command);

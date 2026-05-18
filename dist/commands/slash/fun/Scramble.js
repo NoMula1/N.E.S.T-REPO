@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const CommandExecutor_1 = require("../../../utils/CommandExecutor");
+const GuildConfigCache_1 = require("../../../utils/GuildConfigCache");
 const logging_1 = require("../../../utils/logging");
 const lineReader = require("line-reader");
 exports.default = new CommandExecutor_1.CommandExecutor()
@@ -19,7 +20,11 @@ exports.default = new CommandExecutor_1.CommandExecutor()
         return;
     const member = interaction.options.getMember("user") || interaction.member;
     //check for perms if non - admin
-    if (((_a = interaction.guild.roles.cache.find((r) => r.id === CommandExecutor_1.RoleIDS.Administrator)) === null || _a === void 0 ? void 0 : _a.position) > interaction.member.roles.highest.position && member) {
+    const scrambleCfg = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
+    const adminRoleId = (_a = scrambleCfg === null || scrambleCfg === void 0 ? void 0 : scrambleCfg.roles) === null || _a === void 0 ? void 0 : _a.Administrator;
+    const adminRole = adminRoleId ? interaction.guild.roles.cache.get(adminRoleId) : null;
+    const isAdmin = adminRole ? interaction.member.roles.highest.position >= adminRole.position : false;
+    if (!isAdmin && member !== interaction.member) {
         await interaction.reply({
             content: "You can only run this command on yourself!",
             ephemeral: true

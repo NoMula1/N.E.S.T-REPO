@@ -41,6 +41,7 @@ const fs_1 = require("fs");
 const path_1 = __importStar(require("path"));
 const RoleBans_1 = __importDefault(require("../../schemas/RoleBans"));
 const logging_1 = require("../../utils/logging");
+const GuildConfigCache_1 = require("../../utils/GuildConfigCache");
 function addSpacesToEachLine(str) {
     return str.split("\n").map(line => "    " + line).join("\n");
 }
@@ -77,7 +78,7 @@ exports.default = {
     name: discord_js_1.Events.MessageCreate,
     once: false,
     async execute(_, message) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
         const foundBan = await RoleBans_1.default.find({
             guildID: (_a = message.guild) === null || _a === void 0 ? void 0 : _a.id,
             userID: message.author.id,
@@ -91,7 +92,25 @@ exports.default = {
         }
         if (!(message.channel instanceof discord_js_1.TextChannel))
             return;
-        if (message.channel.parentId !== ((_d = message.guild) === null || _d === void 0 ? void 0 : _d.channels.cache.find(c => c.name.toLowerCase() == "tickets" && c.type === discord_js_1.ChannelType.GuildCategory)).id)
+        if (!message.guildId)
+            return;
+        const guildCfg = await (0, GuildConfigCache_1.getGuildConfig)(message.guildId);
+        const configuredCatIds = [
+            (_d = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.channels) === null || _d === void 0 ? void 0 : _d.ticketsCategoryGeneral,
+            (_e = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.channels) === null || _e === void 0 ? void 0 : _e.ticketsCategoryTrading,
+            (_f = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.channels) === null || _f === void 0 ? void 0 : _f.ticketsCategoryMarket,
+            (_g = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.channels) === null || _g === void 0 ? void 0 : _g.ticketsCategoryBusiness,
+            (_h = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.channels) === null || _h === void 0 ? void 0 : _h.internalAffairs,
+        ].filter((id) => !!id);
+        let isInTicketCategory = false;
+        if (configuredCatIds.length > 0) {
+            isInTicketCategory = configuredCatIds.includes((_j = message.channel.parentId) !== null && _j !== void 0 ? _j : '');
+        }
+        else {
+            const fallbackCat = (_k = message.guild) === null || _k === void 0 ? void 0 : _k.channels.cache.find(c => c.name.toLowerCase() === 'tickets' && c.type === discord_js_1.ChannelType.GuildCategory);
+            isInTicketCategory = !!fallbackCat && message.channel.parentId === fallbackCat.id;
+        }
+        if (!isInTicketCategory)
             return;
         const ticketID = message.channel.id;
         const ticketPath = path_1.default.join(__dirname, "../..", "transcripts", `${ticketID}`);
@@ -100,7 +119,7 @@ exports.default = {
                 (0, fs_1.mkdirSync)(ticketPath);
                 logging_1.Log.warn(`Ticket transcript is missing. Will not be able to append message to it! ${message.author.tag} (${message.author.id}) at ${message.createdAt}`);
             }
-            catch (_e) {
+            catch (_l) {
                 return;
             }
         }

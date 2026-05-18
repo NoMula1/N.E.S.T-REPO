@@ -12,27 +12,10 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
 };
 var _CommandExecutor_executor, _CommandExecutor_base_permission, _CommandExecutor_disabled;
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CommandExecutor = exports.PermissionLevel = exports.RoleIDS = void 0;
+exports.CommandExecutor = exports.PermissionLevel = void 0;
 const discord_js_1 = require("discord.js");
 const config_1 = require("../utils/config");
-const GlobalScope_1 = require("../bootstrap/GlobalScope");
-exports.RoleIDS = {
-    MarketStaff: '1480436503187423342', // Marketplace Department (base staff role)
-    TrialHelpModerator: '1480437092361175163', // Trial Help Moderator
-    HelpModerator: '1480436761938104380', // Help Moderator
-    MarketModerator: '1480435758845395045', // Marketplace Moderator
-    MarketManager: '1480435906044362814', // Marketplace Manager
-    HelpManager: '1480436823984705557', // Help Forums Manager
-    ScamInvestigator: '1474515140841046231', // Scam Investigator
-    TrialScamInvestigator: '1474515390418780330', // Trial Scam Investigator
-    ScamInvestigationsManager: '1474514887609680124', // Scam Investigations Manager
-    AssistantModerator: '1392220113909846018', // Trial Moderator
-    Moderator: '1406065795464822917', // Moderator
-    SeniorModerator: '1413957083598164008', // Senior Moderator
-    SeniorMarketModerator: '1480436288296583228', // Senior Marketplace Moderator
-    AssistantAdministrator: '1390774033586458745', // Senior Community Moderator / Assistant Administrator
-    Administrator: '1473948752720040087', // Server Manager / Administrator
-};
+const GuildConfigCache_1 = require("../utils/GuildConfigCache");
 /**
  * Permission level for commands.
  * @enum {PermissionLevel} Level for command use.
@@ -68,6 +51,20 @@ var PermissionLevel;
     /** Must be a part of the devs array in config.json. */
     PermissionLevel[PermissionLevel["Developer"] = 13] = "Developer";
 })(PermissionLevel || (exports.PermissionLevel = PermissionLevel = {}));
+const LEVEL_ROLE_MAP = {
+    [PermissionLevel.MarketStaff]: { key: 'MarketStaff', message: 'You must be Trial Market Moderator and up to use this command.' },
+    [PermissionLevel.TrialHelpModerator]: { key: 'TrialHelpModerator', message: 'You must be Trial Help Moderator and up to use this command.' },
+    [PermissionLevel.HelpModerator]: { key: 'HelpModerator', message: 'You must be Help Moderator and up to use this command.' },
+    [PermissionLevel.MarketModerator]: { key: 'MarketModerator', message: 'You must be Market Moderator and up to use this command.' },
+    [PermissionLevel.HelpManager]: { key: 'HelpManager', message: 'You must be Help Manager and up to use this command.' },
+    [PermissionLevel.AssistantModerator]: { key: 'AssistantModerator', message: 'You must be Assistant Moderator and up to use this command.' },
+    [PermissionLevel.Moderator]: { key: 'Moderator', message: 'You must be Moderator and up to use this command.' },
+    [PermissionLevel.SeniorModerator]: { key: 'SeniorModerator', message: 'You must be Senior Moderator and up to use this command.' },
+    [PermissionLevel.SeniorMarketModerator]: { key: 'SeniorMarketModerator', message: 'You must be Senior Market Moderator and up to use this command.' },
+    [PermissionLevel.AssistantAdministrator]: { key: 'AssistantAdministrator', message: 'You must be Assistant Administrator and up to use this command.' },
+    [PermissionLevel.MarketManager]: { key: 'MarketManager', message: 'You must be Market Manager and up to use this command.' },
+    [PermissionLevel.Administrator]: { key: 'Administrator', message: 'You must be Administrator and up to use this command.' },
+};
 /** A user-facing command. */
 class CommandExecutor extends discord_js_1.SlashCommandBuilder {
     constructor() {
@@ -190,17 +187,9 @@ class CommandExecutor extends discord_js_1.SlashCommandBuilder {
      * @returns The result of checking if the user has permission to run the command.
      */
     async hasPermission(interaction) {
+        var _a, _b;
         if (!interaction.inCachedGuild())
             return { success: false, content: "You must use this in a guild." };
-        /*
-        if (!(interaction.member?.permissions as Readonly<PermissionsBitField>)?.has([
-            PermissionsBitField.Flags.SendMessages,
-            PermissionsBitField.Flags.EmbedLinks])) {
-            return {
-                success: false
-            };
-        }
-        */
         if (!__classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").NotRole)
             __classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").NotRole = [];
         if (!__classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").NotUser)
@@ -209,25 +198,10 @@ class CommandExecutor extends discord_js_1.SlashCommandBuilder {
             __classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").HasRole = [];
         if (!__classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").IsUser)
             __classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").IsUser = [];
-        // Check toggle
-        // TODO: Implement the togglestatus
-        // if (!(interaction.member?.permissions as Readonly<PermissionsBitField>)?.has(PermissionsBitField.Flags.Administrator)) {
-        //     return {
-        //         success: false,
-        //         content: 'This command was disabled by an administrator.',
-        //         ephemeral: true
-        //     }
-        // }
         if (this.disabled) {
             return {
                 success: false,
                 content: `This command has been disabled. Please contact a Bot Developer if you believe this is an error.`
-            };
-        }
-        if (this.scope !== GlobalScope_1.scope) {
-            return {
-                success: false,
-                content: `You are not allowed to run a ${(0, GlobalScope_1.toString)(this.scope)} command in the ${(0, GlobalScope_1.toString)(GlobalScope_1.scope)} scope.`
             };
         }
         for (const user of __classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").NotUser) {
@@ -260,139 +234,33 @@ class CommandExecutor extends discord_js_1.SlashCommandBuilder {
                 };
             }
         }
-        // Check base permissions
-        switch (__classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").Level) {
-            case PermissionLevel.MarketStaff:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.MarketStaff)) {
-                    return {
-                        success: false,
-                        content: "You must be Trial Market Moderator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.TrialHelpModerator:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.TrialHelpModerator)) {
-                    return {
-                        success: false,
-                        content: "You must be Trial Help Moderator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.HelpModerator:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.HelpModerator)) {
-                    return {
-                        success: false,
-                        content: "You must be Help Moderator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.MarketModerator:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.MarketModerator)) {
-                    return {
-                        success: false,
-                        content: "You must be Market Moderator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.HelpManager:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.HelpManager)) {
-                    return {
-                        success: false,
-                        content: "You must be Help Manager and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.AssistantModerator:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.AssistantModerator)) {
-                    return {
-                        success: false,
-                        content: "You must be Assistant Moderator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.Moderator:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.Moderator)) {
-                    return {
-                        success: false,
-                        content: "You must be Moderator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.SeniorModerator:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.SeniorModerator)) {
-                    return {
-                        success: false,
-                        content: "You must be Senior Moderator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.SeniorMarketModerator:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.SeniorMarketModerator)) {
-                    return {
-                        success: false,
-                        content: "You must be Senior Market Moderator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.AssistantAdministrator:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.AssistantAdministrator)) {
-                    return {
-                        success: false,
-                        content: "You must be Senior Moderator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.Administrator:
-                if (!interaction.member.roles.cache.has(exports.RoleIDS.Administrator)) {
-                    return {
-                        success: false,
-                        content: "You must be Administrator and up to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.Developer:
-                let response = false;
-                console.log(`⚙️ Dev check - User ID: ${interaction.user.id}, Allowed devs:`, config_1.config.devs);
-                for (const dev of config_1.config.devs) {
-                    if (dev === interaction.user.id) {
-                        response = true;
-                        break;
-                    }
-                }
-                if (response == false) {
-                    return {
-                        success: false,
-                        content: "You must be an NEST developer to use this command."
-                    };
-                }
-                break;
-            case PermissionLevel.None:
-                break;
-            default:
-                return {
-                    success: false,
-                    content: "You aren't authorized to use this command."
-                };
+        const level = __classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").Level;
+        if (level === PermissionLevel.None)
+            return { success: true };
+        // Developers bypass all role-level checks
+        if (config_1.config.devs.includes(interaction.user.id))
+            return { success: true };
+        if (level === PermissionLevel.Developer) {
+            return { success: false, content: 'You must be a NEST developer to use this command.' };
         }
-        // if (!this.#base_permission(interaction)) {
-        //     return {
-        //         success: false,
-        //         content: "You aren't authorized to use this command."
-        //     }
-        // }
-        // Success
-        return {
-            success: true
-        };
+        // Discord Administrators bypass NEST role checks
+        if ((_a = interaction.memberPermissions) === null || _a === void 0 ? void 0 : _a.has('Administrator'))
+            return { success: true };
+        const mapping = LEVEL_ROLE_MAP[level];
+        if (!mapping)
+            return { success: false, content: "You aren't authorized to use this command." };
+        const guildConfig = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
+        const roleId = (_b = guildConfig === null || guildConfig === void 0 ? void 0 : guildConfig.roles) === null || _b === void 0 ? void 0 : _b[mapping.key];
+        if (!roleId)
+            return { success: false, content: `This server hasn't configured the ${mapping.key} role yet. Run /setup or configure roles in the NEST dashboard.` };
+        if (!interaction.member.roles.cache.has(roleId))
+            return { success: false, content: mapping.message };
+        return { success: true };
     }
     /** Runs the current {@link Executor}. */
     execute(interaction) {
         var _a;
         return (_a = __classPrivateFieldGet(this, _CommandExecutor_executor, "f").call(this, interaction)) !== null && _a !== void 0 ? _a : Promise.resolve();
-    }
-    get scope() {
-        var _a;
-        return (_a = __classPrivateFieldGet(this, _CommandExecutor_base_permission, "f").Scope) !== null && _a !== void 0 ? _a : GlobalScope_1.Scope.Default;
     }
     get disabled() {
         var _a;

@@ -12,6 +12,7 @@ exports.defaultQueueInterfaceRows = void 0;
 exports.attemptRegeneration = attemptRegeneration;
 const discord_js_1 = require("discord.js");
 const CommandExecutor_1 = require("../../../utils/CommandExecutor");
+const GuildConfigCache_1 = require("../../../utils/GuildConfigCache");
 const PostTemplates_1 = __importDefault(require("../../../schemas/PostTemplates"));
 const FastFlag_1 = __importDefault(require("../../../schemas/FastFlag"));
 const queue_1 = require("../../../utils/queue");
@@ -84,7 +85,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setName("queue")
     .setDescription("Manage the post template queue")
     .setExecutor(async (interaction) => {
-    var _a;
+    var _a, _b;
     if (!interaction.inCachedGuild()) {
         interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true });
         return;
@@ -173,7 +174,9 @@ exports.default = new CommandExecutor_1.CommandExecutor()
         }
         case 'info_user': {
             const user = (_a = interaction.options.getUser('user')) !== null && _a !== void 0 ? _a : interaction.user;
-            if (user !== interaction.user && !interaction.member.guild.roles.cache.find((r) => r.name.toLowerCase() === "marketplace manager")) {
+            const queueCfg = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
+            const marketManagerRole = (_b = queueCfg === null || queueCfg === void 0 ? void 0 : queueCfg.roles) === null || _b === void 0 ? void 0 : _b.MarketManager;
+            if (user !== interaction.user && (!marketManagerRole || !interaction.member.roles.cache.has(marketManagerRole))) {
                 await interaction.reply({
                     ephemeral: true,
                     content: `Only market managers can check the queue info of user other than themselves.`

@@ -26,7 +26,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
      * 1474515140841046231 = Scam Investigator
      * 1474515390418780330 = Trial Scam Investigator
      * 1474514887609680124 = Scam Investigations Manager
-     */
+    */
 })
     .setExecutor(async (interaction) => {
     if (!interaction.inCachedGuild()) {
