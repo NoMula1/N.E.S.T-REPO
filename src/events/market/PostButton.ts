@@ -1205,10 +1205,17 @@ export default {
 						return
 					}
 					if (recentPost) {
-						const thisChannel: TextChannel = await interaction.client.channels.fetch(recentPost.jobChannelId!) as TextChannel
-						const thisMessage = await (thisChannel! as TextChannel).messages.fetch(recentPost.messageId!).catch((err) => {
-
-						})
+						if (!isSnowflake(recentPost.jobChannelId)) {
+							// Stale post record with no valid channel ID (created before multi-server rework).
+							// Delete it so the user can post again.
+							await recentPost.deleteOne()
+						} else {
+						const thisChannel: TextChannel | null = await interaction.client.channels.fetch(recentPost.jobChannelId).catch(() => null) as TextChannel | null
+						if (!thisChannel) {
+							// Channel was deleted — clean up the stale record and let the user post.
+							await recentPost.deleteOne()
+						} else {
+						const thisMessage = await thisChannel.messages.fetch(recentPost.messageId!).catch(() => undefined)
 						const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
 							new ButtonBuilder()
 								.setCustomId('delete-post-yes')
@@ -1262,6 +1269,8 @@ export default {
 							}
 							return
 						}
+						} // end else (thisChannel exists)
+						} // end else (isSnowflake check)
 					}
 
 					let postColor = sendPostTemplate.embedColor! ?? Colors.Green
