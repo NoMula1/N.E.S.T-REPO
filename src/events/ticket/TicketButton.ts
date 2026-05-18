@@ -10,7 +10,7 @@ import TicketStatus from "../../schemas/TicketStatus"
 import { resolveTicketStatusEmbed, ticketStatus, updateTicketStatus } from './TicketStatusUpdate'
 import FastFlag from "../../schemas/FastFlag"
 import { EventOptions } from "../../utils/RegisterEvents"
-import { getGuildConfig } from "../../utils/GuildConfigCache"
+import { getGuildConfig, invalidateGuildConfig } from "../../utils/GuildConfigCache"
 import { GuildChannels } from "../../schemas/GuildConfig"
 
 const SkipTickets = [
@@ -70,10 +70,24 @@ export default {
 					await findTicket.deleteOne()
 				}
 
-				const catId = guildCfg?.channels?.[configKey]
-				const category = (catId ? interaction.guild.channels.cache.get(catId) : null) as CategoryChannel | undefined
-				if (!category) {
+				let catId = guildCfg?.channels?.[configKey]
+				// If catId is missing the cache may be stale from a recent dashboard update — bust and refetch
+				if (!catId) {
+					invalidateGuildConfig(interaction.guildId!)
+					const freshCfg = await getGuildConfig(interaction.guildId!)
+					catId = freshCfg?.channels?.[configKey]
+				}
+				if (!catId) {
 					await interaction.editReply(errorEmbed('This ticket category isn\'t configured yet. Please contact an administrator.') as InteractionEditReplyOptions)
+					return
+				}
+				// Prefer cache, fall back to API fetch if channel isn't cached (e.g. after bot restart)
+				const category = (
+					(interaction.guild.channels.cache.get(catId) as CategoryChannel | undefined)
+					?? (await interaction.guild.channels.fetch(catId).catch(() => null)) as CategoryChannel | null
+				) ?? undefined
+				if (!category) {
+					await interaction.editReply(errorEmbed('Ticket category channel not found. Please verify the configuration.') as InteractionEditReplyOptions)
 					return
 				}
 
