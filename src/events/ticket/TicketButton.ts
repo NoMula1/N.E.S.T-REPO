@@ -70,18 +70,21 @@ export default {
 					await findTicket.deleteOne()
 				}
 
-				let catId = guildCfg?.channels?.[configKey]
-				// If catId is missing the cache may be stale from a recent dashboard update — bust and refetch
+				const isSnowflake = (id: string | null | undefined): id is string => typeof id === 'string' && /^\d{17,20}$/.test(id)
+
+				// Use freshest config — bust cache if category is missing (dashboard may have just updated)
+				let activeCfg = guildCfg
+				let catId = activeCfg?.channels?.[configKey]
 				if (!catId) {
 					invalidateGuildConfig(interaction.guildId!)
-					const freshCfg = await getGuildConfig(interaction.guildId!)
-					catId = freshCfg?.channels?.[configKey]
+					activeCfg = await getGuildConfig(interaction.guildId!)
+					catId = activeCfg?.channels?.[configKey]
 				}
 				if (!catId) {
 					await interaction.editReply(errorEmbed('This ticket category isn\'t configured yet. Please contact an administrator.') as InteractionEditReplyOptions)
 					return
 				}
-				// Prefer cache, fall back to API fetch if channel isn't cached (e.g. after bot restart)
+				// Prefer in-memory cache, fall back to API fetch (handles post-restart state)
 				const category = (
 					(interaction.guild.channels.cache.get(catId) as CategoryChannel | undefined)
 					?? (await interaction.guild.channels.fetch(catId).catch(() => null)) as CategoryChannel | null
@@ -91,9 +94,11 @@ export default {
 					return
 				}
 
-				const isSnowflake = (id: string | null | undefined): id is string => typeof id === 'string' && /^\d{17,20}$/.test(id)
-				const rawStaffId = guildCfg?.roles?.AssistantModerator || guildCfg?.roles?.Moderator || null
-				const staffRoleId = isSnowflake(rawStaffId) ? rawStaffId : null
+				// Resolve staff role — use cached Role object so no cache lookup needed
+				const rawStaffRoleId = activeCfg?.roles?.AssistantModerator || activeCfg?.roles?.Moderator || null
+				const staffRole = isSnowflake(rawStaffRoleId)
+					? (interaction.guild.roles.cache.get(rawStaffRoleId) ?? null)
+					: null
 
 				let ticketNum = await incrimentTicket(interaction.guild)
 				if (SkipTickets.find(t => t === ticketNum)) {
@@ -101,11 +106,12 @@ export default {
 					ticketNum = await incrimentTicket(interaction.guild)
 				}
 
+				// Use interaction.member (GuildMember object) directly — avoids cache resolution for user ID
 				const permOverwrites: any[] = [
-					{ id: interaction.guild.id,   type: OverwriteType.Role,   deny:  [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
-					{ id: interaction.user.id,    type: OverwriteType.Member, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles] },
+					{ id: interaction.guild.id, type: OverwriteType.Role,   deny:  [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
+					{ id: interaction.member,   type: OverwriteType.Member, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles] },
 				]
-				if (staffRoleId) permOverwrites.push({ id: staffRoleId, type: OverwriteType.Role, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] })
+				if (staffRole) permOverwrites.push({ id: staffRole, type: OverwriteType.Role, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] })
 
 				const newChannel = await interaction.guild.channels.create({
 					name: `${channelPrefix}-${ticketNum}`,
@@ -178,7 +184,7 @@ export default {
 								.setStyle(ButtonStyle.Primary)
 						)
 					await interaction.reply({
-						ephemeral: true,
+						flags: MessageFlags.Ephemeral,
 						embeds: [
 							internalAffairEmbed
 						],
@@ -246,7 +252,7 @@ export default {
 					}
 					const iaGuildCfg = await getGuildConfig(interaction.guildId!)
 					const internalReviewerRoleId = iaGuildCfg?.roles?.InternalReviewer
-					const internalReviewer = internalReviewerRoleId
+					const internalReviewer = (internalReviewerRoleId && /^\d{17,20}$/.test(internalReviewerRoleId))
 						? interaction.guild.roles.cache.get(internalReviewerRoleId)
 						: interaction.guild.roles.cache.find(r => r.name === "Internal Reviewer")
 
@@ -257,20 +263,11 @@ export default {
 					}
 
 					const iaOverwrites: any[] = [
-						{
-							id: interaction.guild.id,
-							deny: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-						},
-						{
-							id: interaction.user.id,
-							allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles]
-						},
+						{ id: interaction.guild.id, type: OverwriteType.Role,   deny:  [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] },
+						{ id: interaction.member,   type: OverwriteType.Member, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory, PermissionsBitField.Flags.AttachFiles] },
 					]
 					if (internalReviewer) {
-						iaOverwrites.push({
-							id: internalReviewer.id,
-							allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory]
-						})
+						iaOverwrites.push({ id: internalReviewer, type: OverwriteType.Role, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory] })
 					}
 
 					const newChannel = await interaction.guild.channels.create({
