@@ -50,11 +50,11 @@ const transcriptDir = (channelId: string) =>
    Always pass actual Role / GuildMember objects so Discord.js
    never has to resolve raw string IDs from the cache.
 ──────────────────────────────────────────────────────────────── */
-function baseOverwrites(interaction: Interaction & { inCachedGuild(): true }) {
+function baseOverwrites(guild: import('discord.js').Guild, member: import('discord.js').GuildMember) {
 	// @everyone deny — use the cached Role object, never a raw string
 	return [
 		{
-			id:   interaction.guild!.roles.everyone,
+			id:   guild.roles.everyone,
 			type: OverwriteType.Role,
 			deny: [
 				PermissionsBitField.Flags.ViewChannel,
@@ -63,8 +63,8 @@ function baseOverwrites(interaction: Interaction & { inCachedGuild(): true }) {
 			],
 		},
 		{
-			// interaction.member is always a GuildMember when inCachedGuild() is true
-			id:    (interaction as any).member,
+			// Pass the GuildMember object directly — no cache lookup by Discord.js
+			id:    member,
 			type:  OverwriteType.Member,
 			allow: [
 				PermissionsBitField.Flags.ViewChannel,
@@ -212,7 +212,7 @@ export default {
 				const ticketNum = await nextTicketNum(interaction.guild)
 
 				// Build overwrites using actual objects (no raw string IDs)
-				const permOverwrites = baseOverwrites(interaction)
+				const permOverwrites = baseOverwrites(interaction.guild!, interaction.member as import('discord.js').GuildMember)
 				if (staffRole) permOverwrites.push(roleOverwrite(staffRole))
 
 				const newChannel = await interaction.guild.channels.create({
@@ -353,7 +353,7 @@ export default {
 					const ticketNum = await nextTicketNum(interaction.guild)
 
 					// Build overwrites using actual objects
-					const iaOverwrites = baseOverwrites(interaction)
+					const iaOverwrites = baseOverwrites(interaction.guild!, interaction.member as import('discord.js').GuildMember)
 					if (internalReviewer) iaOverwrites.push(roleOverwrite(internalReviewer))
 
 					const newChannel = await interaction.guild.channels.create({
