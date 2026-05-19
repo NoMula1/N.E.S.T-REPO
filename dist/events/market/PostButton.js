@@ -613,7 +613,7 @@ exports.default = {
                         interaction.update({ content: `${config_1.config.failedEmoji} No template found.`, embeds: [], components: [approvalButtonsDisabled] });
                         return;
                     }
-                    const approveUser = interaction.guild.members.cache.get(approvalTemplate.userID);
+                    const approveUser = await interaction.guild.members.fetch(approvalTemplate.userID).catch(() => null);
                     if (!approveUser) {
                         interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [approvalButtonsDisabled] });
                         await approvalTemplate.updateOne({
@@ -669,6 +669,9 @@ exports.default = {
                                     .setDescription(`Your template for __${approvalTemplate.jobType.toLowerCase()}__ has been approved! You may now post to the marketplace.\n\nRun \`/post\` in ${postChannelRef} to post!`)
                             ]
                         }).catch((err) => { logging_1.Log.error(err); });
+                    }
+                    else {
+                        logging_1.Log.warn(`[approved_yes] templateApprovalLog not configured or channel not found for guild ${interaction.guildId}`);
                     }
                     const yourPostHasBeenApproved = new discord_js_1.EmbedBuilder()
                         .setAuthor({ name: `Template Approved!`, iconURL: interaction.guild.iconURL() || undefined })
@@ -1563,7 +1566,7 @@ Reason: ${deleteReason}`).catch((err) => {
                         if (templateRej.approved === true) {
                             return;
                         }
-                        const approveUser = interaction.guild.members.cache.get(templateRej.userID);
+                        const approveUser = await interaction.guild.members.fetch(templateRej.userID).catch(() => null);
                         if (!approveUser) {
                             interaction.update({ content: `${config_1.config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [postRejectedButtons] });
                             await templateRej.updateOne({
@@ -1617,6 +1620,9 @@ Reason: ${deleteReason}`).catch((err) => {
                             }).catch((err) => {
                                 logging_1.Log.error(err);
                             });
+                        }
+                        else {
+                            logging_1.Log.warn(`[reject_form] templateApprovalLog not configured or channel not found for guild ${interaction.guildId}`);
                         }
                         await interaction.update({ content: `${config_1.config.loadingEmoji} Rejecting template...`, components: [postRejectedButtons] });
                         await templateRej.updateOne({

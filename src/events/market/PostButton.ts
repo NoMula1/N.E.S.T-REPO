@@ -727,7 +727,7 @@ export default {
 							return
 						}
 
-						const approveUser = interaction.guild.members.cache.get(approvalTemplate.userID)
+						const approveUser = await interaction.guild.members.fetch(approvalTemplate.userID).catch(() => null)
 						if (!approveUser) {
 							interaction.update({ content: `${config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [approvalButtonsDisabled as any] })
 							await approvalTemplate.updateOne({
@@ -788,6 +788,8 @@ export default {
 										.setDescription(`Your template for __${approvalTemplate.jobType.toLowerCase()}__ has been approved! You may now post to the marketplace.\n\nRun \`/post\` in ${postChannelRef} to post!`)
 								]
 							}).catch((err) => { Log.error(err) })
+						} else {
+							Log.warn(`[approved_yes] templateApprovalLog not configured or channel not found for guild ${interaction.guildId}`)
 						}
 
 						const yourPostHasBeenApproved = new EmbedBuilder()
@@ -1794,7 +1796,7 @@ Reason: ${deleteReason}`).catch((err) => {
 							return
 						}
 
-						const approveUser = interaction.guild.members.cache.get(templateRej.userID)
+						const approveUser = await interaction.guild.members.fetch(templateRej.userID).catch(() => null)
 						if (!approveUser) {
 							interaction.update({ content: `${config.failedEmoji} User has left the server. Automatically declining template.`, embeds: [], components: [postRejectedButtons as any] })
 							await templateRej.updateOne({
@@ -1851,6 +1853,8 @@ Reason: ${deleteReason}`).catch((err) => {
 							}).catch((err) => {
 								Log.error(err)
 							})
+						} else {
+							Log.warn(`[reject_form] templateApprovalLog not configured or channel not found for guild ${interaction.guildId}`)
 						}
 
 						await interaction.update({ content: `${config.loadingEmoji} Rejecting template...`, components: [postRejectedButtons as any] })
