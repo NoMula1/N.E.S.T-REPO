@@ -19,7 +19,7 @@ import { EventOptions } from "../../utils/RegisterEvents"
 import { TagAssociation } from "../../utils/BitwiseTagHelpers"
 import { Dictionary } from "lodash"
 import { AnyArray } from "mongoose"
-import { getGuildConfig } from "../../utils/GuildConfigCache"
+import { getGuildConfig, getFreshGuildConfig } from "../../utils/GuildConfigCache"
 const ILLEGAL_CHAR_BLACKLIST = [ // A compiled list of characters that are intended to be annoying / take up an exceptional amount of space - tl;dr: banned chars
 	"꧅",
 	"𒐫",
@@ -772,7 +772,7 @@ export default {
 							waitingForApproval: false,
 						})
 
-						const guildCfgLog = await getGuildConfig(interaction.guildId!)
+						const guildCfgLog = await getFreshGuildConfig(interaction.guildId!)
 						const logChannel = await resolveChannel(interaction.guild, guildCfgLog?.channels?.templateApprovalLog)
 						const botCmdsId = guildCfgLog?.channels?.botCommands
 						const postChannelRef = isSnowflake(botCmdsId) ? `<#${botCmdsId}>` : 'the bot-commands channel'
@@ -1835,7 +1835,7 @@ Reason: ${deleteReason}`).catch((err) => {
 							localPostTemplateCache.set(interaction.message.id, new Date())
 						}
 
-						const guildCfgReject = await getGuildConfig(interaction.guildId!)
+						const guildCfgReject = await getFreshGuildConfig(interaction.guildId!)
 						const logChannel = await resolveChannel(interaction.guild, guildCfgReject?.channels?.templateApprovalLog)
 						if (logChannel) {
 							await logChannel.send({

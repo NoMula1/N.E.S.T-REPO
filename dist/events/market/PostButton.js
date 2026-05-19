@@ -653,7 +653,7 @@ exports.default = {
                         approved: true,
                         waitingForApproval: false,
                     });
-                    const guildCfgLog = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
+                    const guildCfgLog = await (0, GuildConfigCache_1.getFreshGuildConfig)(interaction.guildId);
                     const logChannel = await resolveChannel(interaction.guild, (_l = guildCfgLog === null || guildCfgLog === void 0 ? void 0 : guildCfgLog.channels) === null || _l === void 0 ? void 0 : _l.templateApprovalLog);
                     const botCmdsId = (_m = guildCfgLog === null || guildCfgLog === void 0 ? void 0 : guildCfgLog.channels) === null || _m === void 0 ? void 0 : _m.botCommands;
                     const postChannelRef = isSnowflake(botCmdsId) ? `<#${botCmdsId}>` : 'the bot-commands channel';
@@ -1602,7 +1602,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             });
                             localPostTemplateCache.set(interaction.message.id, new Date());
                         }
-                        const guildCfgReject = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
+                        const guildCfgReject = await (0, GuildConfigCache_1.getFreshGuildConfig)(interaction.guildId);
                         const logChannel = await resolveChannel(interaction.guild, (_36 = guildCfgReject === null || guildCfgReject === void 0 ? void 0 : guildCfgReject.channels) === null || _36 === void 0 ? void 0 : _36.templateApprovalLog);
                         if (logChannel) {
                             await logChannel.send({

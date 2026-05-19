@@ -5,9 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getGuildConfig = getGuildConfig;
 exports.invalidateGuildConfig = invalidateGuildConfig;
+exports.getFreshGuildConfig = getFreshGuildConfig;
 exports.getOrCreateGuildConfig = getOrCreateGuildConfig;
 const GuildConfig_1 = __importDefault(require("../schemas/GuildConfig"));
-const TTL_MS = 5 * 60 * 1000; // 5 minutes
+const TTL_MS = 60 * 1000; // 1 minute
 const cache = new Map();
 /**
  * Cache-first lookup for a guild's configuration document.
@@ -30,6 +31,18 @@ async function getGuildConfig(guildId) {
  */
 function invalidateGuildConfig(guildId) {
     cache.delete(guildId);
+}
+/**
+ * Always fetches fresh from MongoDB, bypassing the cache.
+ * Use when stale channel/role config would cause incorrect behaviour
+ * (e.g. approval log channel lookups after a dashboard update).
+ */
+async function getFreshGuildConfig(guildId) {
+    const config = await GuildConfig_1.default.findOne({ guildId }).lean();
+    if (config) {
+        cache.set(guildId, { config, expiresAt: Date.now() + TTL_MS });
+    }
+    return config !== null && config !== void 0 ? config : null;
 }
 /**
  * Returns the guild config, creating one with defaults if it does not yet exist.

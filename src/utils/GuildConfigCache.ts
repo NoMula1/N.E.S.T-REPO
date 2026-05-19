@@ -5,7 +5,7 @@ interface CacheEntry {
   expiresAt: number
 }
 
-const TTL_MS = 5 * 60 * 1000 // 5 minutes
+const TTL_MS = 60 * 1000 // 1 minute
 const cache = new Map<string, CacheEntry>()
 
 /**
@@ -31,6 +31,19 @@ export async function getGuildConfig(guildId: string): Promise<GuildConfig | nul
  */
 export function invalidateGuildConfig(guildId: string): void {
   cache.delete(guildId)
+}
+
+/**
+ * Always fetches fresh from MongoDB, bypassing the cache.
+ * Use when stale channel/role config would cause incorrect behaviour
+ * (e.g. approval log channel lookups after a dashboard update).
+ */
+export async function getFreshGuildConfig(guildId: string): Promise<GuildConfig | null> {
+  const config = await GuildConfigModel.findOne({ guildId }).lean<GuildConfig>()
+  if (config) {
+    cache.set(guildId, { config, expiresAt: Date.now() + TTL_MS })
+  }
+  return config ?? null
 }
 
 /**
