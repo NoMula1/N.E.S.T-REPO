@@ -4,6 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
+const helpRoleEntrySchema = new mongoose_1.default.Schema({
+    name: { type: String, required: true },
+    roleId: { type: String, required: true },
+}, { _id: false });
 const guildRolesSchema = new mongoose_1.default.Schema({
     MarketStaff: String,
     TrialHelpModerator: String,
@@ -62,6 +66,7 @@ const schema = new mongoose_1.default.Schema({
     features: { type: guildFeaturesSchema, default: () => ({ marketplace: true, moderation: true, tickets: true, qotd: true }) },
     requirePostApproval: { type: Boolean, default: true },
     postApprovalLottery: { type: Number, min: 0, max: 1, default: 0 },
+    helpRoles: { type: [helpRoleEntrySchema], default: [] },
     marketplaceEnabled: { type: Boolean, default: true },
     moderationEnabled: { type: Boolean, default: true },
     ticketsEnabled: { type: Boolean, default: true },

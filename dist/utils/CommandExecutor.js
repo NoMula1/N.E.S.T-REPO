@@ -10,7 +10,7 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _CommandExecutor_executor, _CommandExecutor_base_permission, _CommandExecutor_disabled;
+var _CommandExecutor_executor, _CommandExecutor_autocompleteExecutor, _CommandExecutor_base_permission, _CommandExecutor_disabled;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommandExecutor = exports.PermissionLevel = void 0;
 const discord_js_1 = require("discord.js");
@@ -70,11 +70,13 @@ class CommandExecutor extends discord_js_1.SlashCommandBuilder {
     constructor() {
         super();
         _CommandExecutor_executor.set(this, void 0);
+        _CommandExecutor_autocompleteExecutor.set(this, void 0);
         _CommandExecutor_base_permission.set(this, void 0);
         _CommandExecutor_disabled.set(this, void 0);
         __classPrivateFieldSet(this, _CommandExecutor_executor, function () {
             throw new Error('Command executor unimplemented (call setExecutor before exporting commands)');
         }, "f");
+        __classPrivateFieldSet(this, _CommandExecutor_autocompleteExecutor, undefined, "f");
         __classPrivateFieldSet(this, _CommandExecutor_base_permission, { Level: PermissionLevel.None }, "f");
         __classPrivateFieldSet(this, _CommandExecutor_disabled, false, "f");
     }
@@ -85,6 +87,11 @@ class CommandExecutor extends discord_js_1.SlashCommandBuilder {
     */
     setExecutor(executor) {
         __classPrivateFieldSet(this, _CommandExecutor_executor, executor, "f");
+        return this;
+    }
+    /** Sets the autocomplete handler for this command. */
+    setAutocompleteExecutor(executor) {
+        __classPrivateFieldSet(this, _CommandExecutor_autocompleteExecutor, executor, "f");
         return this;
     }
     /* Sets whether or not the command is disabled or not*/
@@ -262,10 +269,18 @@ class CommandExecutor extends discord_js_1.SlashCommandBuilder {
         var _a;
         return (_a = __classPrivateFieldGet(this, _CommandExecutor_executor, "f").call(this, interaction)) !== null && _a !== void 0 ? _a : Promise.resolve();
     }
+    /** Runs the autocomplete handler, if one is set. */
+    executeAutocomplete(interaction) {
+        var _a, _b;
+        return (_b = (_a = __classPrivateFieldGet(this, _CommandExecutor_autocompleteExecutor, "f")) === null || _a === void 0 ? void 0 : _a.call(this, interaction)) !== null && _b !== void 0 ? _b : Promise.resolve();
+    }
     get disabled() {
         var _a;
         return (_a = __classPrivateFieldGet(this, _CommandExecutor_disabled, "f")) !== null && _a !== void 0 ? _a : false;
     }
+    get hasAutocomplete() {
+        return !!__classPrivateFieldGet(this, _CommandExecutor_autocompleteExecutor, "f");
+    }
 }
 exports.CommandExecutor = CommandExecutor;
-_CommandExecutor_executor = new WeakMap(), _CommandExecutor_base_permission = new WeakMap(), _CommandExecutor_disabled = new WeakMap();
+_CommandExecutor_executor = new WeakMap(), _CommandExecutor_autocompleteExecutor = new WeakMap(), _CommandExecutor_base_permission = new WeakMap(), _CommandExecutor_disabled = new WeakMap();

@@ -1,5 +1,10 @@
 import mongoose from "mongoose"
 
+export interface HelpRole {
+  name: string;
+  roleId: string;
+}
+
 export interface GuildRoles {
   MarketStaff?: string;
   TrialHelpModerator?: string;
@@ -62,12 +67,18 @@ export interface GuildConfig {
   features: GuildFeatures;
   requirePostApproval: boolean;
   postApprovalLottery: number; // 0-1
+  helpRoles: HelpRole[];
   marketplaceEnabled: boolean;
   moderationEnabled: boolean;
   ticketsEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const helpRoleEntrySchema = new mongoose.Schema<HelpRole>({
+  name:   { type: String, required: true },
+  roleId: { type: String, required: true },
+}, { _id: false })
 
 const guildRolesSchema = new mongoose.Schema<GuildRoles>({
   MarketStaff: String,
@@ -130,6 +141,7 @@ const schema = new mongoose.Schema<GuildConfig>({
   features: { type: guildFeaturesSchema, default: () => ({ marketplace: true, moderation: true, tickets: true, qotd: true }) },
   requirePostApproval: { type: Boolean, default: true },
   postApprovalLottery: { type: Number, min: 0, max: 1, default: 0 },
+  helpRoles: { type: [helpRoleEntrySchema], default: [] },
   marketplaceEnabled: { type: Boolean, default: true },
   moderationEnabled: { type: Boolean, default: true },
   ticketsEnabled: { type: Boolean, default: true },

@@ -8,29 +8,44 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setName("pingrole")
     .setDescription("Ping help roles for help")
     .addStringOption(opt => opt.setName("role")
-    .setDescription("Role to ping")
+    .setDescription("Select the type of help you need")
     .setRequired(true)
-    .addChoices({ name: 'Scripting', value: '1480457270285566086' }, { name: 'Advanced Scripting', value: '1480457221975445605' }, { name: 'Modeling', value: '1480459000662462495' }, { name: 'Building', value: '1480459532013535345' }, { name: 'Animation', value: '1480456771045687508' }, { name: 'General', value: '1480456771045687508' }))
+    .setAutocomplete(true))
     .addStringOption(opt => opt.setName("messagelink")
     .setDescription("Enter the link to the message you need help with")
     .setRequired(true))
     .setBasePermission({ Level: CommandExecutor_1.PermissionLevel.None })
-    .setExecutor(async (interaction) => {
+    .setAutocompleteExecutor(async (interaction) => {
     var _a;
+    if (!interaction.inCachedGuild()) {
+        await interaction.respond([]);
+        return;
+    }
+    const guildCfg = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
+    const helpRoles = (_a = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.helpRoles) !== null && _a !== void 0 ? _a : [];
+    const focused = interaction.options.getFocused().toLowerCase();
+    const choices = helpRoles
+        .filter(hr => hr.name.toLowerCase().includes(focused))
+        .slice(0, 25)
+        .map(hr => ({ name: hr.name, value: hr.roleId }));
+    await interaction.respond(choices);
+})
+    .setExecutor(async (interaction) => {
+    var _a, _b;
     if (!interaction.inCachedGuild())
         return;
-    const role = interaction.options.getString("role");
+    const roleId = interaction.options.getString("role");
     const messageLink = interaction.options.getString("messagelink");
     const userId = interaction.user.id;
     const guildCfg = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
     const staffRoleIds = Object.values((_a = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.roles) !== null && _a !== void 0 ? _a : {}).filter(Boolean);
     const isStaff = staffRoleIds.length > 0 && staffRoleIds.some(id => interaction.member.roles.cache.has(id));
     if (!isStaff && userCD.has(userId)) {
-        interaction.reply({ content: 'You are on cooldown, please wait before asking for help', ephemeral: true });
+        interaction.reply({ content: 'You are on cooldown, please wait before asking for help again.', ephemeral: true });
         return;
     }
-    if (!role) {
-        interaction.reply({ content: "Help role is invalid", ephemeral: true });
+    if (!roleId) {
+        interaction.reply({ content: "Help role is invalid.", ephemeral: true });
         return;
     }
     if (!messageLink) {
@@ -42,12 +57,18 @@ exports.default = new CommandExecutor_1.CommandExecutor()
         interaction.reply({ content: "Invalid message link.", ephemeral: true });
         return;
     }
-    const roleid = role;
+    // Validate that the submitted role ID is still a configured help role (guards against injected IDs)
+    const helpRoles = (_b = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.helpRoles) !== null && _b !== void 0 ? _b : [];
+    const validRole = helpRoles.find(hr => hr.roleId === roleId);
+    if (!validRole) {
+        interaction.reply({ content: "That help role is no longer configured for this server. Please try again.", ephemeral: true });
+        return;
+    }
     const embed = new discord_js_1.EmbedBuilder()
         .setTitle("Help Requested!")
-        .setDescription(`**<@${interaction.user.id}>** has requested help from **<@&${roleid}>**.\n\n[Click here to view the referenced message](${messageLink})`)
+        .setDescription(`**<@${interaction.user.id}>** has requested help from **<@&${roleId}>**.\n\n[Click here to view the referenced message](${messageLink})`)
         .setColor(0x2F3136);
-    await interaction.reply({ embeds: [embed], content: (0, discord_js_1.roleMention)(roleid), allowedMentions: { roles: [roleid] } });
+    await interaction.reply({ embeds: [embed], content: (0, discord_js_1.roleMention)(roleId), allowedMentions: { roles: [roleId] } });
     if (!isStaff) {
         userCD.set(userId, setTimeout(() => {
             userCD.delete(userId);

@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, InteractionReplyOptions, SlashCommandBooleanOption, SlashCommandBuilder } from 'discord.js'
+import { AutocompleteInteraction, ChatInputCommandInteraction, InteractionReplyOptions, SlashCommandBooleanOption, SlashCommandBuilder } from 'discord.js'
 import { config } from '../utils/config'
 import { SlashCommandChannelOption, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandRoleOption, SlashCommandStringOption, SlashCommandUserOption } from '@discordjs/builders'
 import { getGuildConfig } from '../utils/GuildConfigCache'
@@ -81,6 +81,9 @@ const LEVEL_ROLE_MAP: Partial<Record<PermissionLevel, { key: keyof GuildRoles; m
 /** The main action of a command. */
 type Executor = (interaction: ChatInputCommandInteraction) => Promise<void> | void
 
+/** Autocomplete handler for a command option. */
+type AutocompleteExecutor = (interaction: AutocompleteInteraction) => Promise<void> | void
+
 /** The results of checking user permissions. */
 interface PermissionsResult extends InteractionReplyOptions {
 	success: boolean;
@@ -89,6 +92,7 @@ interface PermissionsResult extends InteractionReplyOptions {
 /** A user-facing command. */
 export class CommandExecutor extends SlashCommandBuilder {
 	#executor: Executor
+	#autocompleteExecutor: AutocompleteExecutor | undefined
 	#base_permission: Permission
 	#disabled: boolean
 	constructor() {
@@ -96,6 +100,7 @@ export class CommandExecutor extends SlashCommandBuilder {
 		this.#executor = function () {
 			throw new Error('Command executor unimplemented (call setExecutor before exporting commands)')
 		}
+		this.#autocompleteExecutor = undefined
 		this.#base_permission = { Level: PermissionLevel.None }
 		this.#disabled = false
 	}
@@ -107,6 +112,12 @@ export class CommandExecutor extends SlashCommandBuilder {
 	*/
 	setExecutor(executor: Executor): CommandExecutor {
 		this.#executor = executor
+		return this
+	}
+
+	/** Sets the autocomplete handler for this command. */
+	setAutocompleteExecutor(executor: AutocompleteExecutor): this {
+		this.#autocompleteExecutor = executor
 		return this
 	}
 	/* Sets whether or not the command is disabled or not*/
@@ -280,7 +291,16 @@ export class CommandExecutor extends SlashCommandBuilder {
 		return this.#executor(interaction) ?? Promise.resolve()
 	}
 
+	/** Runs the autocomplete handler, if one is set. */
+	executeAutocomplete(interaction: AutocompleteInteraction): Promise<unknown> {
+		return this.#autocompleteExecutor?.(interaction) ?? Promise.resolve()
+	}
+
 	get disabled(): boolean {
 		return this.#disabled ?? false
+	}
+
+	get hasAutocomplete(): boolean {
+		return !!this.#autocompleteExecutor
 	}
 }

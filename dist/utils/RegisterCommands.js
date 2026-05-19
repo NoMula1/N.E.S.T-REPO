@@ -114,6 +114,17 @@ async function load(client) {
                     .catch((err) => (0, GenUtils_1.handleError)(err));
             }
         }
+        else if (interaction.isAutocomplete()) {
+            const command = client.slashcommands.get(interaction.commandName);
+            if (!command || !command.hasAutocomplete)
+                return;
+            try {
+                await command.executeAutocomplete(interaction);
+            }
+            catch (error) {
+                console.error(error);
+            }
+        }
         else if (interaction.isContextMenuCommand()) {
             const command = client.contextcommands.get(interaction.commandName);
             if (!command)
