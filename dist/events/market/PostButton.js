@@ -1025,12 +1025,18 @@ exports.default = {
                         return;
                     }
                     const isBooster = await checkIsBooster(interaction.guildId, interaction.member);
+                    // Staff, admins, and devs are exempt from posting cooldowns
+                    const _member = interaction.member;
+                    const isExemptFromCooldown = _member.permissions.has(discord_js_1.PermissionFlagsBits.Administrator) ||
+                        _member.permissions.has(discord_js_1.PermissionFlagsBits.ManageMessages) ||
+                        await checkIsMarketMod(interaction.guildId, _member) ||
+                        _member.roles.cache.hasAny("1257205848665489468", "1257206288111370281");
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const recentPost = await Post_1.default.findOne({
                         jobChannelId: jobChannel.id,
                         userID: interaction.user.id
                     }).sort({ createdAt: -1 });
-                    if (recentPost && (new Date().getTime() - recentPost.createdAt.getTime()) < (isBooster ? BOOSTER_COOLDOWN_DURATION : NON_BOOSTER_COOLDOWN_DURATION)) {
+                    if (!isExemptFromCooldown && recentPost && (new Date().getTime() - recentPost.createdAt.getTime()) < (isBooster ? BOOSTER_COOLDOWN_DURATION : NON_BOOSTER_COOLDOWN_DURATION)) {
                         const timeElapsed = new Date().getTime() - recentPost.createdAt.getTime();
                         const timeRemaining = (isBooster ? BOOSTER_COOLDOWN_DURATION : NON_BOOSTER_COOLDOWN_DURATION) - timeElapsed;
                         const timeRemainingStr = (0, timeFuncs_1.timetostring)(timeRemaining);
