@@ -5,8 +5,8 @@ import { handleError } from "../../../utils/GenUtils"
 import RoleBans from "../../../schemas/RoleBans"
 import Case from "../../../schemas/Case"
 import PostTemplates from "../../../schemas/PostTemplates"
-import Settings from "../../../schemas/Settings"
 import FastFlag from "../../../schemas/FastFlag"
+import { getGuildConfig } from "../../../utils/GuildConfigCache"
 import { Log } from "../../../utils/logging"
 
 export default new CommandExecutor()
@@ -87,20 +87,15 @@ export default new CommandExecutor()
 			talentHubLink: 1,
 			jobType: 1
 		})
+		const guildCfg = await getGuildConfig(interaction.guild.id)
+		const requireApproval = guildCfg?.requirePostApproval ?? true
+		const lotteryTotal    = guildCfg?.postApprovalLottery ?? 0
+
 		let postTemplate = await postTemplateQuery
 		if (!postTemplate) {
 			await interaction.editReply({ content: `${config.loadingEmoji} No post template found! Creating one...` })
 
-			const settings = await Settings.findOne({
-				guildID: interaction.guild.id
-			})
-			if (!settings) {
-				await interaction.editReply({ content: `${config.failedEmoji} Unable to check guild settings. If this error persists, please contact a bot developer.` })
-				return
-			}
-
 			let isApproved = false
-			const lotteryTotal = settings?.postApprovalLottery || 0
 			const lotteryGuess = Math.random()
 			//Log.debug(`Post lottery attempt: ${lotteryTotal} > ${lotteryGuess}`)
 			if (lotteryTotal > lotteryGuess) {
@@ -141,7 +136,7 @@ export default new CommandExecutor()
 
 		await interaction.editReply({ content: `${config.loadingEmoji} Generating template embed...` })
 
-		const templateEmbed = await generateEmbed(postTemplate, interaction.user, interaction.guild)
+		const templateEmbed = await generateEmbed(postTemplate, interaction.user, interaction.guild, requireApproval)
 
 		await interaction.editReply({ content: `${config.loadingEmoji} Generating template buttons...` })
 
@@ -149,10 +144,7 @@ export default new CommandExecutor()
 
 	})
 
-async function generateEmbed(template: any, user: User, guild: Guild): Promise<{ PostEmbed: EmbedBuilder; PostMessage: string; PostButtons: ActionRowBuilder<ButtonBuilder>[]; }> {
-	const settings = await Settings.findOne({
-		guildID: guild.id
-	})
+async function generateEmbed(template: any, user: User, guild: Guild, requirePostApproval: boolean = true): Promise<{ PostEmbed: EmbedBuilder; PostMessage: string; PostButtons: ActionRowBuilder<ButtonBuilder>[]; }> {
 	let postEmoji = config.successEmoji
 	let issuesFound = 0
 	let postIssues = ``
@@ -166,7 +158,7 @@ async function generateEmbed(template: any, user: User, guild: Guild): Promise<{
 		postIssues = postIssues + "\n> No payments set."
 		postEmoji = config.failedEmoji
 	}
-	if (template.approved == false && settings?.requirePostApproval == true && !template.waitingForApproval) {
+	if (template.approved == false && requirePostApproval == true && !template.waitingForApproval) {
 		issuesFound++
 		postIssues = postIssues + "\n> You must submit your template for approval."
 		postEmoji = config.failedEmoji
@@ -201,7 +193,7 @@ async function generateEmbed(template: any, user: User, guild: Guild): Promise<{
 				.setEmoji("👑")
 				.setStyle(ButtonStyle.Primary),
 		)
-	if (template.approved == false && settings?.requirePostApproval == true) {
+	if (template.approved == false && requirePostApproval == true) {
 		templateRow.components[0].setLabel("Submit for Approval")
 			.setCustomId("send_approval")
 			.setEmoji("🗳")
@@ -228,10 +220,10 @@ async function generateEmbed(template: any, user: User, guild: Guild): Promise<{
 				.setEmoji("🎨")
 				.setStyle(ButtonStyle.Secondary)
 		)
-	if (issuesFound > 1 && template.approved == false && settings?.requirePostApproval == true) {
+	if (issuesFound > 1 && template.approved == false && requirePostApproval == true) {
 		templateRow.components[0].setDisabled(true)
 	}
-	if (issuesFound > 0 && settings?.requirePostApproval == false) {
+	if (issuesFound > 0 && requirePostApproval == false) {
 		templateRow.components[0].setDisabled(true)
 	}
 	const templateRowPrem = new ActionRowBuilder<ButtonBuilder>()

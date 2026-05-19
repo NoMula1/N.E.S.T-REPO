@@ -10,8 +10,8 @@ const GenUtils_1 = require("../../../utils/GenUtils");
 const RoleBans_1 = __importDefault(require("../../../schemas/RoleBans"));
 const Case_1 = __importDefault(require("../../../schemas/Case"));
 const PostTemplates_1 = __importDefault(require("../../../schemas/PostTemplates"));
-const Settings_1 = __importDefault(require("../../../schemas/Settings"));
 const FastFlag_1 = __importDefault(require("../../../schemas/FastFlag"));
+const GuildConfigCache_1 = require("../../../utils/GuildConfigCache");
 const logging_1 = require("../../../utils/logging");
 exports.default = new CommandExecutor_1.CommandExecutor()
     .setName("post")
@@ -25,6 +25,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setRequired(true)
     .addChoices({ name: "Hiring", value: "HIRING" }, { name: "For Hire", value: "FOR_HIRE" }, { name: "Selling", value: "SELLING" }))
     .setExecutor(async (interaction) => {
+    var _a, _b;
     if (!interaction.inCachedGuild()) {
         interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true });
         return;
@@ -83,18 +84,13 @@ exports.default = new CommandExecutor_1.CommandExecutor()
         talentHubLink: 1,
         jobType: 1
     });
+    const guildCfg = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guild.id);
+    const requireApproval = (_a = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.requirePostApproval) !== null && _a !== void 0 ? _a : true;
+    const lotteryTotal = (_b = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.postApprovalLottery) !== null && _b !== void 0 ? _b : 0;
     let postTemplate = await postTemplateQuery;
     if (!postTemplate) {
         await interaction.editReply({ content: `${config_1.config.loadingEmoji} No post template found! Creating one...` });
-        const settings = await Settings_1.default.findOne({
-            guildID: interaction.guild.id
-        });
-        if (!settings) {
-            await interaction.editReply({ content: `${config_1.config.failedEmoji} Unable to check guild settings. If this error persists, please contact a bot developer.` });
-            return;
-        }
         let isApproved = false;
-        const lotteryTotal = (settings === null || settings === void 0 ? void 0 : settings.postApprovalLottery) || 0;
         const lotteryGuess = Math.random();
         //Log.debug(`Post lottery attempt: ${lotteryTotal} > ${lotteryGuess}`)
         if (lotteryTotal > lotteryGuess) {
@@ -133,14 +129,11 @@ exports.default = new CommandExecutor_1.CommandExecutor()
         }
     }
     await interaction.editReply({ content: `${config_1.config.loadingEmoji} Generating template embed...` });
-    const templateEmbed = await generateEmbed(postTemplate, interaction.user, interaction.guild);
+    const templateEmbed = await generateEmbed(postTemplate, interaction.user, interaction.guild, requireApproval);
     await interaction.editReply({ content: `${config_1.config.loadingEmoji} Generating template buttons...` });
     await interaction.editReply({ content: templateEmbed.PostMessage, embeds: [templateEmbed.PostEmbed], components: templateEmbed.PostButtons.map(btn => btn) });
 });
-async function generateEmbed(template, user, guild) {
-    const settings = await Settings_1.default.findOne({
-        guildID: guild.id
-    });
+async function generateEmbed(template, user, guild, requirePostApproval = true) {
     let postEmoji = config_1.config.successEmoji;
     let issuesFound = 0;
     let postIssues = ``;
@@ -154,7 +147,7 @@ async function generateEmbed(template, user, guild) {
         postIssues = postIssues + "\n> No payments set.";
         postEmoji = config_1.config.failedEmoji;
     }
-    if (template.approved == false && (settings === null || settings === void 0 ? void 0 : settings.requirePostApproval) == true && !template.waitingForApproval) {
+    if (template.approved == false && requirePostApproval == true && !template.waitingForApproval) {
         issuesFound++;
         postIssues = postIssues + "\n> You must submit your template for approval.";
         postEmoji = config_1.config.failedEmoji;
@@ -183,7 +176,7 @@ async function generateEmbed(template, user, guild) {
         .setCustomId("edit_extras")
         .setEmoji("👑")
         .setStyle(discord_js_1.ButtonStyle.Primary));
-    if (template.approved == false && (settings === null || settings === void 0 ? void 0 : settings.requirePostApproval) == true) {
+    if (template.approved == false && requirePostApproval == true) {
         templateRow.components[0].setLabel("Submit for Approval")
             .setCustomId("send_approval")
             .setEmoji("🗳")
@@ -204,10 +197,10 @@ async function generateEmbed(template, user, guild) {
         .setCustomId("add_talent_hub")
         .setEmoji("🎨")
         .setStyle(discord_js_1.ButtonStyle.Secondary));
-    if (issuesFound > 1 && template.approved == false && (settings === null || settings === void 0 ? void 0 : settings.requirePostApproval) == true) {
+    if (issuesFound > 1 && template.approved == false && requirePostApproval == true) {
         templateRow.components[0].setDisabled(true);
     }
-    if (issuesFound > 0 && (settings === null || settings === void 0 ? void 0 : settings.requirePostApproval) == false) {
+    if (issuesFound > 0 && requirePostApproval == false) {
         templateRow.components[0].setDisabled(true);
     }
     const templateRowPrem = new discord_js_1.ActionRowBuilder()
