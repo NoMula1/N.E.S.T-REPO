@@ -25,7 +25,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     .setRequired(true)
     .addChoices({ name: "Hiring", value: "HIRING" }, { name: "For Hire", value: "FOR_HIRE" }, { name: "Selling", value: "SELLING" }))
     .setExecutor(async (interaction) => {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f, _g;
     if (!interaction.inCachedGuild()) {
         interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true });
         return;
@@ -87,6 +87,16 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     const guildCfg = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guild.id);
     const requireApproval = (_a = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.requirePostApproval) !== null && _a !== void 0 ? _a : true;
     const lotteryTotal = (_b = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.postApprovalLottery) !== null && _b !== void 0 ? _b : 0;
+    // Collect all configured developer role IDs for auto-approval check
+    const devRoleIds = [
+        (_c = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.roles) === null || _c === void 0 ? void 0 : _c.MasterDeveloper,
+        (_d = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.roles) === null || _d === void 0 ? void 0 : _d.ExpertDeveloper,
+        (_e = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.roles) === null || _e === void 0 ? void 0 : _e.SeniorDeveloper,
+        (_f = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.roles) === null || _f === void 0 ? void 0 : _f.Developer,
+        (_g = guildCfg === null || guildCfg === void 0 ? void 0 : guildCfg.roles) === null || _g === void 0 ? void 0 : _g.NoviceDeveloper,
+    ].filter((id) => typeof id === 'string' && /^\d{17,20}$/.test(id));
+    const memberIsDevRole = devRoleIds.length > 0 &&
+        interaction.member.roles.cache.hasAny(...devRoleIds);
     let postTemplate = await postTemplateQuery;
     if (!postTemplate) {
         await interaction.editReply({ content: `${config_1.config.loadingEmoji} No post template found! Creating one...` });
@@ -99,10 +109,10 @@ exports.default = new CommandExecutor_1.CommandExecutor()
                 logging_1.Log.error(`Unable to inform the user ${interaction.user.id} that their post has been auto-approved (lottery)`);
             });
         }
-        if (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281")) {
+        if (memberIsDevRole) {
             isApproved = true;
-            await interaction.user.send(`Your post has been auto-approved.\nReason: **MASTER\_DEVELOPER** or **EXPERT\_DEVELOPER**`).catch(() => {
-                logging_1.Log.error(`Unable to inform the user ${interaction.user.id} that their post has been auto-approved (expert role)`);
+            await interaction.user.send(`Your post has been auto-approved.\nReason: Developer role`).catch(() => {
+                logging_1.Log.error(`Unable to inform the user ${interaction.user.id} that their post has been auto-approved (dev role)`);
             });
         }
         postTemplate = new PostTemplates_1.default({
@@ -122,10 +132,10 @@ exports.default = new CommandExecutor_1.CommandExecutor()
         });
     }
     else {
-        if (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281") && postTemplate.approved === false) {
+        if (memberIsDevRole && postTemplate.approved === false) {
             postTemplate.approved = true;
             await postTemplate.save();
-            await interaction.user.send(`Your post has been auto-approved.\nReason: **MASTER\_DEVELOPER** or **EXPERT\_DEVELOPER**`).catch(() => { });
+            await interaction.user.send(`Your post has been auto-approved.\nReason: Developer role`).catch(() => { });
         }
     }
     await interaction.editReply({ content: `${config_1.config.loadingEmoji} Generating template embed...` });

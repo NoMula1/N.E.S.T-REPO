@@ -19,6 +19,11 @@ const guildRolesSchema = new mongoose_1.default.Schema({
     Administrator: String,
     InternalReviewer: String,
     ServerBooster: String,
+    MasterDeveloper: String,
+    ExpertDeveloper: String,
+    SeniorDeveloper: String,
+    Developer: String,
+    NoviceDeveloper: String,
 }, { _id: false });
 const guildChannelsSchema = new mongoose_1.default.Schema({
     botCommands: String,

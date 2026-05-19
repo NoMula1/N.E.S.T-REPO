@@ -91,6 +91,17 @@ export default new CommandExecutor()
 		const requireApproval = guildCfg?.requirePostApproval ?? true
 		const lotteryTotal    = guildCfg?.postApprovalLottery ?? 0
 
+		// Collect all configured developer role IDs for auto-approval check
+		const devRoleIds = [
+			guildCfg?.roles?.MasterDeveloper,
+			guildCfg?.roles?.ExpertDeveloper,
+			guildCfg?.roles?.SeniorDeveloper,
+			guildCfg?.roles?.Developer,
+			guildCfg?.roles?.NoviceDeveloper,
+		].filter((id): id is string => typeof id === 'string' && /^\d{17,20}$/.test(id))
+		const memberIsDevRole = devRoleIds.length > 0 &&
+			interaction.member.roles.cache.hasAny(...(devRoleIds as [string, ...string[]]))
+
 		let postTemplate = await postTemplateQuery
 		if (!postTemplate) {
 			await interaction.editReply({ content: `${config.loadingEmoji} No post template found! Creating one...` })
@@ -104,10 +115,10 @@ export default new CommandExecutor()
 					Log.error(`Unable to inform the user ${interaction.user.id} that their post has been auto-approved (lottery)`)
 				})
 			}
-			if (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281")) {
+			if (memberIsDevRole) {
 				isApproved = true
-				await interaction.user.send(`Your post has been auto-approved.\nReason: **MASTER\_DEVELOPER** or **EXPERT\_DEVELOPER**`).catch(()=>{
-					Log.error(`Unable to inform the user ${interaction.user.id} that their post has been auto-approved (expert role)`)
+				await interaction.user.send(`Your post has been auto-approved.\nReason: Developer role`).catch(()=>{
+					Log.error(`Unable to inform the user ${interaction.user.id} that their post has been auto-approved (dev role)`)
 				})
 			}
 
@@ -127,10 +138,10 @@ export default new CommandExecutor()
 				return
 			})
 		} else {
-			if (interaction.member.roles.cache.hasAny("1257205848665489468", "1257206288111370281") && postTemplate.approved === false) {
+			if (memberIsDevRole && postTemplate.approved === false) {
 				postTemplate.approved = true
 				await postTemplate.save()
-				await interaction.user.send(`Your post has been auto-approved.\nReason: **MASTER\_DEVELOPER** or **EXPERT\_DEVELOPER**`).catch(()=>{})
+				await interaction.user.send(`Your post has been auto-approved.\nReason: Developer role`).catch(()=>{})
 			}
 		}
 

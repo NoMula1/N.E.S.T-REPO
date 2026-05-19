@@ -15,6 +15,12 @@ export interface GuildRoles {
   Administrator?: string;
   InternalReviewer?: string;
   ServerBooster?: string;
+  /* Developer tiers */
+  MasterDeveloper?: string;
+  ExpertDeveloper?: string;
+  SeniorDeveloper?: string;
+  Developer?: string;
+  NoviceDeveloper?: string;
 }
 
 export interface GuildChannels {
@@ -78,6 +84,11 @@ const guildRolesSchema = new mongoose.Schema<GuildRoles>({
   Administrator: String,
   InternalReviewer: String,
   ServerBooster: String,
+  MasterDeveloper: String,
+  ExpertDeveloper: String,
+  SeniorDeveloper: String,
+  Developer: String,
+  NoviceDeveloper: String,
 }, { _id: false })
 
 const guildChannelsSchema = new mongoose.Schema<GuildChannels>({

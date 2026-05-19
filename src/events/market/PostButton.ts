@@ -1188,11 +1188,18 @@ export default {
 
 					// Staff, admins, and devs are exempt from posting cooldowns
 					const _member = interaction.member as GuildMember
+					const devRoleIds = [
+						guildCfgPost?.roles?.MasterDeveloper,
+						guildCfgPost?.roles?.ExpertDeveloper,
+						guildCfgPost?.roles?.SeniorDeveloper,
+						guildCfgPost?.roles?.Developer,
+						guildCfgPost?.roles?.NoviceDeveloper,
+					].filter((id): id is string => isSnowflake(id))
 					const isExemptFromCooldown =
 						(_member.permissions as PermissionsBitField).has(PermissionFlagsBits.Administrator) ||
 						(_member.permissions as PermissionsBitField).has(PermissionFlagsBits.ManageMessages) ||
 						await checkIsMarketMod(interaction.guildId!, _member) ||
-						_member.roles.cache.hasAny("1257205848665489468", "1257206288111370281")
+						(devRoleIds.length > 0 && _member.roles.cache.hasAny(...(devRoleIds as [string, ...string[]])))
 
 					// eslint-disable-next-line @typescript-eslint/no-explicit-any
 					const recentPost: any = await Post.findOne({
