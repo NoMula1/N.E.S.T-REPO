@@ -365,11 +365,12 @@ export default {
 
 						await interaction.editReply({ content: `${config.loadingEmoji} Generating new post template...` })
 
+						const recreateCfg = await getGuildConfig(interaction.guildId!)
 						const newPostTemplate = new PostTemplates({
 							guildID: interaction.guild.id,
 							userID: interaction.user.id,
 							jobType: jobTypeDeleteYes,
-							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
+							approved: !(recreateCfg?.requirePostApproval ?? true),
 						})
 						newPostTemplate.save().catch(async (err: Error) => {
 							handleError(err)
@@ -1548,13 +1549,15 @@ Reason: ${deleteReason}`).catch((err) => {
 							}
 						}
 
+						const editCfgDesc = await getGuildConfig(interaction.guildId!)
 						await PostTemplates.findOneAndUpdate({
 							guildID: interaction.guild?.id,
 							userID: interaction.user.id,
 							jobType: jobType,
 						}, {
 							description: description,
-							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
+							approved: !(editCfgDesc?.requirePostApproval ?? true),
+							waitingForApproval: false,
 						})
 						const foundTemplateDesc = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -1589,13 +1592,15 @@ Reason: ${deleteReason}`).catch((err) => {
 							return
 						}
 
+						const editCfgTalent = await getGuildConfig(interaction.guildId!)
 						await PostTemplates.findOneAndUpdate({
 							guildID: interaction.guild?.id,
 							userID: interaction.user.id,
 							jobType: jobTypeTalent,
 						}, {
 							talentHubLink: matched[0] || "",
-							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
+							approved: !(editCfgTalent?.requirePostApproval ?? true),
+							waitingForApproval: false,
 						})
 						const foundTemplateTalent = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -1651,6 +1656,7 @@ Reason: ${deleteReason}`).catch((err) => {
 							}
 						}
 
+						const editCfgPayment = await getGuildConfig(interaction.guildId!)
 						await PostTemplates.findOneAndUpdate({
 							guildID: interaction.guild?.id,
 							userID: interaction.user.id,
@@ -1661,7 +1667,8 @@ Reason: ${deleteReason}`).catch((err) => {
 								money: paymentMoney,
 								other: paymentOther,
 							},
-							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
+							approved: !(editCfgPayment?.requirePostApproval ?? true),
+							waitingForApproval: false,
 						})
 						const foundTemplatePayment = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -1713,6 +1720,7 @@ Reason: ${deleteReason}`).catch((err) => {
 
 						await interaction.update({ content: `${config.loadingEmoji} Updating job post images...` })
 
+						const editCfgImages = await getGuildConfig(interaction.guildId!)
 						await PostTemplates.findOneAndUpdate({
 							guildID: interaction.guild?.id,
 							userID: interaction.user.id,
@@ -1720,7 +1728,8 @@ Reason: ${deleteReason}`).catch((err) => {
 						}, {
 							image: postImage || undefined,
 							thumbnail: postThumbnail || undefined,
-							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
+							approved: !(editCfgImages?.requirePostApproval ?? true),
+							waitingForApproval: false,
 						})
 						const foundTemplateImages = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
@@ -1897,6 +1906,7 @@ Reason: ${deleteReason}`).catch((err) => {
 							}
 						}
 
+						const editCfgExtras = await getGuildConfig(interaction.guildId!)
 						await PostTemplates.findOneAndUpdate({
 							guildID: interaction.guild?.id,
 							userID: interaction.user.id,
@@ -1908,7 +1918,8 @@ Reason: ${deleteReason}`).catch((err) => {
 							},
 							author: templateTitle || "",
 							embedColor: templateColor || "",
-							approved: await checkIsBooster(interaction.guildId!, interaction.member as GuildMember),
+							approved: !(editCfgExtras?.requirePostApproval ?? true),
+							waitingForApproval: false,
 						})
 						const foundTemplateExtras = await PostTemplates.findOne({
 							guildID: interaction.guild?.id,
