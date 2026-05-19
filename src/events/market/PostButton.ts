@@ -1152,13 +1152,13 @@ export default {
 					})
 					if (!sendPostTemplate)
 						return
-					if (!sendPostTemplate.approved) {
-						const templateEditor = await generateEmbed(sendPostTemplate, interaction.user, interaction.guild!)
-
-						await interaction.update({ content: templateEditor.PostMessage, embeds: [templateEditor.PostEmbed], components: templateEditor.PostButtons.map(btn => btn as any) })
-					}
-
 					const guildCfgPost = await getGuildConfig(interaction.guildId!)
+
+					if (!sendPostTemplate.approved && (guildCfgPost?.requirePostApproval ?? true)) {
+						const templateEditor = await generateEmbed(sendPostTemplate, interaction.user, interaction.guild!)
+						await interaction.update({ content: templateEditor.PostMessage, embeds: [templateEditor.PostEmbed], components: templateEditor.PostButtons.map(btn => btn as any) })
+						return
+					}
 
 					let jobChannelId: string | undefined
 					switch (sendPostTemplate.jobType.toLowerCase()) {

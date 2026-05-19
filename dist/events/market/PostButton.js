@@ -129,7 +129,7 @@ exports.default = {
     name: discord_js_1.Events.InteractionCreate,
     once: false,
     async execute(_, interaction) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _33;
         if (interaction.isButton()) {
             const id = interaction.customId;
             switch (id) {
@@ -989,23 +989,24 @@ exports.default = {
                     });
                     if (!sendPostTemplate)
                         return;
-                    if (!sendPostTemplate.approved) {
+                    const guildCfgPost = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
+                    if (!sendPostTemplate.approved && ((_u = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.requirePostApproval) !== null && _u !== void 0 ? _u : true)) {
                         const templateEditor = await generateEmbed(sendPostTemplate, interaction.user, interaction.guild);
                         await interaction.update({ content: templateEditor.PostMessage, embeds: [templateEditor.PostEmbed], components: templateEditor.PostButtons.map(btn => btn) });
+                        return;
                     }
-                    const guildCfgPost = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
                     let jobChannelId;
                     switch (sendPostTemplate.jobType.toLowerCase()) {
                         case 'hiring': {
-                            jobChannelId = (_u = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.channels) === null || _u === void 0 ? void 0 : _u.hiring;
+                            jobChannelId = (_v = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.channels) === null || _v === void 0 ? void 0 : _v.hiring;
                             break;
                         }
                         case 'for_hire': {
-                            jobChannelId = (_v = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.channels) === null || _v === void 0 ? void 0 : _v.forHire;
+                            jobChannelId = (_w = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.channels) === null || _w === void 0 ? void 0 : _w.forHire;
                             break;
                         }
                         case 'selling': {
-                            jobChannelId = (_w = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.channels) === null || _w === void 0 ? void 0 : _w.selling;
+                            jobChannelId = (_x = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.channels) === null || _x === void 0 ? void 0 : _x.selling;
                             break;
                         }
                     }
@@ -1028,11 +1029,11 @@ exports.default = {
                     // Staff, admins, and devs are exempt from posting cooldowns
                     const _member = interaction.member;
                     const devRoleIds = [
-                        (_x = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _x === void 0 ? void 0 : _x.MasterDeveloper,
-                        (_y = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _y === void 0 ? void 0 : _y.ExpertDeveloper,
-                        (_z = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _z === void 0 ? void 0 : _z.SeniorDeveloper,
-                        (_0 = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _0 === void 0 ? void 0 : _0.Developer,
-                        (_1 = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _1 === void 0 ? void 0 : _1.NoviceDeveloper,
+                        (_y = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _y === void 0 ? void 0 : _y.MasterDeveloper,
+                        (_z = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _z === void 0 ? void 0 : _z.ExpertDeveloper,
+                        (_0 = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _0 === void 0 ? void 0 : _0.SeniorDeveloper,
+                        (_1 = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _1 === void 0 ? void 0 : _1.Developer,
+                        (_2 = guildCfgPost === null || guildCfgPost === void 0 ? void 0 : guildCfgPost.roles) === null || _2 === void 0 ? void 0 : _2.NoviceDeveloper,
                     ].filter((id) => isSnowflake(id));
                     const isExemptFromCooldown = _member.permissions.has(discord_js_1.PermissionFlagsBits.Administrator) ||
                         _member.permissions.has(discord_js_1.PermissionFlagsBits.ManageMessages) ||
@@ -1122,13 +1123,13 @@ exports.default = {
                             } // end else (thisChannel exists)
                         } // end else (isSnowflake check)
                     }
-                    let postColor = (_2 = sendPostTemplate.embedColor) !== null && _2 !== void 0 ? _2 : discord_js_1.Colors.Green;
-                    let postAuthorText = (_3 = sendPostTemplate.author) !== null && _3 !== void 0 ? _3 : interaction.user.tag;
+                    let postColor = (_3 = sendPostTemplate.embedColor) !== null && _3 !== void 0 ? _3 : discord_js_1.Colors.Green;
+                    let postAuthorText = (_4 = sendPostTemplate.author) !== null && _4 !== void 0 ? _4 : interaction.user.tag;
                     let postFooterText = "NIGHTHAWK SERVERS Marketplace";
                     let postFooterImage = interaction.user.avatarURL();
                     if (sendPostTemplate.footer) {
-                        postFooterText = (_4 = sendPostTemplate.footer.text) !== null && _4 !== void 0 ? _4 : "NIGHTHAWK SERVERS Marketplace";
-                        postFooterImage = (_5 = sendPostTemplate.footer.icon) !== null && _5 !== void 0 ? _5 : undefined;
+                        postFooterText = (_5 = sendPostTemplate.footer.text) !== null && _5 !== void 0 ? _5 : "NIGHTHAWK SERVERS Marketplace";
+                        postFooterImage = (_6 = sendPostTemplate.footer.icon) !== null && _6 !== void 0 ? _6 : undefined;
                         if (postFooterImage && postFooterImage.length < 1) {
                             postFooterImage = undefined;
                         }
@@ -1136,7 +1137,7 @@ exports.default = {
                     }
                     ;
                     if (!isBooster) {
-                        if (sendPostTemplate.embedColor !== "Green" || sendPostTemplate.author !== interaction.user.username || ((_6 = sendPostTemplate.footer) === null || _6 === void 0 ? void 0 : _6.text) !== "NIGHTHAWK SERVERS Marketplace" || ((_7 = sendPostTemplate.footer) === null || _7 === void 0 ? void 0 : _7.icon) !== interaction.user.avatarURL()) {
+                        if (sendPostTemplate.embedColor !== "Green" || sendPostTemplate.author !== interaction.user.username || ((_7 = sendPostTemplate.footer) === null || _7 === void 0 ? void 0 : _7.text) !== "NIGHTHAWK SERVERS Marketplace" || ((_8 = sendPostTemplate.footer) === null || _8 === void 0 ? void 0 : _8.icon) !== interaction.user.avatarURL()) {
                             await interaction.member.user.send({
                                 embeds: [
                                     new discord_js_1.EmbedBuilder()
@@ -1158,7 +1159,7 @@ exports.default = {
                     const postEmbed = new discord_js_1.EmbedBuilder()
                         .setColor(postColor)
                         .setTitle(jobTypeSendPost)
-                        .setThumbnail((_8 = sendPostTemplate.thumbnail) !== null && _8 !== void 0 ? _8 : undefined)
+                        .setThumbnail((_9 = sendPostTemplate.thumbnail) !== null && _9 !== void 0 ? _9 : undefined)
                         .setAuthor({
                         name: postAuthorText,
                         iconURL: interaction.user.avatarURL()
@@ -1166,9 +1167,9 @@ exports.default = {
                         .setDescription(sendPostTemplate.description)
                         .addFields({
                         name: 'Payment',
-                        value: `**Robux:** ${((_9 = sendPostTemplate.payment) === null || _9 === void 0 ? void 0 : _9.robux) || "N/A"}
-**Real Money:** ${((_10 = sendPostTemplate.payment) === null || _10 === void 0 ? void 0 : _10.money) || "N/A"}
-**Other:** ${((_11 = sendPostTemplate.payment) === null || _11 === void 0 ? void 0 : _11.other) || "N/A"}`
+                        value: `**Robux:** ${((_10 = sendPostTemplate.payment) === null || _10 === void 0 ? void 0 : _10.robux) || "N/A"}
+**Real Money:** ${((_11 = sendPostTemplate.payment) === null || _11 === void 0 ? void 0 : _11.money) || "N/A"}
+**Other:** ${((_12 = sendPostTemplate.payment) === null || _12 === void 0 ? void 0 : _12.other) || "N/A"}`
                     }, {
                         name: 'Contact',
                         value: `Discord: <@${interaction.user.id}>`
@@ -1211,11 +1212,11 @@ exports.default = {
                             return;
                         }
                         let matches = false;
-                        if (((_13 = (_12 = sendPostTemplate.payment) === null || _12 === void 0 ? void 0 : _12.robux) !== null && _13 !== void 0 ? _13 : "").toLowerCase().match(blacklistedChar) !== null)
+                        if (((_14 = (_13 = sendPostTemplate.payment) === null || _13 === void 0 ? void 0 : _13.robux) !== null && _14 !== void 0 ? _14 : "").toLowerCase().match(blacklistedChar) !== null)
                             matches = true;
-                        if (((_15 = (_14 = sendPostTemplate.payment) === null || _14 === void 0 ? void 0 : _14.money) !== null && _15 !== void 0 ? _15 : "").toLowerCase().match(blacklistedChar) !== null)
+                        if (((_16 = (_15 = sendPostTemplate.payment) === null || _15 === void 0 ? void 0 : _15.money) !== null && _16 !== void 0 ? _16 : "").toLowerCase().match(blacklistedChar) !== null)
                             matches = true;
-                        if (((_17 = (_16 = sendPostTemplate.payment) === null || _16 === void 0 ? void 0 : _16.other) !== null && _17 !== void 0 ? _17 : "").toLowerCase().match(blacklistedChar) !== null)
+                        if (((_18 = (_17 = sendPostTemplate.payment) === null || _17 === void 0 ? void 0 : _17.other) !== null && _18 !== void 0 ? _18 : "").toLowerCase().match(blacklistedChar) !== null)
                             matches = true;
                         if (matches) {
                             await interaction.update({
@@ -1280,10 +1281,10 @@ exports.default = {
                             });
                             return;
                         }
-                        const postMember = await ((_18 = interaction.guild) === null || _18 === void 0 ? void 0 : _18.members.fetch(thisPost.userID).catch((err) => {
+                        const postMember = await ((_19 = interaction.guild) === null || _19 === void 0 ? void 0 : _19.members.fetch(thisPost.userID).catch((err) => {
                             logging_1.Log.error(err);
                         }));
-                        const hasManageMessages = ((_19 = interaction.member) === null || _19 === void 0 ? void 0 : _19.permissions).has(discord_js_1.PermissionFlagsBits.ManageMessages);
+                        const hasManageMessages = ((_20 = interaction.member) === null || _20 === void 0 ? void 0 : _20.permissions).has(discord_js_1.PermissionFlagsBits.ManageMessages);
                         const isStaff = hasManageMessages || await checkIsMarketMod(interaction.guildId, interaction.member);
                         if (!isStaff) {
                             await interaction.editReply({
@@ -1349,7 +1350,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             }
                         }
                         await PostTemplates_1.default.findOneAndUpdate({
-                            guildID: (_20 = interaction.guild) === null || _20 === void 0 ? void 0 : _20.id,
+                            guildID: (_21 = interaction.guild) === null || _21 === void 0 ? void 0 : _21.id,
                             userID: interaction.user.id,
                             jobType: jobType,
                         }, {
@@ -1357,7 +1358,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             approved: await checkIsBooster(interaction.guildId, interaction.member),
                         });
                         const foundTemplateDesc = await PostTemplates_1.default.findOne({
-                            guildID: (_21 = interaction.guild) === null || _21 === void 0 ? void 0 : _21.id,
+                            guildID: (_22 = interaction.guild) === null || _22 === void 0 ? void 0 : _22.id,
                             userID: interaction.user.id,
                             jobType: jobType,
                         });
@@ -1386,7 +1387,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             return;
                         }
                         await PostTemplates_1.default.findOneAndUpdate({
-                            guildID: (_22 = interaction.guild) === null || _22 === void 0 ? void 0 : _22.id,
+                            guildID: (_23 = interaction.guild) === null || _23 === void 0 ? void 0 : _23.id,
                             userID: interaction.user.id,
                             jobType: jobTypeTalent,
                         }, {
@@ -1394,7 +1395,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             approved: await checkIsBooster(interaction.guildId, interaction.member),
                         });
                         const foundTemplateTalent = await PostTemplates_1.default.findOne({
-                            guildID: (_23 = interaction.guild) === null || _23 === void 0 ? void 0 : _23.id,
+                            guildID: (_24 = interaction.guild) === null || _24 === void 0 ? void 0 : _24.id,
                             userID: interaction.user.id,
                             jobType: jobTypeTalent,
                         });
@@ -1442,7 +1443,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             }
                         }
                         await PostTemplates_1.default.findOneAndUpdate({
-                            guildID: (_24 = interaction.guild) === null || _24 === void 0 ? void 0 : _24.id,
+                            guildID: (_25 = interaction.guild) === null || _25 === void 0 ? void 0 : _25.id,
                             userID: interaction.user.id,
                             jobType: jobTypePayment,
                         }, {
@@ -1454,7 +1455,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             approved: await checkIsBooster(interaction.guildId, interaction.member),
                         });
                         const foundTemplatePayment = await PostTemplates_1.default.findOne({
-                            guildID: (_25 = interaction.guild) === null || _25 === void 0 ? void 0 : _25.id,
+                            guildID: (_26 = interaction.guild) === null || _26 === void 0 ? void 0 : _26.id,
                             userID: interaction.user.id,
                             jobType: jobTypePayment,
                         });
@@ -1496,7 +1497,7 @@ Reason: ${deleteReason}`).catch((err) => {
                         }
                         await interaction.update({ content: `${config_1.config.loadingEmoji} Updating job post images...` });
                         await PostTemplates_1.default.findOneAndUpdate({
-                            guildID: (_26 = interaction.guild) === null || _26 === void 0 ? void 0 : _26.id,
+                            guildID: (_27 = interaction.guild) === null || _27 === void 0 ? void 0 : _27.id,
                             userID: interaction.user.id,
                             jobType: jobTypeImages,
                         }, {
@@ -1505,7 +1506,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             approved: await checkIsBooster(interaction.guildId, interaction.member),
                         });
                         const foundTemplateImages = await PostTemplates_1.default.findOne({
-                            guildID: (_27 = interaction.guild) === null || _27 === void 0 ? void 0 : _27.id,
+                            guildID: (_28 = interaction.guild) === null || _28 === void 0 ? void 0 : _28.id,
                             userID: interaction.user.id,
                             jobType: jobTypeImages,
                         });
@@ -1567,7 +1568,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             await PostTemplateChanges_1.default.create({
                                 marketModerator: interaction.user.id,
                                 userId: approveUser.user.id,
-                                templateChannel: (_28 = templateRej.jobType) !== null && _28 !== void 0 ? _28 : "UNKNOWN",
+                                templateChannel: (_29 = templateRej.jobType) !== null && _29 !== void 0 ? _29 : "UNKNOWN",
                                 templateType: "REJECT",
                                 reason: rejectReason,
                                 templateCreatedAt: templateRej.createdAt,
@@ -1580,7 +1581,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             await PostTemplateChanges_1.default.create({
                                 marketModerator: interaction.user.id,
                                 userId: approveUser.user.id,
-                                templateChannel: (_29 = templateRej.jobType) !== null && _29 !== void 0 ? _29 : "UNKNOWN",
+                                templateChannel: (_30 = templateRej.jobType) !== null && _30 !== void 0 ? _30 : "UNKNOWN",
                                 templateType: "REJECT",
                                 reason: rejectReason,
                                 templateCreatedAt: templateRej.createdAt,
@@ -1590,7 +1591,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             localPostTemplateCache.set(interaction.message.id, new Date());
                         }
                         const guildCfgReject = await (0, GuildConfigCache_1.getGuildConfig)(interaction.guildId);
-                        const logChannel = await resolveChannel(interaction.guild, (_30 = guildCfgReject === null || guildCfgReject === void 0 ? void 0 : guildCfgReject.channels) === null || _30 === void 0 ? void 0 : _30.templateApprovalLog);
+                        const logChannel = await resolveChannel(interaction.guild, (_31 = guildCfgReject === null || guildCfgReject === void 0 ? void 0 : guildCfgReject.channels) === null || _31 === void 0 ? void 0 : _31.templateApprovalLog);
                         if (logChannel) {
                             await logChannel.send({
                                 content: `<@${approveUser.id}>`,
@@ -1655,7 +1656,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             }
                         }
                         await PostTemplates_1.default.findOneAndUpdate({
-                            guildID: (_31 = interaction.guild) === null || _31 === void 0 ? void 0 : _31.id,
+                            guildID: (_32 = interaction.guild) === null || _32 === void 0 ? void 0 : _32.id,
                             userID: interaction.user.id,
                             jobType: jobTypeExtras,
                         }, {
@@ -1668,7 +1669,7 @@ Reason: ${deleteReason}`).catch((err) => {
                             approved: await checkIsBooster(interaction.guildId, interaction.member),
                         });
                         const foundTemplateExtras = await PostTemplates_1.default.findOne({
-                            guildID: (_32 = interaction.guild) === null || _32 === void 0 ? void 0 : _32.id,
+                            guildID: (_33 = interaction.guild) === null || _33 === void 0 ? void 0 : _33.id,
                             userID: interaction.user.id,
                             jobType: jobTypeExtras,
                         });
