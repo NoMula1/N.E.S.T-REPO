@@ -54,6 +54,16 @@ export interface GuildFeatures {
   qotd: boolean;
 }
 
+/** AI Portal — drives the NightHawk-AI assistant feature.
+ *  v1: bot enforces a server allowlist (NIGHTHAWK_GUILD_ID env).
+ *  Future: gate on `aiAccess.premium` once the premium tier ships. */
+export interface GuildAiAccess {
+  enabled: boolean;
+  roleIds: string[];   // Discord role IDs allowed to use the AI
+  premium: boolean;    // reserved for tier rollout
+  model: string;       // overridable per-server later
+}
+
 export interface GuildConfig {
   guildId: string;         // unique index
   guildName: string;
@@ -71,6 +81,7 @@ export interface GuildConfig {
   marketplaceEnabled: boolean;
   moderationEnabled: boolean;
   ticketsEnabled: boolean;
+  aiAccess: GuildAiAccess;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -128,6 +139,13 @@ const guildFeaturesSchema = new mongoose.Schema<GuildFeatures>({
   qotd: { type: Boolean, default: true },
 }, { _id: false })
 
+const guildAiAccessSchema = new mongoose.Schema<GuildAiAccess>({
+  enabled: { type: Boolean, default: false },
+  roleIds: { type: [String], default: [] },
+  premium: { type: Boolean, default: false },
+  model:   { type: String,  default: 'claude-haiku-4-5' },
+}, { _id: false })
+
 const schema = new mongoose.Schema<GuildConfig>({
   guildId: { type: String, required: true, unique: true },
   guildName: { type: String, required: true },
@@ -145,6 +163,7 @@ const schema = new mongoose.Schema<GuildConfig>({
   marketplaceEnabled: { type: Boolean, default: true },
   moderationEnabled: { type: Boolean, default: true },
   ticketsEnabled: { type: Boolean, default: true },
+  aiAccess: { type: guildAiAccessSchema, default: () => ({ enabled: false, roleIds: [], premium: false, model: 'claude-haiku-4-5' }) },
 }, {
   timestamps: true,
   collection: 'nest_guild_configs',
