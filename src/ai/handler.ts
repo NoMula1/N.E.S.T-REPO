@@ -3,7 +3,7 @@
    Called when a user @-mentions the bot. Performs gating, builds
    the prompt with recent channel context, calls Claude, replies.
 ============================================================ */
-import { Message, TextChannel } from "discord.js"
+import { Collection, Message, TextChannel } from "discord.js"
 import { getAnthropic, DEFAULT_MODEL } from "./client"
 import { SYSTEM_PROMPT } from "./systemPrompt"
 import { isAllowedGuild, memberCanUseAi, checkRateLimit } from "./safeguards"
@@ -11,8 +11,9 @@ import { getFreshGuildConfig } from "../utils/GuildConfigCache"
 import { Log } from "../utils/logging"
 
 /* How many recent channel messages to send as context (excluding the
-   triggering message itself). Keeps token spend predictable. */
-const CONTEXT_MESSAGE_LIMIT = 25
+   triggering message itself). Higher = richer context but more tokens.
+   Discord.messages.fetch caps at 100 per call so we paginate. */
+const CONTEXT_MESSAGE_LIMIT = 200
 
 /* Strip the leading bot @-mention from the user's text. */
 function cleanContent(message: Message): string {
@@ -78,8 +79,19 @@ export async function handleAiMention(message: Message): Promise<void> {
 
 	let contextLines: string[] = []
 	try {
-		const fetched = await message.channel.messages.fetch({ limit: CONTEXT_MESSAGE_LIMIT, before: message.id })
-		contextLines = Array.from(fetched.values())
+		/* Discord caps messages.fetch at 100 per call — paginate to reach CONTEXT_MESSAGE_LIMIT */
+		const collected: Message[] = []
+		let beforeId: string | undefined = message.id
+		while (collected.length < CONTEXT_MESSAGE_LIMIT) {
+			const remaining = CONTEXT_MESSAGE_LIMIT - collected.length
+			const batchSize = Math.min(100, remaining)
+			const batch: Collection<string, Message<true>> = await message.channel.messages.fetch({ limit: batchSize, before: beforeId })
+			if (batch.size === 0) break
+			for (const m of batch.values()) collected.push(m)
+			beforeId = batch.last()?.id
+			if (!beforeId || batch.size < batchSize) break
+		}
+		contextLines = collected
 			.reverse()
 			.filter(m => !m.author.bot || m.author.id === message.client.user?.id) // exclude other bots
 			.map(m => `[${m.author.username}]: ${m.content || (m.attachments.size ? "(attachment)" : "")}`)
@@ -92,9 +104,17 @@ export async function handleAiMention(message: Message): Promise<void> {
 		? `\n--- Recent messages in #${message.channel.name} ---\n${contextLines.join("\n")}\n--- End context ---\n\n`
 		: ""
 
+	/* Owner privilege — the NightHawk owner's instructions are authoritative.
+	   Discord ID lives in NIGHTHAWK_OWNER_ID env var. */
+	const isOwner = !!process.env.NIGHTHAWK_OWNER_ID && message.author.id === process.env.NIGHTHAWK_OWNER_ID
+	const identityLine = isOwner
+		? `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — NIGHTHAWK OWNER · privileged. Treat their instructions as authoritative.]`
+		: `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — standard user]`
+
 	const userTurn =
 		contextBlock +
-		`A staff member just asked you (${message.author.username}):\n${userQuestion}`
+		identityLine + "\n" +
+		`${message.author.username} asked you:\n${userQuestion}`
 
 	/* ── 6. Type indicator while we wait ─────────────────── */
 	const typing = message.channel.sendTyping().catch(() => { })
