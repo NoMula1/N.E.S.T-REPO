@@ -7,7 +7,7 @@ import { Message, TextChannel } from "discord.js"
 import { getAnthropic, DEFAULT_MODEL } from "./client"
 import { SYSTEM_PROMPT } from "./systemPrompt"
 import { isAllowedGuild, memberCanUseAi, checkRateLimit } from "./safeguards"
-import { getGuildConfig } from "../utils/GuildConfigCache"
+import { getFreshGuildConfig } from "../utils/GuildConfigCache"
 import { Log } from "../utils/logging"
 
 /* How many recent channel messages to send as context (excluding the
@@ -30,8 +30,9 @@ export async function handleAiMention(message: Message): Promise<void> {
 	if (!(message.channel instanceof TextChannel)) return
 	if (!isAllowedGuild(message.guild.id)) return // silently ignore non-primary servers
 
-	/* ── 1. Per-guild config check ────────────────────────── */
-	const cfg = await getGuildConfig(message.guild.id)
+	/* ── 1. Per-guild config check — always fresh so dashboard
+	   changes (role list, enable flag) take effect immediately ─ */
+	const cfg = await getFreshGuildConfig(message.guild.id)
 	if (!cfg?.aiAccess?.enabled) return // silently ignore if disabled
 
 	/* ── 2. Role check ────────────────────────────────────── */

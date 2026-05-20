@@ -2,7 +2,7 @@
    NightHawk AI — safeguards
    Server allowlist, role checks, rate limits.
 ============================================================ */
-import { GuildMember, PermissionFlagsBits } from "discord.js"
+import { GuildMember } from "discord.js"
 import type { GuildConfig } from "../schemas/GuildConfig"
 
 /** Is this guild allowed to use AI in v1?
@@ -15,12 +15,13 @@ export function isAllowedGuild(guildId: string | undefined): boolean {
 }
 
 /** Does this member have permission to invoke the AI in this guild?
- *  - Discord Administrator perm always wins.
- *  - Otherwise the member must have at least one role from aiAccess.roleIds.
- *  - aiAccess.enabled must be true. */
+ *  Pure role-based: aiAccess.enabled must be true, the member must hold
+ *  at least one of the configured aiAccess.roleIds. Discord Administrator
+ *  permission is NOT a shortcut — the configured role is the source of
+ *  truth. If the server owner wants access, they grant themselves the
+ *  configured role like anyone else. */
 export function memberCanUseAi(member: GuildMember, cfg: GuildConfig | null | undefined): boolean {
 	if (!cfg?.aiAccess?.enabled) return false
-	if (member.permissions.has(PermissionFlagsBits.Administrator)) return true
 	const allowedRoles = cfg.aiAccess.roleIds || []
 	if (allowedRoles.length === 0) return false
 	return member.roles.cache.some(r => allowedRoles.includes(r.id))
