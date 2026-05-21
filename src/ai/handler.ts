@@ -20,6 +20,7 @@ import { isAllowedGuild, memberCanUseAi, checkRateLimit } from "./safeguards"
 import { getFreshGuildConfig } from "../utils/GuildConfigCache"
 import { Log } from "../utils/logging"
 import { ALL_TOOL_DEFINITIONS, executeTool } from "./tools"
+import { loadRelevantMemories } from "./tools/memory"
 import {
 	appendToSession,
 	endSession,
@@ -167,9 +168,22 @@ export async function handleAiMention(message: Message): Promise<void> {
 
 	let textPart: string
 	if (isNewSession) {
+		// Pull persistent memories so the AI has context immediately
+		let memoryBlock = ""
+		try {
+			const mems = await loadRelevantMemories(message.guild.id, message.channelId, message.author.id, 30)
+			if (mems.length > 0) {
+				const lines = mems.map(m => `• [${m.scope}/${m.key}]${m.tags.length ? ` (${m.tags.join(",")})` : ""}: ${m.content.slice(0, 400)}`)
+				memoryBlock = `\n--- Saved memories (use these as authoritative context; you wrote them on past requests) ---\n${lines.join("\n")}\n--- End memories ---\n\n`
+			}
+		} catch (e) {
+			Log.warn("[NightHawk-AI] memory load failed: " + (e as Error).message)
+		}
+
 		// First turn — give Claude the full context block + a session note
 		textPart =
 			contextBlock +
+			memoryBlock +
 			timeContextLine + "\n" +
 			identityLine + "\n" +
 			`Current channel: <#${message.channelId}> (id: ${message.channelId})\n` +

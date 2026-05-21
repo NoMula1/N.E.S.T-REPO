@@ -21,6 +21,7 @@ import { userCanUseAiInDm, checkRateLimit } from "./safeguards"
 import { getFreshGuildConfig } from "../utils/GuildConfigCache"
 import { Log } from "../utils/logging"
 import { SCHEDULING_TOOL_DEFINITIONS, executeSchedulingTool } from "./tools/scheduling"
+import { MEMORY_TOOL_DEFINITIONS, executeMemoryTool, loadRelevantMemories } from "./tools/memory"
 import {
 	appendToSession,
 	endSession,
@@ -109,6 +110,7 @@ export async function handleAiDm(message: Message): Promise<void> {
 	/* DM context: small lookback so Claude sees recent exchanges if the
 	   session expired between turns. */
 	let contextBlock = ""
+	let memoryBlock = ""
 	if (isNewSession) {
 		try {
 			const batch: Collection<string, Message> = await message.channel.messages.fetch({ limit: CONTEXT_MESSAGE_LIMIT, before: message.id })
@@ -120,6 +122,17 @@ export async function handleAiDm(message: Message): Promise<void> {
 		} catch (e) {
 			Log.warn("[NightHawk-AI/DM] failed to fetch DM context: " + (e as Error).message)
 		}
+
+		// Persistent memories — only user-scope is meaningful in DM (no channel/server context)
+		try {
+			const mems = await loadRelevantMemories(hubGuildId, null, message.author.id, 30)
+			if (mems.length > 0) {
+				const lines = mems.map(m => `• [${m.scope}/${m.key}]${m.tags.length ? ` (${m.tags.join(",")})` : ""}: ${m.content.slice(0, 400)}`)
+				memoryBlock = `\n--- Saved memories (use these as authoritative context; you wrote them on past requests) ---\n${lines.join("\n")}\n--- End memories ---\n\n`
+			}
+		} catch (e) {
+			Log.warn("[NightHawk-AI/DM] memory load failed: " + (e as Error).message)
+		}
 	}
 
 	const identityLine = `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — DM session, no server context]`
@@ -129,9 +142,10 @@ export async function handleAiDm(message: Message): Promise<void> {
 	if (isNewSession) {
 		textPart =
 			contextBlock +
+			memoryBlock +
 			timeContextLine + "\n" +
 			identityLine + "\n\n" +
-			`[DM CONVERSATION MODE OPEN] — This is a private DM. There is no Discord server context. Tools that require a server (channel management, moderation, audit log, etc.) are UNAVAILABLE. You CAN: schedule reminders, list/manage their schedules, chat. They'll say "farewell" to end.\n\n` +
+			`[DM CONVERSATION MODE OPEN] — This is a private DM. There is no Discord server context. Tools that require a server (channel management, moderation, audit log, etc.) are UNAVAILABLE. You CAN: schedule reminders, list/manage their schedules, save/recall/forget memories, chat. They'll say "farewell" to end.\n\n` +
 			(userQuestion
 				? `${message.author.username} said:\n${userQuestion}`
 				: `${message.author.username} DM'd you without saying anything specific. Greet them briefly and ask what they need.`)
@@ -178,17 +192,21 @@ export async function handleAiDm(message: Message): Promise<void> {
 	const dmCtx = buildDmCtx(message, hubGuildId)
 	const model = cfg?.aiAccess?.model || DEFAULT_MODEL
 
-	/* DM tool registry — scheduling only.
-	   schedule_announcement is excluded (needs a channel; nothing reasonable to do
-	   with it in DM context). list_server_schedules is excluded — staff dashboard
-	   handles cross-user listings. */
-	const dmTools = SCHEDULING_TOOL_DEFINITIONS.filter(t =>
-		t.name === "schedule_reminder" ||
-		t.name === "list_my_schedules" ||
-		t.name === "cancel_schedule" ||
-		t.name === "pause_schedule" ||
-		t.name === "resume_schedule"
-	)
+	/* DM tool registry — scheduling + memory (no guild-required tools).
+	   - schedule_announcement excluded (needs a channel)
+	   - list_server_schedules excluded (dashboard's job)
+	   - memory tools all available — user-scope is the dominant use */
+	const dmTools = [
+		...SCHEDULING_TOOL_DEFINITIONS.filter(t =>
+			t.name === "schedule_reminder" ||
+			t.name === "list_my_schedules" ||
+			t.name === "cancel_schedule" ||
+			t.name === "pause_schedule" ||
+			t.name === "resume_schedule"
+		),
+		...MEMORY_TOOL_DEFINITIONS,
+	]
+	const memoryToolNames = new Set(MEMORY_TOOL_DEFINITIONS.map(t => t.name))
 
 	let answer = ""
 	let iterations = 0
@@ -217,7 +235,9 @@ export async function handleAiDm(message: Message): Promise<void> {
 			const toolResults: Anthropic.ToolResultBlockParam[] = []
 			for (const tool of toolUses) {
 				const input = (tool.input || {}) as Record<string, unknown>
-				const result = await executeSchedulingTool(tool.name, input, dmCtx).catch(e => `Error: ${(e as Error).message}`)
+				const result = memoryToolNames.has(tool.name)
+					? await executeMemoryTool(tool.name, input, dmCtx).catch(e => `Error: ${(e as Error).message}`)
+					: await executeSchedulingTool(tool.name, input, dmCtx).catch(e => `Error: ${(e as Error).message}`)
 				toolResults.push({ type: "tool_result", tool_use_id: tool.id, content: result })
 			}
 			conversation.push({ role: "user", content: toolResults })
