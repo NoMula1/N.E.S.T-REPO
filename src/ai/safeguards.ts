@@ -45,3 +45,14 @@ export function checkRateLimit(userId: string): { ok: boolean; retryAfter: numbe
 	userHits.set(userId, hits)
 	return { ok: true, retryAfter: 0 }
 }
+
+/** DM access — independent from channel/role gating since DMs aren't
+ *  tied to any guild. Reads from the primary NightHawk hub guild's
+ *  aiAccess.dmEnabled + dmAllowedUserIds list. */
+export function userCanUseAiInDm(userId: string, cfg: GuildConfig | null | undefined): boolean {
+	if (!cfg?.aiAccess) return false
+	if (!cfg.aiAccess.dmEnabled) return false
+	const allowed = cfg.aiAccess.dmAllowedUserIds || []
+	if (allowed.length === 0) return false
+	return allowed.includes(userId)
+}

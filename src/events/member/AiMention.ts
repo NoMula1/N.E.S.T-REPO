@@ -9,6 +9,7 @@
 import { Events, Message } from "discord.js"
 import { EventOptions } from "../../utils/RegisterEvents"
 import { handleAiMention } from "../../ai/handler"
+import { handleAiDm } from "../../ai/dmHandler"
 import { getSession } from "../../ai/sessions"
 import { Log } from "../../utils/logging"
 
@@ -20,7 +21,14 @@ export default {
 			if (message.author.bot) return
 			const botId = message.client.user?.id
 			if (!botId) return
-			if (!message.guildId) return
+
+			// ── DM path ─────────────────────────────────────────
+			// No guildId means we're in a DM. dmHandler does its own
+			// allowlist check against the hub guild's aiAccess.dmAllowedUserIds.
+			if (!message.guildId) {
+				await handleAiDm(message)
+				return
+			}
 
 			// Ignore @everyone / @here mentions that incidentally include the bot
 			if (message.mentions.everyone) return

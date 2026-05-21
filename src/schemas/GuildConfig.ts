@@ -59,9 +59,16 @@ export interface GuildFeatures {
  *  Future: gate on `aiAccess.premium` once the premium tier ships. */
 export interface GuildAiAccess {
   enabled: boolean;
-  roleIds: string[];   // Discord role IDs allowed to use the AI
+  roleIds: string[];   // Discord role IDs allowed to use the AI in channels
   premium: boolean;    // reserved for tier rollout
   model: string;       // overridable per-server later
+  /* DM mode — allowed users can private-message the bot directly for
+     reminders, memory, general chat. Server-tools are unavailable in DMs.
+     Only configurable on the primary NightHawk hub guild
+     (NIGHTHAWK_GUILD_ID). The bot reads this guild's allowlist when
+     processing DMs since DMs aren't tied to any guild. */
+  dmEnabled: boolean;
+  dmAllowedUserIds: string[];
 }
 
 /** Automod per-module action — what happens when a rule fires. */
@@ -189,10 +196,12 @@ const guildFeaturesSchema = new mongoose.Schema<GuildFeatures>({
 }, { _id: false })
 
 const guildAiAccessSchema = new mongoose.Schema<GuildAiAccess>({
-  enabled: { type: Boolean, default: false },
-  roleIds: { type: [String], default: [] },
-  premium: { type: Boolean, default: false },
-  model:   { type: String,  default: 'claude-haiku-4-5' },
+  enabled:          { type: Boolean, default: false },
+  roleIds:          { type: [String], default: [] },
+  premium:          { type: Boolean, default: false },
+  model:            { type: String,  default: 'claude-haiku-4-5' },
+  dmEnabled:        { type: Boolean, default: false },
+  dmAllowedUserIds: { type: [String], default: [] },
 }, { _id: false })
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -268,7 +277,7 @@ const schema = new mongoose.Schema<GuildConfig>({
   marketplaceEnabled: { type: Boolean, default: true },
   moderationEnabled: { type: Boolean, default: true },
   ticketsEnabled: { type: Boolean, default: true },
-  aiAccess: { type: guildAiAccessSchema, default: () => ({ enabled: false, roleIds: [], premium: false, model: 'claude-haiku-4-5' }) },
+  aiAccess: { type: guildAiAccessSchema, default: () => ({ enabled: false, roleIds: [], premium: false, model: 'claude-haiku-4-5', dmEnabled: false, dmAllowedUserIds: [] }) },
   automod:  { type: guildAutomodSchema,  default: () => ({ enabled: false, alertChannelId: null, bypassRoleIds: [], modules: {
     massMention: { enabled: false, maxMentions: 5, action: 'delete', aiCheck: false },
     links:       { enabled: false, mode: 'block_new_accounts', minAccountDays: 7, domainList: [], action: 'delete', aiCheck: false },
