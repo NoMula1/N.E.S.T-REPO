@@ -199,7 +199,7 @@ const guildAiAccessSchema = new mongoose.Schema<GuildAiAccess>({
   enabled:          { type: Boolean, default: false },
   roleIds:          { type: [String], default: [] },
   premium:          { type: Boolean, default: false },
-  model:            { type: String,  default: 'claude-haiku-4-5' },
+  model:            { type: String,  default: 'claude-sonnet-4-5' },
   dmEnabled:        { type: Boolean, default: false },
   dmAllowedUserIds: { type: [String], default: [] },
 }, { _id: false })
@@ -277,7 +277,7 @@ const schema = new mongoose.Schema<GuildConfig>({
   marketplaceEnabled: { type: Boolean, default: true },
   moderationEnabled: { type: Boolean, default: true },
   ticketsEnabled: { type: Boolean, default: true },
-  aiAccess: { type: guildAiAccessSchema, default: () => ({ enabled: false, roleIds: [], premium: false, model: 'claude-haiku-4-5', dmEnabled: false, dmAllowedUserIds: [] }) },
+  aiAccess: { type: guildAiAccessSchema, default: () => ({ enabled: false, roleIds: [], premium: false, model: 'claude-sonnet-4-5', dmEnabled: false, dmAllowedUserIds: [] }) },
   automod:  { type: guildAutomodSchema,  default: () => ({ enabled: false, alertChannelId: null, bypassRoleIds: [], modules: {
     massMention: { enabled: false, maxMentions: 5, action: 'delete', aiCheck: false },
     links:       { enabled: false, mode: 'block_new_accounts', minAccountDays: 7, domainList: [], action: 'delete', aiCheck: false },

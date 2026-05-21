@@ -6,7 +6,7 @@
    keeps cost predictable.
 ============================================================ */
 import { Guild, Message, TextChannel } from "discord.js"
-import { getAnthropic, DEFAULT_MODEL } from "../ai/client"
+import { getAnthropic, AUTOMOD_MODEL } from "../ai/client"
 import { getFreshGuildConfig } from "../utils/GuildConfigCache"
 import type { GuildConfig, AutomodAction } from "../schemas/GuildConfig"
 import { applyAction } from "./actions"
@@ -206,7 +206,7 @@ async function classifyBatch(entries: QueueEntry[], cfg: GuildConfig, guildId: s
 
 	try {
 		const response = await anthropic.messages.create({
-			model: DEFAULT_MODEL,
+			model: AUTOMOD_MODEL,
 			max_tokens: 2000,
 			system: [{ type: "text", text: AUTOMOD_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
 			messages: [{ role: "user", content: userContent as any }],
@@ -307,7 +307,7 @@ Respond with JSON: {"confirm": true|false, "reason": "<one sentence>"}`
 
 	try {
 		const response = await anthropic.messages.create({
-			model: DEFAULT_MODEL,
+			model: AUTOMOD_MODEL,
 			max_tokens: 200,
 			system: [{ type: "text", text: AUTOMOD_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
 			messages: [{ role: "user", content: userContent as any }],
