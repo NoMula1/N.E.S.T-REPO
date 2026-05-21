@@ -20,8 +20,10 @@ interface QueueEntry {
 	authorTag: string
 	accountAgeDays: number
 	serverAgeDays: number | null
+	hasAnyRole: boolean
 	content: string
 	hasAttachments: boolean
+	imageUrls: string[]   // image attachment URLs (max 4, jpeg/png/webp/gif only)
 	timestamp: number
 	// Hold a soft reference back to the live Message for action execution.
 	// If the message gets deleted before we flush, the reference becomes a noop.
@@ -35,6 +37,47 @@ interface GuildQueue {
 }
 
 const queues = new Map<string, GuildQueue>()
+
+/* ── Per-guild daily image-budget tracking ──
+   Counts images sent to Claude. Resets at UTC midnight.
+   Cap is enforced from cfg.automod.aiAutomod.imageDailyCap. */
+interface ImageBudgetState {
+	dateStamp: string     // YYYY-MM-DD UTC, used to detect day rollover
+	imagesUsed: number
+}
+const imageBudgets = new Map<string, ImageBudgetState>()
+function todayUTC(): string {
+	const d = new Date()
+	return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`
+}
+function getImageBudget(guildId: string): ImageBudgetState {
+	const today = todayUTC()
+	let b = imageBudgets.get(guildId)
+	if (!b || b.dateStamp !== today) {
+		b = { dateStamp: today, imagesUsed: 0 }
+		imageBudgets.set(guildId, b)
+	}
+	return b
+}
+
+/* Discord image attachments — what we accept for vision */
+const IMAGE_MIME_PREFIX = "image/"
+const SUPPORTED_IMAGE_MIMES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
+const MAX_IMAGES_PER_MESSAGE = 4
+function extractImageUrls(message: Message): string[] {
+	const urls: string[] = []
+	for (const att of message.attachments.values()) {
+		const ct = (att.contentType || "").toLowerCase()
+		if (!ct.startsWith(IMAGE_MIME_PREFIX)) continue
+		// Reject .gif via Claude — animated gifs aren't supported by vision in the API.
+		// Plain image/gif still works in Discord (often stills) so we keep it,
+		// but the API call will use the first frame implicitly.
+		if (!SUPPORTED_IMAGE_MIMES.has(ct)) continue
+		if (urls.length >= MAX_IMAGES_PER_MESSAGE) break
+		urls.push(att.url)
+	}
+	return urls
+}
 
 const AUTOMOD_SYSTEM_PROMPT = `You are an automated moderation classifier for a Discord server run by NightHawk. You receive a batch of recent messages and must classify each as one of:
 
@@ -52,7 +95,13 @@ Be especially alert to:
 - Crypto + giveaway + sketchy-looking URL = high-confidence scam
 - Discord invite links from new accounts = likely spam
 - Letter-substitution bypasses (l33t speak, zero-width chars)
-- Image-based scams (you'll see them as "(attachment)" — flag as needs_review)
+- IMAGE-BASED SCAMS: if a message includes one or more attached
+  images, you can SEE them. Look for: fake Robux giveaway screens,
+  fake admin / staff impersonation UIs, phishing screenshots that
+  mimic Roblox/Discord login, fake free-item promos, QR codes
+  promising rewards. Image-only scams are the most-evaded category
+  by text filters. When you flag an image-based hit, mention "image"
+  briefly in the reason field.
 
 Conservative default: when in doubt, classify "legit" with low confidence. False positives are worse than false negatives because they affect real users.`
 
@@ -63,9 +112,61 @@ interface BatchVerdict {
 	reason: string
 }
 
-async function classifyBatch(entries: QueueEntry[]): Promise<BatchVerdict[]> {
+/* Decide which entries get their images attached based on cfg + budget.
+   Mutates entries.imageUrls in place (strips images that won't be sent). */
+function applyImageBudget(
+	entries: QueueEntry[],
+	cfg: GuildConfig,
+	guildId: string,
+): { entriesWithImages: number; imagesSent: number } {
+	const ai = cfg.automod?.aiAutomod
+	if (!ai || !ai.scanImages) {
+		entries.forEach(e => (e.imageUrls = []))
+		return { entriesWithImages: 0, imagesSent: 0 }
+	}
+	const budget = getImageBudget(guildId)
+	const cap = Math.max(0, ai.imageDailyCap ?? 500)
+	const sampleRate = Math.max(0, Math.min(100, ai.imageSampleRate ?? 25))
+	const repSkip = !!ai.imageReputationSkip
+
+	let entriesWithImages = 0
+	let imagesSent = 0
+	for (const e of entries) {
+		if (e.imageUrls.length === 0) continue
+		// Reputation skip — trusted accounts get text-only treatment
+		if (repSkip && e.accountAgeDays > 90 && e.hasAnyRole) {
+			e.imageUrls = []
+			continue
+		}
+		// Sample rate — random skip
+		if (Math.random() * 100 > sampleRate) {
+			e.imageUrls = []
+			continue
+		}
+		// Budget — drop if today's cap would be exceeded
+		const wanted = e.imageUrls.length
+		const remaining = Math.max(0, cap - budget.imagesUsed)
+		if (remaining === 0) {
+			e.imageUrls = []
+			continue
+		}
+		if (wanted > remaining) {
+			e.imageUrls = e.imageUrls.slice(0, remaining)
+		}
+		budget.imagesUsed += e.imageUrls.length
+		imagesSent += e.imageUrls.length
+		entriesWithImages++
+	}
+	return { entriesWithImages, imagesSent }
+}
+
+async function classifyBatch(entries: QueueEntry[], cfg: GuildConfig, guildId: string): Promise<BatchVerdict[]> {
 	const anthropic = getAnthropic()
 	if (!anthropic) return []
+
+	// Filter / sample image attachments based on cfg + daily budget
+	const { entriesWithImages, imagesSent } = applyImageBudget(entries, cfg, guildId)
+	if (imagesSent > 0) Log.info(`[automod/ai] vision attached ${imagesSent} image(s) across ${entriesWithImages} entr${entriesWithImages === 1 ? "y" : "ies"} (guild ${guildId})`)
 
 	const formatted = entries.map(e => ({
 		id: e.messageId,
@@ -73,17 +174,42 @@ async function classifyBatch(entries: QueueEntry[]): Promise<BatchVerdict[]> {
 		account_age_days: Math.round(e.accountAgeDays * 10) / 10,
 		server_age_days: e.serverAgeDays === null ? null : Math.round(e.serverAgeDays * 10) / 10,
 		channel_id: e.channelId,
-		content: e.content || (e.hasAttachments ? "(attachment, no text)" : ""),
+		content: e.content || (e.hasAttachments ? "(attachment, see image below)" : ""),
+		image_count: e.imageUrls.length,
 	}))
 
-	const userTurn = `Classify each of the following ${formatted.length} message${formatted.length === 1 ? "" : "s"}. Return a JSON array of verdicts.\n\n${JSON.stringify(formatted, null, 2)}`
+	// Build multi-modal content blocks. When any entry has images attached we
+	// build a mixed text+image payload; otherwise we send a single text turn.
+	const hasAnyImages = entries.some(e => e.imageUrls.length > 0)
+	let userContent: Anthropic.Messages.ContentBlockParam[] | string
+	if (hasAnyImages) {
+		const blocks: Anthropic.Messages.ContentBlockParam[] = [
+			{
+				type: "text",
+				text: `Classify each of the following ${formatted.length} message${formatted.length === 1 ? "" : "s"}. Some messages have attached images interleaved below — use them as evidence. Return a JSON array of verdicts.\n\n${JSON.stringify(formatted, null, 2)}\n\nImages follow, labeled by message id:`,
+			},
+		]
+		for (const e of entries) {
+			if (e.imageUrls.length === 0) continue
+			blocks.push({ type: "text", text: `\n--- Images for message ${e.messageId} (author ${e.authorTag}) ---` })
+			for (const url of e.imageUrls) {
+				blocks.push({
+					type: "image",
+					source: { type: "url", url } as Anthropic.Messages.ImageBlockParam["source"],
+				})
+			}
+		}
+		userContent = blocks
+	} else {
+		userContent = `Classify each of the following ${formatted.length} message${formatted.length === 1 ? "" : "s"}. Return a JSON array of verdicts.\n\n${JSON.stringify(formatted, null, 2)}`
+	}
 
 	try {
 		const response = await anthropic.messages.create({
 			model: DEFAULT_MODEL,
 			max_tokens: 2000,
 			system: [{ type: "text", text: AUTOMOD_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-			messages: [{ role: "user", content: userTurn }],
+			messages: [{ role: "user", content: userContent as any }],
 		})
 		const textBlock = response.content.find(b => b.type === "text") as Anthropic.TextBlock | undefined
 		if (!textBlock) return []
@@ -113,7 +239,7 @@ async function flushQueue(guildId: string, guild: Guild): Promise<void> {
 	const cfg = await getFreshGuildConfig(guildId)
 	if (!cfg?.automod?.aiAutomod?.enabled) return
 
-	const verdicts = await classifyBatch(entries)
+	const verdicts = await classifyBatch(entries, cfg as GuildConfig, guildId)
 	if (verdicts.length === 0) return
 
 	const action: AutomodAction = cfg.automod.aiAutomod.action
@@ -156,21 +282,35 @@ export async function confirmViolationWithAi(
 	const accountAgeDays = member?.user?.createdAt
 		? (Date.now() - member.user.createdAt.getTime()) / 86400000
 		: 0
-	const userTurn = `A Layer 1 automod rule flagged this message. Was it a real violation, or a false positive?
+	const imageUrls = extractImageUrls(message)
+	const textTurn = `A Layer 1 automod rule flagged this message. Was it a real violation, or a false positive?
 
 Rule: ${moduleName}
 Rule's reason: ${reason}
 Author: ${message.author.tag} (account ${Math.round(accountAgeDays)} days old)
 Content: ${(message.content || "(no text)").slice(0, 500)}
+${imageUrls.length ? `Attached images: ${imageUrls.length} (see below — use them as evidence)` : ""}
 
 Respond with JSON: {"confirm": true|false, "reason": "<one sentence>"}`
+
+	let userContent: Anthropic.Messages.ContentBlockParam[] | string = textTurn
+	if (imageUrls.length > 0) {
+		const blocks: Anthropic.Messages.ContentBlockParam[] = [{ type: "text", text: textTurn }]
+		for (const url of imageUrls) {
+			blocks.push({
+				type: "image",
+				source: { type: "url", url } as Anthropic.Messages.ImageBlockParam["source"],
+			})
+		}
+		userContent = blocks
+	}
 
 	try {
 		const response = await anthropic.messages.create({
 			model: DEFAULT_MODEL,
 			max_tokens: 200,
 			system: [{ type: "text", text: AUTOMOD_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-			messages: [{ role: "user", content: userTurn }],
+			messages: [{ role: "user", content: userContent as any }],
 		})
 		const textBlock = response.content.find(b => b.type === "text") as Anthropic.TextBlock | undefined
 		if (!textBlock) return { confirm: true, aiReason: "(no AI response)" }
@@ -218,6 +358,9 @@ export async function maybeQueueForAi(message: Message, cfg: GuildConfig): Promi
 		queues.set(guildId, q)
 	}
 
+	const memberRoles = member?.roles?.cache
+	const hasAnyRole = !!memberRoles && memberRoles.filter(r => r.id !== message.guild!.id).size > 0
+
 	q.entries.push({
 		messageId: message.id,
 		channelId: message.channelId,
@@ -225,8 +368,10 @@ export async function maybeQueueForAi(message: Message, cfg: GuildConfig): Promi
 		authorTag: message.author.tag,
 		accountAgeDays,
 		serverAgeDays,
+		hasAnyRole,
 		content: (message.content || "").slice(0, 500),
 		hasAttachments: message.attachments.size > 0,
+		imageUrls: extractImageUrls(message),
 		timestamp: Date.now(),
 		messageRef: message,
 	})

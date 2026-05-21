@@ -102,6 +102,14 @@ export interface GuildAiAutomod {
   skipChannelIds: string[];    // channels never scanned
   batchSize: number;           // messages per Claude call
   batchIntervalSeconds: number;// flush interval
+  /* Vision / image scanning — patches the image-only scam gap.
+     Even when text has nothing flaggable, the AI can read the attached
+     image and flag (fake giveaway screenshots, Robux scams, phishing UI).
+     Cost-controlled: sample rate + daily image cap. */
+  scanImages: boolean;           // when true, attach images to AI calls
+  imageSampleRate: number;       // 0-100 — odds an eligible image gets attached
+  imageDailyCap: number;         // max images sent to Claude per day (hard stop)
+  imageReputationSkip: boolean;  // skip images from trusted accounts (>90d + role)
 }
 
 export interface GuildConfig {
@@ -236,6 +244,10 @@ const guildAutomodSchema = new mongoose.Schema<GuildAutomod>({
     skipChannelIds:       { type: [String], default: [] },
     batchSize:            { type: Number,  default: 10 },
     batchIntervalSeconds: { type: Number,  default: 20 },
+    scanImages:           { type: Boolean, default: false },
+    imageSampleRate:      { type: Number,  default: 25 },
+    imageDailyCap:        { type: Number,  default: 500 },
+    imageReputationSkip:  { type: Boolean, default: true  },
   } as any, { _id: false }),
 }, { _id: false })
 
@@ -266,6 +278,7 @@ const schema = new mongoose.Schema<GuildConfig>({
   }, aiAutomod: {
     enabled: false, mode: 'confirm_layer1', sampleRate: 10, action: 'alert',
     skipChannelIds: [], batchSize: 10, batchIntervalSeconds: 20,
+    scanImages: false, imageSampleRate: 25, imageDailyCap: 500, imageReputationSkip: true,
   } }) },
 }, {
   timestamps: true,
