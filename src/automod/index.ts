@@ -17,6 +17,7 @@ import {
 	checkWordFilter,
 } from "./modules"
 import { applyAction } from "./actions"
+import { maybeQueueForAi, confirmViolationWithAi } from "./aiScanner"
 
 /**
  * Entry point — called from messageCreate event.
@@ -62,21 +63,43 @@ export async function scanMessage(message: Message): Promise<void> {
 			Log.warn(`[automod] detector crash: ${(e as Error).message}`)
 		}
 	}
-	if (!hit) return
 
-	const moduleCfg = mods[hit.moduleKey]
-	const action = moduleCfg.action
+	if (hit) {
+		const moduleCfg = mods[hit.moduleKey]
+		const action = moduleCfg.action
 
-	/* Phase 2 hook: if moduleCfg.aiCheck === true, route through Claude
-	   here BEFORE applying action. Skipped for now — Phase 1 = hardcoded. */
+		let finalReason = hit.reason
+		let aiExtra: Record<string, unknown> = {}
 
-	await applyAction({
-		message,
-		cfg,
-		moduleName: hit.moduleName,
-		reason: hit.reason,
-		configuredAction: action,
-		severity: hit.severity,
-		extra: hit.extra,
-	})
+		/* If the module has aiCheck enabled, ask Claude to confirm before
+		   applying the action. Filters false positives + adds semantic
+		   reasoning to obvious Layer 1 hits. */
+		if (moduleCfg.aiCheck) {
+			const verdict = await confirmViolationWithAi(message, hit.moduleName, hit.reason)
+			aiExtra = { aiConfirm: verdict.confirm, aiReason: verdict.aiReason }
+			if (!verdict.confirm) {
+				Log.info(`[automod] AI rejected Layer 1 hit (${hit.moduleName}): ${verdict.aiReason}`)
+				return  // skip action — AI thinks it's a false positive
+			}
+			finalReason = `${hit.reason} (AI confirmed: ${verdict.aiReason})`
+		}
+
+		await applyAction({
+			message,
+			cfg,
+			moduleName: hit.moduleName,
+			reason: finalReason,
+			configuredAction: action,
+			severity: hit.severity,
+			extra: { ...hit.extra, ...aiExtra },
+		})
+		return
+	}
+
+	/* Layer 1 didn't fire. If AI Moderation is enabled in sample_all or
+	   scan_all mode, queue this message for the AI scanner. The scanner
+	   batches messages and flushes asynchronously — no blocking here. */
+	if (cfg.automod.aiAutomod?.enabled && cfg.automod.aiAutomod.mode !== "confirm_layer1") {
+		await maybeQueueForAi(message, cfg).catch(e => Log.warn(`[automod] AI queue err: ${(e as Error).message}`))
+	}
 }

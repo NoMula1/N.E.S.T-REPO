@@ -88,6 +88,20 @@ export interface GuildAutomod {
     spamRate:    AutomodModuleBase & { maxMessages: number; windowSeconds: number };
     wordFilter:  AutomodModuleBase & { words: string[] };
   };
+  aiAutomod: GuildAiAutomod;
+}
+
+/** AI Moderation — Claude can act AS the automod, not just as a Layer 1
+ *  confirmer. Three modes determine what the AI sees. */
+export type AiAutomodMode = 'confirm_layer1' | 'sample_all' | 'scan_all'
+export interface GuildAiAutomod {
+  enabled: boolean;
+  mode: AiAutomodMode;
+  sampleRate: number;          // 0-100, only relevant when mode=sample_all
+  action: AutomodAction;       // what to do when AI flags scam/spam
+  skipChannelIds: string[];    // channels never scanned
+  batchSize: number;           // messages per Claude call
+  batchIntervalSeconds: number;// flush interval
 }
 
 export interface GuildConfig {
@@ -214,6 +228,15 @@ const guildAutomodSchema = new mongoose.Schema<GuildAutomod>({
       aiCheck: { type: Boolean, default: false },
     } as any, { _id: false }),
   },
+  aiAutomod: new mongoose.Schema({
+    enabled:              { type: Boolean, default: false },
+    mode:                 { type: String,  default: 'confirm_layer1' },
+    sampleRate:           { type: Number,  default: 10 },
+    action:               { type: String,  default: 'alert' },
+    skipChannelIds:       { type: [String], default: [] },
+    batchSize:            { type: Number,  default: 10 },
+    batchIntervalSeconds: { type: Number,  default: 20 },
+  } as any, { _id: false }),
 }, { _id: false })
 
 const schema = new mongoose.Schema<GuildConfig>({
@@ -240,6 +263,9 @@ const schema = new mongoose.Schema<GuildConfig>({
     accountAge:  { enabled: false, minServerDays: 0, minAccountDays: 7, action: 'alert', aiCheck: false },
     spamRate:    { enabled: false, maxMessages: 5, windowSeconds: 10, action: 'delete_timeout', aiCheck: false },
     wordFilter:  { enabled: false, words: [], action: 'delete', aiCheck: false },
+  }, aiAutomod: {
+    enabled: false, mode: 'confirm_layer1', sampleRate: 10, action: 'alert',
+    skipChannelIds: [], batchSize: 10, batchIntervalSeconds: 20,
   } }) },
 }, {
   timestamps: true,
