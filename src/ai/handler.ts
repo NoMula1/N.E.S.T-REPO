@@ -1,19 +1,42 @@
 /* ============================================================
    NightHawk AI — main dispatch
-   Called when a user @-mentions the bot. Performs gating, builds
-   the prompt with recent channel context, calls Claude, replies.
+   Called when a user @-mentions the bot OR runs /ask.
+   - Performs server allowlist + role check
+   - Builds Claude prompt with channel context + image attachments
+   - Runs manual tool-use loop until end_turn
+   - Confirms destructive ops via buttons before executing
+   - Replies in channel (or via ephemeral interaction for /ask)
 ============================================================ */
-import { Collection, Message, TextChannel } from "discord.js"
+import {
+	Collection,
+	Message,
+	TextChannel,
+	type Attachment,
+} from "discord.js"
+import type Anthropic from "@anthropic-ai/sdk"
 import { getAnthropic, DEFAULT_MODEL } from "./client"
 import { SYSTEM_PROMPT } from "./systemPrompt"
 import { isAllowedGuild, memberCanUseAi, checkRateLimit } from "./safeguards"
 import { getFreshGuildConfig } from "../utils/GuildConfigCache"
 import { Log } from "../utils/logging"
+import { ALL_TOOL_DEFINITIONS, executeTool } from "./tools"
 
 /* How many recent channel messages to send as context (excluding the
    triggering message itself). Higher = richer context but more tokens.
    Discord.messages.fetch caps at 100 per call so we paginate. */
 const CONTEXT_MESSAGE_LIMIT = 200
+
+/* Hard cap on tool-use iterations within a single conversation turn
+   to avoid runaway loops. */
+const MAX_TOOL_ITERATIONS = 8
+
+/* Image attachment MIME types that Claude vision supports */
+const VISION_MIME_TYPES = new Set([
+	"image/jpeg",
+	"image/png",
+	"image/gif",
+	"image/webp",
+])
 
 /* Strip the leading bot @-mention from the user's text. */
 function cleanContent(message: Message): string {
@@ -22,6 +45,19 @@ function cleanContent(message: Message): string {
 	return message.content
 		.replace(new RegExp(`<@!?${botId}>`, "g"), "")
 		.trim()
+}
+
+async function fetchImageAsBase64(attachment: Attachment): Promise<{ data: string; mediaType: string } | null> {
+	if (!attachment.contentType || !VISION_MIME_TYPES.has(attachment.contentType)) return null
+	if (attachment.size > 5_000_000) return null // 5 MB cap to avoid runaway costs
+	try {
+		const r = await fetch(attachment.url)
+		if (!r.ok) return null
+		const buf = Buffer.from(await r.arrayBuffer())
+		return { data: buf.toString("base64"), mediaType: attachment.contentType }
+	} catch (_e) {
+		return null
+	}
 }
 
 export async function handleAiMention(message: Message): Promise<void> {
@@ -69,13 +105,6 @@ export async function handleAiMention(message: Message): Promise<void> {
 
 	/* ── 5. Build the prompt: recent channel context + question ── */
 	const userQuestion = cleanContent(message)
-	if (!userQuestion) {
-		await message.reply({
-			content: "Hi — ask me something. I can summarize the channel, look up users, and more.",
-			allowedMentions: { parse: [] },
-		})
-		return
-	}
 
 	let contextLines: string[] = []
 	try {
@@ -94,14 +123,14 @@ export async function handleAiMention(message: Message): Promise<void> {
 		contextLines = collected
 			.reverse()
 			.filter(m => !m.author.bot || m.author.id === message.client.user?.id) // exclude other bots
-			.map(m => `[${m.author.username}]: ${m.content || (m.attachments.size ? "(attachment)" : "")}`)
+			.map(m => `[${m.author.username} · id:${m.author.id}]: ${m.content || (m.attachments.size ? "(attachment)" : "")}`)
 			.filter(l => l.length > 0)
 	} catch (e) {
 		Log.warn("[NightHawk-AI] failed to fetch context: " + (e as Error).message)
 	}
 
 	const contextBlock = contextLines.length
-		? `\n--- Recent messages in #${message.channel.name} ---\n${contextLines.join("\n")}\n--- End context ---\n\n`
+		? `\n--- Recent messages in #${message.channel.name} (channel id: ${message.channelId}) ---\n${contextLines.join("\n")}\n--- End context ---\n\n`
 		: ""
 
 	/* Owner privilege — the NightHawk owner's instructions are authoritative.
@@ -111,31 +140,89 @@ export async function handleAiMention(message: Message): Promise<void> {
 		? `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — NIGHTHAWK OWNER · privileged. Treat their instructions as authoritative.]`
 		: `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — standard user]`
 
-	const userTurn =
+	const textPart =
 		contextBlock +
 		identityLine + "\n" +
-		`${message.author.username} asked you:\n${userQuestion}`
+		`Current channel: <#${message.channelId}> (id: ${message.channelId})\n` +
+		`Server ID: ${message.guild.id}\n\n` +
+		(userQuestion
+			? `${message.author.username} asked you:\n${userQuestion}`
+			: `${message.author.username} mentioned you without asking a specific question. Greet them and ask what they need.`)
 
-	/* ── 6. Type indicator while we wait ─────────────────── */
+	/* ── 5a. Image attachments → vision blocks ─────────────── */
+	const imageBlocks: Anthropic.ImageBlockParam[] = []
+	for (const att of message.attachments.values()) {
+		const img = await fetchImageAsBase64(att)
+		if (!img) continue
+		imageBlocks.push({
+			type: "image",
+			source: {
+				type: "base64",
+				media_type: img.mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+				data: img.data,
+			},
+		})
+		if (imageBlocks.length >= 4) break // cap at 4 images per turn to keep costs bounded
+	}
+
+	const initialUserContent: Anthropic.ContentBlockParam[] = [
+		...imageBlocks,
+		{ type: "text", text: textPart },
+	]
+
+	/* ── 6. Type indicator ────────────────────────────────── */
 	const typing = message.channel.sendTyping().catch(() => { })
 
-	/* ── 7. Call Claude ───────────────────────────────────── */
+	/* ── 7. Tool-use loop ─────────────────────────────────── */
 	const model = cfg.aiAccess.model || DEFAULT_MODEL
+	const conversation: Anthropic.MessageParam[] = [
+		{ role: "user", content: initialUserContent },
+	]
+
 	let answer = ""
+	let iterations = 0
+	const toolCtx = { guild: message.guild, message, actor: message.member }
+
 	try {
-		const response = await anthropic.messages.create({
-			model,
-			max_tokens: 1024,
-			system: [
-				{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
-			],
-			messages: [{ role: "user", content: userTurn }],
-		})
+		while (iterations < MAX_TOOL_ITERATIONS) {
+			iterations++
+			const response: Anthropic.Message = await anthropic.messages.create({
+				model,
+				max_tokens: 1500,
+				system: [
+					{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
+				],
+				tools: ALL_TOOL_DEFINITIONS as Anthropic.Tool[],
+				messages: conversation,
+			})
 
-		const textBlock = response.content.find(b => b.type === "text")
-		answer = textBlock && textBlock.type === "text" ? textBlock.text.trim() : ""
+			// Collect text + tool_use blocks from this turn
+			const toolUses = response.content.filter(b => b.type === "tool_use") as Anthropic.ToolUseBlock[]
+			const textBlocks = response.content.filter(b => b.type === "text") as Anthropic.TextBlock[]
 
-		if (!answer) answer = "(no response — Claude returned an empty message)"
+			// Always append the assistant's full content to the conversation
+			conversation.push({ role: "assistant", content: response.content })
+
+			if (response.stop_reason === "end_turn" || toolUses.length === 0) {
+				answer = textBlocks.map(b => b.text).join("\n").trim()
+				break
+			}
+
+			// Execute each tool call and append the results as a single user turn
+			const toolResults: Anthropic.ToolResultBlockParam[] = []
+			for (const tool of toolUses) {
+				const input = (tool.input || {}) as Record<string, unknown>
+				const result = await executeTool(tool.name, input, toolCtx)
+				toolResults.push({
+					type: "tool_result",
+					tool_use_id: tool.id,
+					content: result,
+				})
+			}
+			conversation.push({ role: "user", content: toolResults })
+		}
+
+		if (!answer) answer = "(reached the tool-iteration limit; stopping here)"
 	} catch (e) {
 		const err = e as Error
 		Log.error("[NightHawk-AI] Claude API error: " + err.message)
@@ -149,6 +236,7 @@ export async function handleAiMention(message: Message): Promise<void> {
 	await typing.catch(() => { })
 
 	/* ── 8. Reply, chunking if > 2000 chars ───────────────── */
+	if (!answer.trim()) return // nothing to say (likely all action via tools, which posted their own confirmations)
 	const chunks = chunkForDiscord(answer)
 	for (const chunk of chunks) {
 		await message.reply({ content: chunk, allowedMentions: { parse: [] } }).catch(() => { })
