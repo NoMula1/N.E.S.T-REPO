@@ -251,7 +251,7 @@ export async function handleAiMention(message: Message): Promise<void> {
 			`[CONVERSATION MODE OPEN] — From here on, this user can talk to you without needing to @-mention you again. They'll say "farewell" when they want to end the conversation (you'll be told when this happens).\n\n` +
 			(userQuestion
 				? `${message.author.username} said:\n${userQuestion}`
-				: `${message.author.username} mentioned you without asking a specific question. Use your environment + memory context to acknowledge them with something useful and specific — don't just say "what you need?". Examples: surface something relevant from recent activity, comment on a pinned item if it's worth flagging, or offer 2-3 concrete things you could help with right now. Show you're paying attention to the room, not just waiting for instructions.`)
+				: `${message.author.username} mentioned you without asking a specific question. Reply briefly — acknowledge them, show presence, and stand by. Do NOT guess what they're here for. Do NOT pitch options or list capabilities. One short conversational line, then let them speak.`)
 	} else if (userIsLeaving) {
 		// Final turn — they want to end the conversation
 		textPart =

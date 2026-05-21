@@ -151,7 +151,7 @@ export async function handleAiDm(message: Message): Promise<void> {
 			`[DM CONVERSATION MODE OPEN] — This is a private DM. There is no Discord server context. Tools that require a server (channel management, moderation, audit log, etc.) are UNAVAILABLE. You CAN: schedule reminders, list/manage their schedules, save/recall/forget memories, chat. They'll say "farewell" to end.\n\n` +
 			(userQuestion
 				? `${message.author.username} said:\n${userQuestion}`
-				: `${message.author.username} DM'd you without saying anything specific. Use your memory context to acknowledge them with something useful — e.g. surface a saved note, remind them of an active schedule, or offer 2-3 concrete things you could help with right now. Don't just say "what you need?". Be specific and aware.`)
+				: `${message.author.username} DM'd you without saying anything specific. Reply briefly — acknowledge, show presence, stand by. Do NOT guess intent. Do NOT pitch options or surface saved notes preemptively. One short line.`)
 	} else if (userIsLeaving) {
 		textPart =
 			timeContextLine + "\n" +
