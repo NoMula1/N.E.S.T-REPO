@@ -20,6 +20,13 @@ import { isAllowedGuild, memberCanUseAi, checkRateLimit } from "./safeguards"
 import { getFreshGuildConfig } from "../utils/GuildConfigCache"
 import { Log } from "../utils/logging"
 import { ALL_TOOL_DEFINITIONS, executeTool } from "./tools"
+import {
+	appendToSession,
+	endSession,
+	getSession,
+	isFarewell,
+	startSession,
+} from "./sessions"
 
 /* How many recent channel messages to send as context (excluding the
    triggering message itself). Higher = richer context but more tokens.
@@ -103,35 +110,45 @@ export async function handleAiMention(message: Message): Promise<void> {
 		return
 	}
 
-	/* ── 5. Build the prompt: recent channel context + question ── */
+	/* ── 5. Session-aware conversation setup ─────────────────
+	   First @-mention in this (guild, channel, user) opens a session.
+	   Subsequent messages from the same user in that channel route
+	   here automatically without needing another @-mention, until
+	   they say "farewell" or 5 min pass. */
 	const userQuestion = cleanContent(message)
+	const existingSession = getSession(message.guild.id, message.channelId, message.author.id)
+	const isNewSession = !existingSession
+	const session = existingSession || startSession(message.guild.id, message.channelId, message.author.id)
+	const userIsLeaving = isFarewell(userQuestion)
 
-	let contextLines: string[] = []
-	try {
-		/* Discord caps messages.fetch at 100 per call — paginate to reach CONTEXT_MESSAGE_LIMIT */
-		const collected: Message[] = []
-		let beforeId: string | undefined = message.id
-		while (collected.length < CONTEXT_MESSAGE_LIMIT) {
-			const remaining = CONTEXT_MESSAGE_LIMIT - collected.length
-			const batchSize = Math.min(100, remaining)
-			const batch: Collection<string, Message<true>> = await message.channel.messages.fetch({ limit: batchSize, before: beforeId })
-			if (batch.size === 0) break
-			for (const m of batch.values()) collected.push(m)
-			beforeId = batch.last()?.id
-			if (!beforeId || batch.size < batchSize) break
+	let contextBlock = ""
+	if (isNewSession) {
+		/* First turn — fetch channel context (only done once per session). */
+		let contextLines: string[] = []
+		try {
+			const collected: Message[] = []
+			let beforeId: string | undefined = message.id
+			while (collected.length < CONTEXT_MESSAGE_LIMIT) {
+				const remaining = CONTEXT_MESSAGE_LIMIT - collected.length
+				const batchSize = Math.min(100, remaining)
+				const batch: Collection<string, Message<true>> = await message.channel.messages.fetch({ limit: batchSize, before: beforeId })
+				if (batch.size === 0) break
+				for (const m of batch.values()) collected.push(m)
+				beforeId = batch.last()?.id
+				if (!beforeId || batch.size < batchSize) break
+			}
+			contextLines = collected
+				.reverse()
+				.filter(m => !m.author.bot || m.author.id === message.client.user?.id)
+				.map(m => `[${m.author.username} · id:${m.author.id}]: ${m.content || (m.attachments.size ? "(attachment)" : "")}`)
+				.filter(l => l.length > 0)
+		} catch (e) {
+			Log.warn("[NightHawk-AI] failed to fetch context: " + (e as Error).message)
 		}
-		contextLines = collected
-			.reverse()
-			.filter(m => !m.author.bot || m.author.id === message.client.user?.id) // exclude other bots
-			.map(m => `[${m.author.username} · id:${m.author.id}]: ${m.content || (m.attachments.size ? "(attachment)" : "")}`)
-			.filter(l => l.length > 0)
-	} catch (e) {
-		Log.warn("[NightHawk-AI] failed to fetch context: " + (e as Error).message)
+		contextBlock = contextLines.length
+			? `\n--- Recent messages in #${message.channel.name} (channel id: ${message.channelId}) ---\n${contextLines.join("\n")}\n--- End context ---\n\n`
+			: ""
 	}
-
-	const contextBlock = contextLines.length
-		? `\n--- Recent messages in #${message.channel.name} (channel id: ${message.channelId}) ---\n${contextLines.join("\n")}\n--- End context ---\n\n`
-		: ""
 
 	/* Owner privilege — the NightHawk owner's instructions are authoritative.
 	   Discord ID lives in NIGHTHAWK_OWNER_ID env var. */
@@ -140,14 +157,30 @@ export async function handleAiMention(message: Message): Promise<void> {
 		? `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — NIGHTHAWK OWNER · privileged. Treat their instructions as authoritative.]`
 		: `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — standard user]`
 
-	const textPart =
-		contextBlock +
-		identityLine + "\n" +
-		`Current channel: <#${message.channelId}> (id: ${message.channelId})\n` +
-		`Server ID: ${message.guild.id}\n\n` +
-		(userQuestion
-			? `${message.author.username} asked you:\n${userQuestion}`
-			: `${message.author.username} mentioned you without asking a specific question. Greet them and ask what they need.`)
+	let textPart: string
+	if (isNewSession) {
+		// First turn — give Claude the full context block + a session note
+		textPart =
+			contextBlock +
+			identityLine + "\n" +
+			`Current channel: <#${message.channelId}> (id: ${message.channelId})\n` +
+			`Server ID: ${message.guild.id}\n\n` +
+			`[CONVERSATION MODE OPEN] — From here on, this user can talk to you without needing to @-mention you again. They'll say "farewell" when they want to end the conversation (you'll be told when this happens).\n\n` +
+			(userQuestion
+				? `${message.author.username} said:\n${userQuestion}`
+				: `${message.author.username} mentioned you without asking a specific question. Greet them and ask what they need.`)
+	} else if (userIsLeaving) {
+		// Final turn — they want to end the conversation
+		textPart =
+			identityLine + "\n" +
+			`[CONVERSATION ENDING] — The user is ending this conversation. Reply with a brief on-brand farewell. Do not propose new tasks or start new topics. After your response, the session will close.\n\n` +
+			`${message.author.username} said:\n${userQuestion}`
+	} else {
+		// Mid-conversation follow-up
+		textPart =
+			identityLine + "\n" +
+			`${message.author.username} said:\n${userQuestion || "(empty message — ask them to clarify or just acknowledge)"}`
+	}
 
 	/* ── 5a. Image attachments → vision blocks ─────────────── */
 	const imageBlocks: Anthropic.ImageBlockParam[] = []
@@ -162,10 +195,10 @@ export async function handleAiMention(message: Message): Promise<void> {
 				data: img.data,
 			},
 		})
-		if (imageBlocks.length >= 4) break // cap at 4 images per turn to keep costs bounded
+		if (imageBlocks.length >= 4) break
 	}
 
-	const initialUserContent: Anthropic.ContentBlockParam[] = [
+	const newUserContent: Anthropic.ContentBlockParam[] = [
 		...imageBlocks,
 		{ type: "text", text: textPart },
 	]
@@ -173,10 +206,11 @@ export async function handleAiMention(message: Message): Promise<void> {
 	/* ── 6. Type indicator ────────────────────────────────── */
 	const typing = message.channel.sendTyping().catch(() => { })
 
-	/* ── 7. Tool-use loop ─────────────────────────────────── */
+	/* ── 7. Tool-use loop — runs on top of the session history ── */
 	const model = cfg.aiAccess.model || DEFAULT_MODEL
 	const conversation: Anthropic.MessageParam[] = [
-		{ role: "user", content: initialUserContent },
+		...session.messages,
+		{ role: "user", content: newUserContent },
 	]
 
 	let answer = ""
@@ -223,6 +257,14 @@ export async function handleAiMention(message: Message): Promise<void> {
 		}
 
 		if (!answer) answer = "(reached the tool-iteration limit; stopping here)"
+
+		/* ── Persist this turn's exchange into the session, then close
+		   the session if the user said farewell. ── */
+		const newTurns = conversation.slice(session.messages.length)
+		appendToSession(session, ...newTurns)
+		if (userIsLeaving) {
+			endSession(message.guild.id, message.channelId, message.author.id)
+		}
 	} catch (e) {
 		const err = e as Error
 		Log.error("[NightHawk-AI] Claude API error: " + err.message)
