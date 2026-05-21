@@ -64,6 +64,32 @@ export interface GuildAiAccess {
   model: string;       // overridable per-server later
 }
 
+/** Automod per-module action — what happens when a rule fires. */
+export type AutomodAction = 'alert' | 'delete' | 'delete_timeout'
+
+export interface AutomodModuleBase {
+  enabled: boolean;
+  action: AutomodAction;
+  aiCheck: boolean;  // Phase 2: route Layer 1 hit through Claude before action
+}
+
+export interface GuildAutomod {
+  enabled: boolean;
+  alertChannelId: string | null;
+  bypassRoleIds: string[];   // any of these roles → skip automod entirely
+  modules: {
+    massMention: AutomodModuleBase & { maxMentions: number };
+    links:       AutomodModuleBase & {
+      mode: 'block_all' | 'block_new_accounts' | 'blocklist' | 'allowlist';
+      minAccountDays: number;
+      domainList: string[];
+    };
+    accountAge:  AutomodModuleBase & { minServerDays: number; minAccountDays: number };
+    spamRate:    AutomodModuleBase & { maxMessages: number; windowSeconds: number };
+    wordFilter:  AutomodModuleBase & { words: string[] };
+  };
+}
+
 export interface GuildConfig {
   guildId: string;         // unique index
   guildName: string;
@@ -82,6 +108,7 @@ export interface GuildConfig {
   moderationEnabled: boolean;
   ticketsEnabled: boolean;
   aiAccess: GuildAiAccess;
+  automod: GuildAutomod;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -146,6 +173,49 @@ const guildAiAccessSchema = new mongoose.Schema<GuildAiAccess>({
   model:   { type: String,  default: 'claude-haiku-4-5' },
 }, { _id: false })
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const guildAutomodSchema = new mongoose.Schema<GuildAutomod>({
+  enabled:        { type: Boolean, default: false },
+  alertChannelId: { type: String,  default: null },
+  bypassRoleIds:  { type: [String], default: [] },
+  modules: {
+    massMention: new mongoose.Schema({
+      enabled:     { type: Boolean, default: false },
+      maxMentions: { type: Number,  default: 5 },
+      action:      { type: String,  default: 'delete' },
+      aiCheck:     { type: Boolean, default: false },
+    } as any, { _id: false }),
+    links: new mongoose.Schema({
+      enabled:        { type: Boolean, default: false },
+      mode:           { type: String,  default: 'block_new_accounts' },
+      minAccountDays: { type: Number,  default: 7 },
+      domainList:     { type: [String], default: [] },
+      action:         { type: String,  default: 'delete' },
+      aiCheck:        { type: Boolean, default: false },
+    } as any, { _id: false }),
+    accountAge: new mongoose.Schema({
+      enabled:        { type: Boolean, default: false },
+      minServerDays:  { type: Number,  default: 0 },
+      minAccountDays: { type: Number,  default: 7 },
+      action:         { type: String,  default: 'alert' },
+      aiCheck:        { type: Boolean, default: false },
+    } as any, { _id: false }),
+    spamRate: new mongoose.Schema({
+      enabled:       { type: Boolean, default: false },
+      maxMessages:   { type: Number,  default: 5 },
+      windowSeconds: { type: Number,  default: 10 },
+      action:        { type: String,  default: 'delete_timeout' },
+      aiCheck:       { type: Boolean, default: false },
+    } as any, { _id: false }),
+    wordFilter: new mongoose.Schema({
+      enabled: { type: Boolean, default: false },
+      words:   { type: [String], default: [] },
+      action:  { type: String,  default: 'delete' },
+      aiCheck: { type: Boolean, default: false },
+    } as any, { _id: false }),
+  },
+}, { _id: false })
+
 const schema = new mongoose.Schema<GuildConfig>({
   guildId: { type: String, required: true, unique: true },
   guildName: { type: String, required: true },
@@ -164,6 +234,13 @@ const schema = new mongoose.Schema<GuildConfig>({
   moderationEnabled: { type: Boolean, default: true },
   ticketsEnabled: { type: Boolean, default: true },
   aiAccess: { type: guildAiAccessSchema, default: () => ({ enabled: false, roleIds: [], premium: false, model: 'claude-haiku-4-5' }) },
+  automod:  { type: guildAutomodSchema,  default: () => ({ enabled: false, alertChannelId: null, bypassRoleIds: [], modules: {
+    massMention: { enabled: false, maxMentions: 5, action: 'delete', aiCheck: false },
+    links:       { enabled: false, mode: 'block_new_accounts', minAccountDays: 7, domainList: [], action: 'delete', aiCheck: false },
+    accountAge:  { enabled: false, minServerDays: 0, minAccountDays: 7, action: 'alert', aiCheck: false },
+    spamRate:    { enabled: false, maxMessages: 5, windowSeconds: 10, action: 'delete_timeout', aiCheck: false },
+    wordFilter:  { enabled: false, words: [], action: 'delete', aiCheck: false },
+  } }) },
 }, {
   timestamps: true,
   collection: 'nest_guild_configs',
