@@ -25,6 +25,7 @@ import {
 	endSession,
 	getSession,
 	isFarewell,
+	resetSessionHistory,
 	startSession,
 } from "./sessions"
 
@@ -278,6 +279,18 @@ export async function handleAiMention(message: Message): Promise<void> {
 	} catch (e) {
 		const err = e as Error
 		Log.error("[NightHawk-AI] Claude API error: " + err.message)
+		// Detect corrupted-conversation 400s from Anthropic and self-heal by
+		// resetting the session. Symptom: "unexpected tool_use_id found in
+		// tool_result blocks" or "tool_use ids were found without ... tool_result".
+		const looksCorrupted = /tool_use_id|tool_result|tool_use ids? were found/i.test(err.message)
+		if (looksCorrupted) {
+			resetSessionHistory(session)
+			await message.reply({
+				content: "⚠️ My conversation thread got tangled — I cleared the history. Please re-ask your last question.",
+				allowedMentions: { parse: [] },
+			})
+			return
+		}
 		await message.reply({
 			content: "⚠️ Sorry — Claude API returned an error: `" + err.message.slice(0, 200) + "`",
 			allowedMentions: { parse: [] },

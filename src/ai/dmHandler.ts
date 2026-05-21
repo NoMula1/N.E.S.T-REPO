@@ -26,6 +26,7 @@ import {
 	endSession,
 	getSession,
 	isFarewell,
+	resetSessionHistory,
 	startSession,
 } from "./sessions"
 
@@ -230,6 +231,12 @@ export async function handleAiDm(message: Message): Promise<void> {
 	} catch (e) {
 		const err = e as Error
 		Log.error("[NightHawk-AI/DM] Claude API error: " + err.message)
+		const looksCorrupted = /tool_use_id|tool_result|tool_use ids? were found/i.test(err.message)
+		if (looksCorrupted) {
+			resetSessionHistory(session)
+			await message.reply({ content: "⚠️ My conversation thread got tangled — I cleared the history. Please re-ask your last question." }).catch(() => {})
+			return
+		}
 		await message.reply({ content: "⚠️ Sorry — Claude API error: `" + err.message.slice(0, 200) + "`" }).catch(() => {})
 		return
 	}
