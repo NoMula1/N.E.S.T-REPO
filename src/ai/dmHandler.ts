@@ -136,19 +136,22 @@ export async function handleAiDm(message: Message): Promise<void> {
 	}
 
 	const identityLine = `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — DM session, no server context]`
+	const acctAgeDays = Math.floor((Date.now() - message.author.createdAt.getTime()) / 86400000)
+	const environmentBlock = `\n--- ENVIRONMENT (DM context) ---\nUser: ${message.author.tag} (${message.author.id})\n  Account age: ${acctAgeDays} days\n  Allowlisted for DM access (verified at handler entry).\nMode: Private DM — no guild tools available. Scheduling + memory tools work fine.\n--- End environment ---\n\n`
 	const nowUTC = new Date()
 	const timeContextLine = `[CURRENT TIME: ${nowUTC.toISOString()} (UTC) — use this as 'now' for any time-based reasoning. For 'in 1 minute', add 60 seconds to this. If the user gives a clock time without timezone, ASK first or assume UTC.]`
 	let textPart: string
 	if (isNewSession) {
 		textPart =
 			contextBlock +
+			environmentBlock +
 			memoryBlock +
 			timeContextLine + "\n" +
 			identityLine + "\n\n" +
 			`[DM CONVERSATION MODE OPEN] — This is a private DM. There is no Discord server context. Tools that require a server (channel management, moderation, audit log, etc.) are UNAVAILABLE. You CAN: schedule reminders, list/manage their schedules, save/recall/forget memories, chat. They'll say "farewell" to end.\n\n` +
 			(userQuestion
 				? `${message.author.username} said:\n${userQuestion}`
-				: `${message.author.username} DM'd you without saying anything specific. Greet them briefly and ask what they need.`)
+				: `${message.author.username} DM'd you without saying anything specific. Use your memory context to acknowledge them with something useful — e.g. surface a saved note, remind them of an active schedule, or offer 2-3 concrete things you could help with right now. Don't just say "what you need?". Be specific and aware.`)
 	} else if (userIsLeaving) {
 		textPart =
 			timeContextLine + "\n" +
@@ -210,18 +213,29 @@ export async function handleAiDm(message: Message): Promise<void> {
 
 	let answer = ""
 	let iterations = 0
+
+	// Extended-thinking heuristic — same as channel handler
+	const lowered = (userQuestion || "").toLowerCase().trim()
+	const isTrivialGreeting = lowered.length <= 12 && /^(hi|hey|yo|sup|wsg|wsp|hello|hola|gm|gn|lol|lmao|haha|ok|k|thx|ty|thanks|np|bye|cya)\b/i.test(lowered)
+	const looksComplex = (userQuestion || "").length >= 60 || /\?|investigate|check|find|search|analyze|why|how come|explain|debug|fix/i.test(userQuestion || "")
+	const useThinking = !isTrivialGreeting && looksComplex && /sonnet|opus/i.test(model)
+
 	try {
 		while (iterations < MAX_TOOL_ITERATIONS) {
 			iterations++
-			const response: Anthropic.Message = await anthropic.messages.create({
+			const requestOpts: Anthropic.MessageCreateParamsNonStreaming = {
 				model,
-				max_tokens: 1500,
+				max_tokens: useThinking ? 8000 : 2000,
 				system: [
 					{ type: "text", text: DM_SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
 				],
 				tools: dmTools as Anthropic.Tool[],
 				messages: conversation,
-			})
+			}
+			if (useThinking) {
+				requestOpts.thinking = { type: "enabled", budget_tokens: 4000 }
+			}
+			const response: Anthropic.Message = await anthropic.messages.create(requestOpts)
 
 			const toolUses = response.content.filter(b => b.type === "tool_use") as Anthropic.ToolUseBlock[]
 			const textBlocks = response.content.filter(b => b.type === "text") as Anthropic.TextBlock[]

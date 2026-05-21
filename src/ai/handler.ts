@@ -35,9 +35,17 @@ import {
    Discord.messages.fetch caps at 100 per call so we paginate. */
 const CONTEXT_MESSAGE_LIMIT = 200
 
-/* Hard cap on tool-use iterations within a single conversation turn
-   to avoid runaway loops. */
-const MAX_TOOL_ITERATIONS = 8
+/* Hard cap on tool-use iterations within a single conversation turn.
+   Bumped from 8 → 16 since Sonnet can chain longer investigations
+   and we want it to actually finish complex tasks instead of bailing. */
+const MAX_TOOL_ITERATIONS = 16
+
+/* Extended thinking budget (Sonnet 4.5).
+   When enabled, Claude spends extra tokens reasoning silently before
+   the visible response. Worth it on complex investigations / multi-tool
+   chains. We gate it on message length + tool-use evidence (handler
+   below decides whether to enable per turn). */
+const THINKING_TOKEN_BUDGET = 4000
 
 /* Image attachment MIME types that Claude vision supports */
 const VISION_MIME_TYPES = new Set([
@@ -124,6 +132,7 @@ export async function handleAiMention(message: Message): Promise<void> {
 	const userIsLeaving = isFarewell(userQuestion)
 
 	let contextBlock = ""
+	let environmentBlock = ""
 	if (isNewSession) {
 		/* First turn — fetch channel context (only done once per session). */
 		let contextLines: string[] = []
@@ -150,6 +159,56 @@ export async function handleAiMention(message: Message): Promise<void> {
 		contextBlock = contextLines.length
 			? `\n--- Recent messages in #${message.channel.name} (channel id: ${message.channelId}) ---\n${contextLines.join("\n")}\n--- End context ---\n\n`
 			: ""
+
+		/* RICH ENVIRONMENTAL CONTEXT — fed once per session so the AI knows:
+		   - Channel purpose (topic, slowmode, pinned items)
+		   - Who's talking to it (account age, server tenure, roles)
+		   - Server snapshot (size, recent activity baseline)
+		   This is what makes "hey" produce a useful reply instead of "wsg.
+		   what you need?" — the bot already has situational awareness when
+		   the first message arrives. */
+		try {
+			const env: string[] = []
+			const ch = message.channel as TextChannel
+			env.push(`Channel: #${ch.name} (${ch.id})`)
+			if (ch.topic) env.push(`Channel topic: ${ch.topic.slice(0, 300)}`)
+			if (ch.rateLimitPerUser) env.push(`Slowmode: ${ch.rateLimitPerUser}s`)
+			env.push(`Channel category: ${ch.parent?.name || "(none)"}`)
+
+			// Pinned messages (high signal on channel purpose / rules)
+			try {
+				const pins = await ch.messages.fetchPinned()
+				if (pins.size > 0) {
+					const pinSummaries = Array.from(pins.values()).slice(0, 5).map(p => {
+						const txt = (p.content || "").slice(0, 200).replace(/\n+/g, " ")
+						return `- ${p.author.username}: ${txt || (p.embeds.length ? "(embed)" : "(no text)")}`
+					})
+					env.push(`Pinned messages (${pins.size}):\n${pinSummaries.join("\n")}`)
+				}
+			} catch { /* missing perms — skip */ }
+
+			// User profile snapshot — instant intelligence about who's asking
+			const member = message.member!
+			const acctAgeDays = Math.floor((Date.now() - message.author.createdAt.getTime()) / 86400000)
+			const serverAgeDays = member.joinedAt ? Math.floor((Date.now() - member.joinedAt.getTime()) / 86400000) : -1
+			const roleList = member.roles.cache.filter(r => r.id !== message.guild!.id).map(r => r.name).slice(0, 10)
+			env.push(`User: ${message.author.tag} (${message.author.id})`)
+			env.push(`  Account age: ${acctAgeDays} days · In this server: ${serverAgeDays >= 0 ? serverAgeDays : "?"} days`)
+			env.push(`  Display name in server: ${member.displayName}`)
+			env.push(`  Roles: ${roleList.length ? roleList.join(", ") : "(none)"}`)
+			if (member.premiumSince) env.push(`  Server boosting since: ${member.premiumSince.toISOString().slice(0, 10)}`)
+			if (member.communicationDisabledUntil && member.communicationDisabledUntil > new Date()) {
+				env.push(`  ⚠ Currently timed out until ${member.communicationDisabledUntil.toISOString()}`)
+			}
+
+			// Server snapshot
+			const g = message.guild!
+			env.push(`Server: ${g.name} · ${g.memberCount} members · owner ${g.ownerId === message.author.id ? "(this user!)" : g.ownerId}`)
+
+			environmentBlock = `\n--- ENVIRONMENT (situational awareness — use this to give context-aware replies; never repeat it back verbatim) ---\n${env.join("\n")}\n--- End environment ---\n\n`
+		} catch (e) {
+			Log.warn("[NightHawk-AI] env block build failed: " + (e as Error).message)
+		}
 	}
 
 	/* Owner privilege — the NightHawk owner's instructions are authoritative.
@@ -183,6 +242,7 @@ export async function handleAiMention(message: Message): Promise<void> {
 		// First turn — give Claude the full context block + a session note
 		textPart =
 			contextBlock +
+			environmentBlock +
 			memoryBlock +
 			timeContextLine + "\n" +
 			identityLine + "\n" +
@@ -191,7 +251,7 @@ export async function handleAiMention(message: Message): Promise<void> {
 			`[CONVERSATION MODE OPEN] — From here on, this user can talk to you without needing to @-mention you again. They'll say "farewell" when they want to end the conversation (you'll be told when this happens).\n\n` +
 			(userQuestion
 				? `${message.author.username} said:\n${userQuestion}`
-				: `${message.author.username} mentioned you without asking a specific question. Greet them and ask what they need.`)
+				: `${message.author.username} mentioned you without asking a specific question. Use your environment + memory context to acknowledge them with something useful and specific — don't just say "what you need?". Examples: surface something relevant from recent activity, comment on a pinned item if it's worth flagging, or offer 2-3 concrete things you could help with right now. Show you're paying attention to the room, not just waiting for instructions.`)
 	} else if (userIsLeaving) {
 		// Final turn — they want to end the conversation
 		textPart =
@@ -242,18 +302,33 @@ export async function handleAiMention(message: Message): Promise<void> {
 	let iterations = 0
 	const toolCtx = { guild: message.guild, message, actor: message.member }
 
+	/* Decide whether to enable extended thinking. Heuristic:
+	   - Sonnet only (Haiku doesn't support thinking)
+	   - User message is long-ish (>= 60 chars) OR question-shaped
+	   - Not a trivial greeting / acknowledgement
+	   When in doubt, OFF — thinking costs extra tokens and most casual
+	   chat doesn't need it. */
+	const lowered = (userQuestion || "").toLowerCase().trim()
+	const isTrivialGreeting = lowered.length <= 12 && /^(hi|hey|yo|sup|wsg|wsp|hello|hola|gm|gn|lol|lmao|haha|ok|k|thx|ty|thanks|np|bye|cya)\b/i.test(lowered)
+	const looksComplex = (userQuestion || "").length >= 60 || /\?|investigate|check|find|search|analyze|why|how come|explain|debug|fix/i.test(userQuestion || "")
+	const useThinking = !isTrivialGreeting && looksComplex && /sonnet|opus/i.test(model)
+
 	try {
 		while (iterations < MAX_TOOL_ITERATIONS) {
 			iterations++
-			const response: Anthropic.Message = await anthropic.messages.create({
+			const requestOpts: Anthropic.MessageCreateParamsNonStreaming = {
 				model,
-				max_tokens: 1500,
+				max_tokens: useThinking ? 8000 : 2000, // larger ceiling for thinking budget
 				system: [
 					{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
 				],
 				tools: ALL_TOOL_DEFINITIONS as Anthropic.Tool[],
 				messages: conversation,
-			})
+			}
+			if (useThinking) {
+				requestOpts.thinking = { type: "enabled", budget_tokens: THINKING_TOKEN_BUDGET }
+			}
+			const response: Anthropic.Message = await anthropic.messages.create(requestOpts)
 
 			// Collect text + tool_use blocks from this turn
 			const toolUses = response.content.filter(b => b.type === "tool_use") as Anthropic.ToolUseBlock[]
