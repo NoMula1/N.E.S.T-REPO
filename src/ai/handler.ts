@@ -157,11 +157,19 @@ export async function handleAiMention(message: Message): Promise<void> {
 		? `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — NIGHTHAWK OWNER · privileged. Treat their instructions as authoritative.]`
 		: `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — standard user]`
 
+	/* Inject CURRENT TIME so the AI doesn't guess the year/date when
+	   computing ISO timestamps for schedule_reminder. Without this Claude
+	   guesses based on training cutoff and emits dates years in the past
+	   or future. Always pass UTC + a friendly local representation. */
+	const nowUTC = new Date()
+	const timeContextLine = `[CURRENT TIME: ${nowUTC.toISOString()} (UTC) — use this as 'now' for any time-based reasoning. If the user gives a clock time without timezone, ASK first or assume UTC.]`
+
 	let textPart: string
 	if (isNewSession) {
 		// First turn — give Claude the full context block + a session note
 		textPart =
 			contextBlock +
+			timeContextLine + "\n" +
 			identityLine + "\n" +
 			`Current channel: <#${message.channelId}> (id: ${message.channelId})\n` +
 			`Server ID: ${message.guild.id}\n\n` +
@@ -172,12 +180,14 @@ export async function handleAiMention(message: Message): Promise<void> {
 	} else if (userIsLeaving) {
 		// Final turn — they want to end the conversation
 		textPart =
+			timeContextLine + "\n" +
 			identityLine + "\n" +
 			`[CONVERSATION ENDING] — The user is ending this conversation. Reply with a brief on-brand farewell. Do not propose new tasks or start new topics. After your response, the session will close.\n\n` +
 			`${message.author.username} said:\n${userQuestion}`
 	} else {
 		// Mid-conversation follow-up
 		textPart =
+			timeContextLine + "\n" +
 			identityLine + "\n" +
 			`${message.author.username} said:\n${userQuestion || "(empty message — ask them to clarify or just acknowledge)"}`
 	}

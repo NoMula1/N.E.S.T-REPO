@@ -26,16 +26,30 @@ let _running = false
 
 export function startScheduler(client: Client): void {
 	if (_tickHandle) return
-	Log.info("[scheduler] worker starting (tick every 30s)")
-	const run = () => {
+	Log.info(`[scheduler] worker starting (tick every ${TICK_INTERVAL_MS / 1000}s)`)
+	const run = async () => {
 		if (_running) return
 		_running = true
-		tick(client)
-			.catch(e => Log.error("[scheduler] tick crashed: " + (e as Error).message))
-			.finally(() => { _running = false })
+		try {
+			await tick(client)
+		} catch (e) {
+			Log.error("[scheduler] tick crashed: " + (e as Error).message)
+		} finally {
+			_running = false
+		}
 	}
-	// Run once on boot (slight delay so bot fully connects), then every 30s
-	setTimeout(run, 4000)
+	// Run once on boot (slight delay so bot fully connects), then every 30s.
+	// Also do a self-check log so we know in production that the worker is alive.
+	setTimeout(async () => {
+		try {
+			const total = await ScheduledTask.countDocuments({})
+			const active = await ScheduledTask.countDocuments({ status: "active" })
+			Log.info(`[scheduler] boot self-check — DB has ${total} task(s) total, ${active} active`)
+		} catch (e) {
+			Log.warn(`[scheduler] boot self-check failed: ${(e as Error).message}`)
+		}
+		run()
+	}, 4000)
 	_tickHandle = setInterval(run, TICK_INTERVAL_MS)
 }
 
@@ -74,19 +88,29 @@ async function tick(client: Client): Promise<void> {
 }
 
 async function executeTask(client: Client, task: ScheduledTaskShape & { _id: unknown }): Promise<void> {
-	const guild = client.guilds.cache.get(task.guildId)
-	if (!guild) throw new Error(`guild ${task.guildId} not in cache`)
+	Log.info(`[scheduler] executing task ${String(task._id)} type=${task.type} createdBy=${task.createdBy}`)
 
 	switch (task.type) {
 		case "dm_reminder": {
-			const user = await client.users.fetch(task.createdBy).catch(() => null)
-			if (!user) throw new Error("creator user not fetchable")
+			// DMs don't need a guild — fetch the user globally and DM them.
+			const user = await client.users.fetch(task.createdBy).catch((e: unknown) => {
+				Log.warn(`[scheduler] users.fetch failed: ${(e as Error).message}`)
+				return null
+			})
+			if (!user) throw new Error("creator user not fetchable from Discord API")
 			const text = formatMessage(task)
-			await user.send({ content: text || "(reminder)" })
+			try {
+				await user.send({ content: text || "(reminder)" })
+				Log.info(`[scheduler] DM'd reminder to ${user.tag}`)
+			} catch (e) {
+				throw new Error(`DM send failed (user may have DMs blocked): ${(e as Error).message}`)
+			}
 			break
 		}
 		case "channel_message": {
 			if (!task.channelId) throw new Error("missing channelId")
+			const guild = client.guilds.cache.get(task.guildId)
+			if (!guild) throw new Error(`guild ${task.guildId} not in cache`)
 			const ch = await guild.channels.fetch(task.channelId).catch(() => null)
 			if (!ch || !(ch instanceof TextChannel)) throw new Error("channel not a text channel")
 			await ch.send({ content: formatMessage(task) })
@@ -94,6 +118,8 @@ async function executeTask(client: Client, task: ScheduledTaskShape & { _id: unk
 		}
 		case "channel_embed": {
 			if (!task.channelId) throw new Error("missing channelId")
+			const guild = client.guilds.cache.get(task.guildId)
+			if (!guild) throw new Error(`guild ${task.guildId} not in cache`)
 			const ch = await guild.channels.fetch(task.channelId).catch(() => null)
 			if (!ch || !(ch instanceof TextChannel)) throw new Error("channel not a text channel")
 			await ch.send({

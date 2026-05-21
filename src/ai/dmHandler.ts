@@ -122,10 +122,13 @@ export async function handleAiDm(message: Message): Promise<void> {
 	}
 
 	const identityLine = `[AUTHOR: ${message.author.username} (Discord ID ${message.author.id}) — DM session, no server context]`
+	const nowUTC = new Date()
+	const timeContextLine = `[CURRENT TIME: ${nowUTC.toISOString()} (UTC) — use this as 'now' for any time-based reasoning. For 'in 1 minute', add 60 seconds to this. If the user gives a clock time without timezone, ASK first or assume UTC.]`
 	let textPart: string
 	if (isNewSession) {
 		textPart =
 			contextBlock +
+			timeContextLine + "\n" +
 			identityLine + "\n\n" +
 			`[DM CONVERSATION MODE OPEN] — This is a private DM. There is no Discord server context. Tools that require a server (channel management, moderation, audit log, etc.) are UNAVAILABLE. You CAN: schedule reminders, list/manage their schedules, chat. They'll say "farewell" to end.\n\n` +
 			(userQuestion
@@ -133,10 +136,12 @@ export async function handleAiDm(message: Message): Promise<void> {
 				: `${message.author.username} DM'd you without saying anything specific. Greet them briefly and ask what they need.`)
 	} else if (userIsLeaving) {
 		textPart =
+			timeContextLine + "\n" +
 			identityLine + "\n" +
 			`[DM ENDING] — Brief on-brand farewell. Don't start new topics.\n\n${message.author.username} said:\n${userQuestion}`
 	} else {
 		textPart =
+			timeContextLine + "\n" +
 			identityLine + "\n" +
 			`${message.author.username} said:\n${userQuestion || "(empty message — ask them to clarify or just acknowledge)"}`
 	}
