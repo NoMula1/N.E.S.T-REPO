@@ -20,11 +20,10 @@ export function getAnthropic(): Anthropic | null {
 }
 
 /* Model selection.
-   - DEFAULT_MODEL: user-facing conversation (mention + DM). Sonnet 4.5
-     for smarter reasoning, voice quality, and intent reading.
-     Per-guild override lives at NestGuildConfig.aiAccess.model.
-   - AUTOMOD_MODEL: bulk Layer 2 message classifier. Haiku 4.5 — high
-     volume, cost-sensitive, lower complexity per call. The 3x cost
-     of Sonnet is not justified for batch classification. */
-export const DEFAULT_MODEL = "claude-sonnet-4-5"
+   - DEFAULT_MODEL: user-facing conversation (mention + DM).
+     Temporarily reverted to Haiku 4.5 to A/B test how much of the
+     recent quality improvement is from prompt engineering vs. the
+     Sonnet upgrade. Flip back to claude-sonnet-4-5 once verified.
+   - AUTOMOD_MODEL: bulk Layer 2 message classifier. Haiku stays here. */
+export const DEFAULT_MODEL = "claude-haiku-4-5"
 export const AUTOMOD_MODEL = "claude-haiku-4-5"
