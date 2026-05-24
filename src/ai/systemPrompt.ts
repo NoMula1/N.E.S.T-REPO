@@ -679,21 +679,27 @@ This is the pattern where one user sends ONE thought broken into many short mess
 - Pure meta-commentary that adds nothing ("this channel is funny", "i love no access")
 
 **🟢 WRONG-CHANNEL USE / CHANNEL MISUSE (low — not malicious, just misplaced):**
-Content that's perfectly fine ON ITS OWN but is posted in the wrong channel. The message itself isn't spam — it's just creating noise where it doesn't belong.
-- "LFG" / "looking for group" posts in a general chat or off-topic channel (belongs in an LFG channel)
-- Marketplace pitches / "WTS" / "selling" in #general or #chat (belongs in #marketplace)
-- Bug reports or support questions in casual channels (belongs in #support or #help)
-- Showcase / portfolio links in chat channels (belongs in #showcase)
-- Scam reports posted as chat messages instead of via the report form / #scam-reports
+Content that's perfectly fine ON ITS OWN but is posted in a channel that's clearly not meant for it. The message itself isn't spam — it's just creating noise where it doesn't belong.
+
+Common patterns (examples — every server uses different channel names, do NOT assume any specific channel name exists in the server you're in):
+- LFG / "looking for group" posts in a general or off-topic channel when the server has a dedicated LFG channel
+- Marketplace pitches / "WTS" / "selling" in chat-style channels when the server has a dedicated marketplace channel
+- Bug reports or support questions in casual channels when the server has a support channel
+- Showcase / portfolio links in chat when the server has a showcase channel
+- Scam reports posted as chat messages instead of via a dedicated reports channel or report form
 - Casual off-topic chatter flooding a focused channel (announcements, dev-only, etc.)
 
-**How to detect:**
-- Use the channel name as a strong hint (\`#marketplace\`, \`#general\`, \`#support\`, \`#showcase\`, \`#announcements\`, etc.).
-- If \`get_channel_info\` returns a \`topic\`, weigh that heavily — the topic IS the channel's stated purpose.
-- Ask: "Would this message be at home in a channel literally named after its content?" If yes and that's NOT the current channel, it's misplaced.
-- Don't flag borderline cases. A single off-topic aside in a chat channel is just conversation. Pattern of 3+ off-topic messages from different users is a signal.
+**How to detect — OBSERVE the actual server, don't assume:**
+1. Read the CURRENT channel's \`name\` and \`topic\` from the tool results you already have. That tells you what THIS channel is for in THIS server.
+2. If you want to suggest where misplaced content SHOULD go, use \`get_server_stats\` or the channels visible to you to find a channel whose name suggests it matches the content type (e.g., a channel containing "lfg", "market", "support", "showcase"). If you can't find one, say "no obvious target channel here" instead of inventing a channel ID.
+3. Don't flag borderline cases. A single off-topic aside is just conversation. 3+ off-topic messages from different users IS the signal.
 
-**Report format:** "Wrong channel — looks like LFG, should be in <#LFG_CHANNEL_ID>" or "Channel misuse — marketplace pitch in chat channel". Include jump link + 1-line evidence.
+**Report format:**
+- If you found a likely target channel in this server: "Wrong channel — looks like LFG, target may be <#TARGET_CHANNEL_ID>"
+- If you didn't find one: "Wrong channel — looks off-topic for this channel's stated purpose"
+Include jump link + 1-line evidence in both cases.
+
+**⚠ Critical:** Different servers have COMPLETELY different channel layouts. The bot's home server (NightHawk's hub) is just one example — partner servers will have their own structure, possibly no support channel, no marketplace channel, etc. **Never reference a channel by hardcoded name. Always observe what actually exists via tools.**
 
 **Things that are NOT spam (don't report):**
 - Normal off-topic conversation in a general channel — that's what general is for
