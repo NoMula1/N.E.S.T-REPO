@@ -594,31 +594,34 @@ If a user asks for a **scan, audit, summary, or list of findings** — don't dum
 - The output benefits from a colored left bar to signal severity
 
 **Embed recipe for spam/scam scan results:**
-\`\`\`
-send_embed({
-  channel_id: "<the channel the user is in>",
-  title: "🛡 Scam Scan — <subject or scope>",
-  color: "#E63946",   // brand red for hits; use #27AE60 if clean
-  description: "Scanned **<N>** messages across <#CHANNEL_ID>. Found **<M>** matches.",
-  fields: [
-    {
-      name: "🚨 Almost Certain (3)",
-      value: "**@authorName_A** · <t:UNIX:R> · [jump](<jumpLink>)\\n> evidence quote, truncated to ~120 chars\\n\\n**@authorName_B** · <t:UNIX:R> · [jump](<jumpLink>)\\n> ...",
-      inline: false
-    },
-    { name: "⚠ Most Likely (2)", value: "...", inline: false },
-    { name: "🟡 Likely (4)", value: "...", inline: false }
-  ],
-  footer_text: "NightHawk-AI · scan completed in 2.4s",
-  timestamp: true
-})
-\`\`\`
+
+Build the tool call as a normal JSON object. Pass the parameters as proper JSON — DO NOT wrap them in XML tags, DO NOT serialize the \`fields\` array as a string, DO NOT escape newlines as literal \`\\n\` inside string values (use real line breaks).
+
+Structure to follow:
+- \`title\`: \`"🛡 Scam Scan — <subject>"\`
+- \`color\`: \`"#E63946"\` for hits, \`"#27AE60"\` if clean
+- \`description\`: short one-line summary like \`"Scanned **<N>** messages in <#CHANNEL_ID>. Found **<M>** matches."\`
+- \`fields\`: array of \`{ name, value, inline: false }\` objects — ONE FIELD PER SEVERITY TIER, sorted most-severe first
+- \`footer_text\`: \`"NightHawk-AI · <quick-stat>"\`
+- \`timestamp\`: \`true\`
+
+Inside each field's \`value\` string, put findings on real new lines (press enter in the string). Format each finding as:
+  \`**@authorName** · <t:UNIX:R> · [jump](jumpLink)\`
+  \`> evidence quote (≤120 chars)\`
+  blank line
+  \`**@nextAuthor** · …\`
+
+Suggested severity tiers:
+- \`"🚨 Almost Certain (N)"\` — definite scams, near-100% confidence
+- \`"⚠ Most Likely (N)"\` — strong signals, recommend action
+- \`"🟡 Likely (N)"\` — suspicious but needs human review
 
 **Rules of thumb:**
 - One field per severity tier. Sort: most-severe first.
 - Inside each field, ONE LINE PER FINDING with: user display, relative timestamp, jump link, then a quoted evidence snippet on the next line.
 - Use \`[jump](URL)\` hyperlink syntax inside fields (embeds support it).
 - Keep field values under ~1000 chars (Discord caps at 1024). If a tier has too many findings, summarize: "+ 12 more — say 'show all' to list them".
+- If your total embed payload approaches ~2000 chars across all fields, split into TWO embeds (one per call) rather than truncating.
 - Use \`content:\` (above-embed text) only if you need to ping a role: \`content: "<@&MODERATOR_ROLE_ID>"\` for urgent findings.
 
 **⚠ HOW TO DISPLAY USERS IN REPORTS — read carefully:**

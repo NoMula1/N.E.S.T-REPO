@@ -151,6 +151,24 @@ function parseHexColor(hex: string | undefined, fallback: number): number {
 	return parseInt(cleaned, 16)
 }
 
+/**
+ * Defensive normalization for embed text fields.
+ * Models occasionally produce double-escaped newlines (`\\n` rendered as literal
+ * backslash-n) or leak Anthropic tool-call XML wrappers (`<parameter name="...">…</parameter>`)
+ * into the output. This cleans both before the text reaches Discord so a partially
+ * malformed model call still renders cleanly instead of showing raw artifacts.
+ */
+function normalizeEmbedText(raw: unknown): string {
+	let s = String(raw ?? "")
+	// Strip leaked Anthropic tool-call XML wrappers if they ever appear in user-visible text
+	s = s.replace(/<\/?(parameter|invoke|function_calls|antml:[a-z_]+)[^>]*>/gi, "")
+	// Convert literal `\n` / `\r\n` / `\t` (two-char sequences) into real whitespace
+	s = s.replace(/\\r\\n/g, "\n").replace(/\\n/g, "\n").replace(/\\t/g, "\t")
+	// Collapse runs of 4+ blank lines down to 2 (cosmetic)
+	s = s.replace(/\n{4,}/g, "\n\n\n")
+	return s
+}
+
 interface ExecContext {
 	guild: Guild
 	message: Message
@@ -191,20 +209,20 @@ export async function executeContentTool(
 				if (!channel || channel.type !== ChannelType.GuildText) return "Error: text channel not found."
 
 				const embed = new EmbedBuilder().setColor(parseHexColor(input.color as string, NIGHTHAWK_PINK))
-				if (input.title)       embed.setTitle(String(input.title).slice(0, 256))
-				if (input.description) embed.setDescription(String(input.description).slice(0, 4096))
+				if (input.title)       embed.setTitle(normalizeEmbedText(input.title).slice(0, 256))
+				if (input.description) embed.setDescription(normalizeEmbedText(input.description).slice(0, 4096))
 				if (input.url)         embed.setURL(String(input.url))
 				if (input.image_url)     embed.setImage(String(input.image_url))
 				if (input.thumbnail_url) embed.setThumbnail(String(input.thumbnail_url))
 				if (input.author_name) {
 					embed.setAuthor({
-						name: String(input.author_name).slice(0, 256),
+						name: normalizeEmbedText(input.author_name).slice(0, 256),
 						iconURL: input.author_icon_url ? String(input.author_icon_url) : undefined,
 					})
 				}
 				if (input.footer_text) {
 					embed.setFooter({
-						text: String(input.footer_text).slice(0, 2048),
+						text: normalizeEmbedText(input.footer_text).slice(0, 2048),
 						iconURL: input.footer_icon_url ? String(input.footer_icon_url) : undefined,
 					})
 				}
@@ -213,8 +231,8 @@ export async function executeContentTool(
 					for (const f of (input.fields as Array<{ name: string; value: string; inline?: boolean }>).slice(0, 25)) {
 						if (!f.name || !f.value) continue
 						embed.addFields({
-							name:   String(f.name).slice(0, 256),
-							value:  String(f.value).slice(0, 1024),
+							name:   normalizeEmbedText(f.name).slice(0, 256),
+							value:  normalizeEmbedText(f.value).slice(0, 1024),
 							inline: !!f.inline,
 						})
 					}
