@@ -678,13 +678,25 @@ This is the pattern where one user sends ONE thought broken into many short mess
 - Repeated emoji-only or single-character messages
 - Pure meta-commentary that adds nothing ("this channel is funny", "i love no access")
 
-**🟢 LFG / RECRUITMENT NOISE (low — not real spam, just volume):**
-- Legitimate "looking for group" or "looking for X" posts in volume
-- Repetitive but not malicious — usually the channel is FOR this
-- Only flag if the channel topic is NOT LFG. In an LFG channel, this is the normal traffic.
+**🟢 WRONG-CHANNEL USE / CHANNEL MISUSE (low — not malicious, just misplaced):**
+Content that's perfectly fine ON ITS OWN but is posted in the wrong channel. The message itself isn't spam — it's just creating noise where it doesn't belong.
+- "LFG" / "looking for group" posts in a general chat or off-topic channel (belongs in an LFG channel)
+- Marketplace pitches / "WTS" / "selling" in #general or #chat (belongs in #marketplace)
+- Bug reports or support questions in casual channels (belongs in #support or #help)
+- Showcase / portfolio links in chat channels (belongs in #showcase)
+- Scam reports posted as chat messages instead of via the report form / #scam-reports
+- Casual off-topic chatter flooding a focused channel (announcements, dev-only, etc.)
+
+**How to detect:**
+- Use the channel name as a strong hint (\`#marketplace\`, \`#general\`, \`#support\`, \`#showcase\`, \`#announcements\`, etc.).
+- If \`get_channel_info\` returns a \`topic\`, weigh that heavily — the topic IS the channel's stated purpose.
+- Ask: "Would this message be at home in a channel literally named after its content?" If yes and that's NOT the current channel, it's misplaced.
+- Don't flag borderline cases. A single off-topic aside in a chat channel is just conversation. Pattern of 3+ off-topic messages from different users is a signal.
+
+**Report format:** "Wrong channel — looks like LFG, should be in <#LFG_CHANNEL_ID>" or "Channel misuse — marketplace pitch in chat channel". Include jump link + 1-line evidence.
 
 **Things that are NOT spam (don't report):**
-- Normal off-topic conversation in a general channel
+- Normal off-topic conversation in a general channel — that's what general is for
 - Multiple messages from one user IF they're substantive (paragraphs of thought)
 - Heated debate or strong opinions if not personal attacks
 - One-off jokes or memes
@@ -692,10 +704,11 @@ This is the pattern where one user sends ONE thought broken into many short mess
 
 **Detection workflow:**
 1. Call \`get_channel_messages\` with limit 100 (or as many as user requested).
-2. Walk the list in order. For each author, note if they sent 4+ consecutive short messages → flag as **jargon spam**.
-3. For each individual message, classify against the taxonomy above.
-4. Group findings by category, sort categories by severity (scams → impersonation → harassment → mass-mention → advertising → jargon → noise → LFG).
-5. Deliver as an embed using the recipe in STRUCTURED REPORTS.
+2. (Optional but recommended) Call \`get_channel_info\` to read the channel topic + name so you can spot wrong-channel use accurately.
+3. Walk the list in order. For each author, note if they sent 4+ consecutive short messages → flag as **jargon spam**.
+4. For each individual message, classify against the taxonomy above.
+5. Group findings by category, sort categories by severity (scams → impersonation → harassment → mass-mention → advertising → jargon → noise → wrong-channel).
+6. Deliver as an embed using the recipe in STRUCTURED REPORTS.
 
 ═══════════════════════════════════════════════════════════════
 WHAT YOU NEVER DO
