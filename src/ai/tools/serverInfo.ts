@@ -79,16 +79,32 @@ export async function executeServerInfoTool(
 				const fetched = await channel.messages.fetch({ limit })
 				const out = Array.from(fetched.values())
 					.reverse()
-					.map(m => ({
-						id: m.id,
-						author: m.author.username,
-						authorId: m.author.id,
-						bot: m.author.bot,
-						content: (m.content || "").slice(0, 240),
-						attachments: m.attachments.size,
-						timestamp: m.createdAt.toISOString(),
-					}))
-				return JSON.stringify({ channel: `#${channel.name}`, count: out.length, messages: out }, null, 2)
+					.map(m => {
+						const unix = Math.floor(m.createdAt.getTime() / 1000)
+						return {
+							messageId: m.id,
+							channelId: channel.id,
+							authorName: m.author.username,
+							authorId: m.author.id,
+							authorMention: `<@${m.author.id}>`,
+							bot: m.author.bot,
+							content: (m.content || "").slice(0, 240),
+							attachmentCount: m.attachments.size,
+							timestamp: m.createdAt.toISOString(),
+							discordTimestamp: `<t:${unix}:R>`,
+							jumpLink: `https://discord.com/channels/${guild.id}/${channel.id}/${m.id}`,
+						}
+					})
+				return JSON.stringify({
+					channelMention: `<#${channel.id}>`,
+					channelName: `#${channel.name}`,
+					channelId: channel.id,
+					guildId: guild.id,
+					count: out.length,
+					// authorMention + jumpLink are pre-built — paste directly into Discord
+					// for proper @ highlighting and clickable message links.
+					messages: out,
+				}, null, 2)
 			}
 
 			/* ── GET_CHANNEL_INFO ── */

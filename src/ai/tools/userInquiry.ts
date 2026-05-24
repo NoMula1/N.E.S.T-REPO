@@ -113,18 +113,42 @@ export async function executeInquiryTool(
 
 				if (channels.length === 0) return "Error: no channels available to search."
 
-				const matches: { channel: string; author: string; ts: string; content: string }[] = []
+				const matches: {
+					messageId: string
+					channelId: string
+					channelMention: string
+					channelName: string
+					authorId: string
+					authorMention: string
+					authorName: string
+					authorIsBot: boolean
+					timestamp: string
+					discordTimestamp: string
+					content: string
+					jumpLink: string
+					attachmentCount: number
+				}[] = []
 				for (const channel of channels) {
 					try {
 						const fetched = await channel.messages.fetch({ limit: Math.min(100, limitPerChannel) })
 						for (const m of fetched.values()) {
 							if (onlyAuthorId && m.author.id !== onlyAuthorId) continue
 							if (!m.content.toLowerCase().includes(query)) continue
+							const unix = Math.floor(m.createdAt.getTime() / 1000)
 							matches.push({
-								channel: `#${channel.name}`,
-								author: m.author.username,
-								ts: m.createdAt.toISOString(),
+								messageId: m.id,
+								channelId: channel.id,
+								channelMention: `<#${channel.id}>`,
+								channelName: `#${channel.name}`,
+								authorId: m.author.id,
+								authorMention: `<@${m.author.id}>`,
+								authorName: m.author.username,
+								authorIsBot: m.author.bot,
+								timestamp: m.createdAt.toISOString(),
+								discordTimestamp: `<t:${unix}:R>`,
 								content: m.content.slice(0, 240),
+								jumpLink: `https://discord.com/channels/${guild.id}/${channel.id}/${m.id}`,
+								attachmentCount: m.attachments.size,
 							})
 							if (matches.length >= 50) break // hard cap on results
 						}
@@ -136,6 +160,10 @@ export async function executeInquiryTool(
 					query,
 					scope: onlyChannelId ? `<#${onlyChannelId}>` : `${channels.length} channels`,
 					matchCount: matches.length,
+					guildId: guild.id,
+					// Each match has channelMention + authorMention pre-built — paste them
+					// directly into Discord output to get proper highlighting. jumpLink
+					// is a clickable URL that takes the user to the exact message.
 					matches,
 				}, null, 2)
 			}
