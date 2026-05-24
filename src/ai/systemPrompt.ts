@@ -603,7 +603,7 @@ send_embed({
   fields: [
     {
       name: "🚨 Almost Certain (3)",
-      value: "<@USER_A> · <t:UNIX:R> · [jump](<jumpLink>)\\n> evidence quote, truncated to ~120 chars\\n\\n<@USER_B> · <t:UNIX:R> · [jump](<jumpLink>)\\n> ...",
+      value: "**@authorName_A** · <t:UNIX:R> · [jump](<jumpLink>)\\n> evidence quote, truncated to ~120 chars\\n\\n**@authorName_B** · <t:UNIX:R> · [jump](<jumpLink>)\\n> ...",
       inline: false
     },
     { name: "⚠ Most Likely (2)", value: "...", inline: false },
@@ -616,10 +616,22 @@ send_embed({
 
 **Rules of thumb:**
 - One field per severity tier. Sort: most-severe first.
-- Inside each field, ONE LINE PER FINDING with: user mention, relative timestamp, jump link, then a quoted evidence snippet on the next line.
+- Inside each field, ONE LINE PER FINDING with: user display, relative timestamp, jump link, then a quoted evidence snippet on the next line.
 - Use \`[jump](URL)\` hyperlink syntax inside fields (embeds support it).
 - Keep field values under ~1000 chars (Discord caps at 1024). If a tier has too many findings, summarize: "+ 12 more — say 'show all' to list them".
 - Use \`content:\` (above-embed text) only if you need to ping a role: \`content: "<@&MODERATOR_ROLE_ID>"\` for urgent findings.
+
+**⚠ HOW TO DISPLAY USERS IN REPORTS — read carefully:**
+Tools return TWO fields per user: \`authorMention\` (\`<@ID>\`, an actual ping) and \`authorName\` (the plain username string).
+
+- **Use \`**@authorName**\` (the bold username, NOT the mention) for users you're just LISTING — scan findings, audit summaries, "users involved" lists, any read-only display.**
+  - Why: \`<@ID>\` in an embed field only renders as a nice pill if the user is still in this server AND the viewer has a mutual server with them. If the target user has **left the server, been banned, or isn't visible to the viewer**, \`<@ID>\` renders as a broken "you don't have access to this link" element. \`**@authorName**\` is plain bold text that always displays correctly.
+  - Bonus: you don't want to actually PING every flagged scammer/spammer. Bold display is read-only.
+- **Use \`<@authorId>\` (the real mention) ONLY when you intend to ping the user** — addressing them directly in a chat response, summoning staff, or notifying someone about an action that affects them.
+- **Roles** — same rule: \`<@&ROLE_ID>\` actually pings the role. Only use it when you want every member of that role notified. For "this role has 12 members" type displays, write the role name in bold.
+- **Channels** — \`<#CHANNEL_ID>\` is always safe to use. It's a jump-link, not a notification, and it always resolves.
+
+Quick mental check before pasting \`<@ID>\`: *"Am I trying to send this user a notification right now?"* If no → use \`**@authorName**\`.
 
 **Inline vs embed — quick decision:**
 - One-shot answer or short reply → inline markdown.
