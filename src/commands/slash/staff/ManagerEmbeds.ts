@@ -53,40 +53,40 @@ interface DocSection {
 
 const DOCS_EMBEDS: DocSection[] = [
 	{
-		key: "public-card",
-		label: "Public Card",
-		emoji: "🎴",
-		title: "Public Card",
-		intro:
-			"Your **shareable portfolio link** at `nhwk.dev/c/yourname`. Built from your entries, badges, links, and visual customization. This is the single URL you share when someone asks to see your work.",
-		steps: [
-			"Set your display name + avatar in **Display Name** / **Change Avatar**",
-			"Go to **Links** and claim your slug — locked after first claim",
-			"Customize the look on the **Customize** page (background, audio, effects)",
-			"Build the page layout in **Pages** (drag-and-drop sections)",
-			"Hit **Public Card** in the sidebar to view your live card",
-		],
-		gotcha:
-			"Slug must start with an alphanumeric character and is locked once claimed. Pick carefully.",
-		url: `${SITE}/member/links`,
-	},
-	{
 		key: "portfolio",
 		label: "Portfolio",
 		emoji: "📁",
-		title: "Portfolio Entries",
+		title: "Portfolio",
 		intro:
-			"Your dev work, organized by category. Each entry has a title, description, image, and optional tags. Verified categories appear as tabs on your public card.",
+			"Your **dev work, organized by category**. Each entry is a title, image, optional description, and tags. Your entries auto-render on your public card at `nighthawknetwork.org/c/<yourname>` — no publish step, edits land instantly.\n\nTo post entries in a category (UI/UX, Scripter, Modeler, GFX/Art, etc.) you first need to be **approved for that category** via the Applications page — see the Applications guide.",
 		steps: [
-			"Go to **Applications** and apply for the category that matches your work",
-			"Wait for staff approval — you'll see APPROVED next to the category",
-			"On the **Portfolio** page, click **+ New Entry** under that category",
+			"Get approved for at least one category via **Applications** (gives you the Verified badge)",
+			"On the **Portfolio** page, click **+ New Entry** under an approved category",
 			"Fill in title, image, optional description and tags, then save",
 			"Reorder entries by drag — first one becomes the category thumbnail",
+			"View your live card any time by clicking **Public Card** in the sidebar",
 		],
 		gotcha:
-			"Discord image URLs **expire after ~24h** because of Discord's signed CDN tokens. Re-upload to NightHawk hosting or use Imgur for permanent links.",
+			"Discord image URLs **expire after ~24h** because Discord signs them with a time-limited token. Re-upload through NightHawk hosting or use Imgur for stable links — otherwise your entry's image goes dead.",
 		url: `${SITE}/member/portfolio`,
+	},
+	{
+		key: "applications",
+		label: "Applications",
+		emoji: "✅",
+		title: "Applications (Category Verification)",
+		intro:
+			"Apply to be **verified in a portfolio category** so you can post entries in it. Approval also earns you the **Verified badge** that appears on your public card.\n\nThis is *not* a hiring system — it's a skill-check that vouches you as a Scripter, Modeler, GFX Artist, etc. on the platform.",
+		steps: [
+			"Open **Applications** in the sidebar",
+			"Find the category that matches your work, click **Apply**",
+			"Fill out the form — link to real work samples (Roblox places, image galleries, GitHub)",
+			"Submit. Status flows: Pending → Approved / Denied",
+			"Approved categories unlock the matching tab on your Portfolio page + the Verified badge",
+		],
+		gotcha:
+			"Work samples matter more than written length. Three strong samples beat ten mediocre ones. If you were on a team for a project, say what your role was — undisclosed shared credit gets flagged.",
+		url: `${SITE}/member/applications`,
 	},
 	{
 		key: "mockup-maker",
@@ -94,17 +94,17 @@ const DOCS_EMBEDS: DocSection[] = [
 		emoji: "🎨",
 		title: "Mockup Maker",
 		intro:
-			"Generate **shareable preview images** from your portfolio entries. Pick a layout, drop in your work, customize the look, download as PNG. Drop it on Discord, in DMs, on for-hire posts — anywhere.",
+			"Generate **shareable preview images** from your portfolio entries. Pick a layout, drop in your work, customize the look, download as a 1920×1080 PNG. Use it on for-hire posts, in DMs, anywhere you need to summarize your portfolio in one image.",
 		steps: [
-			"Pick a template (Quad Grid, Triple Grid, Hero Collage, Staggered, Showcase Card, Magazine, Filmstrip)",
+			"Pick a template — 7 ship: Quad Grid, Triple Grid, Staggered, Hero Collage, Showcase Card, Magazine, Filmstrip",
 			"Click portfolio entries from the left panel to fill the slots",
 			"On the **Style** tab, pick a theme preset or set custom accent + title",
-			"On the **Watermark** tab, enable + style your watermark (16 effects, 4 tile modes)",
+			"On the **Watermark** tab, enable + style your watermark (12 fonts, 16 text effects, 4 tile modes)",
 			"On the **Effects** tab, add chromatic / vignette / grain / accent border",
 			"Click **Download PNG** when satisfied",
 		],
 		gotcha:
-			"Watermark tile mode **Tiled** or **Banner** is your best defense against art theft. Set opacity ~40% so it reads on any background.",
+			"Use a **Tiled** or **Banner** watermark to deter art theft. Single-corner marks are easily cropped off. Opacity ~40% reads on any background.",
 		url: `${SITE}/member/portfolio-mockup`,
 	},
 	{
@@ -113,7 +113,7 @@ const DOCS_EMBEDS: DocSection[] = [
 		emoji: "🌌",
 		title: "Background Library",
 		intro:
-			"Pick an **animated background** for your public card — gifs, videos, or images sourced from KLIPY, Pexels, Pixabay, and Steam Workshop (Wallpaper Engine). Live search returns millions of items.",
+			"Pick an **animated background** for your public card. Search across millions of items — gifs from KLIPY, videos from Pexels, stock images from Pixabay, and live wallpapers from Steam Workshop (Wallpaper Engine).",
 		steps: [
 			"Open **Customize** in the sidebar",
 			"Scroll to the **Library** section",
@@ -123,44 +123,27 @@ const DOCS_EMBEDS: DocSection[] = [
 			"Click any tile to apply instantly, then save",
 		],
 		gotcha:
-			"Wallpaper Engine animated wallpapers usually look best. Animated previews from Steam are scored highest in search results so they float to the top.",
+			"Wallpaper Engine animated wallpapers usually look best as backgrounds — they're designed for the use case. The search scores video-type results highest so they float to the top.",
 		url: `${SITE}/member/customize`,
 	},
 	{
-		key: "careers",
-		label: "Careers",
-		emoji: "🎯",
-		title: "Careers & Applications",
+		key: "customize",
+		label: "Customize",
+		emoji: "⚙️",
+		title: "Customize",
 		intro:
-			"Apply for **development roles** to unlock portfolio categories, marketplace posting, and team assignments. Each application is reviewed by staff — usually within a few days.",
+			"**Card-wide visual settings** — background, audio, opacity, blur, colors, and visual effects. This is where your card gets its personality. Every setting has a sensible default; the heavier looks (CRT scanlines, animated starfield) are opt-in.",
 		steps: [
-			"Browse open roles at **Applications** in the sidebar",
-			"Click **Apply** on any role you want to pursue",
-			"Fill in the application — quality work samples matter more than length",
-			"Submit. Status moves: Pending → Approved or Denied",
-			"Approved roles unlock the matching portfolio category",
+			"**Background** — image, gif, or video. Upload up to 20MB or pick from the Library",
+			"**Audio** — looping track, muted by default. Visitors can unmute via a volume widget",
+			"**Profile Opacity + Blur** — how transparent and frosted the card body is over the background",
+			"**Colors** — background tint + accent color overrides (leave blank for defaults)",
+			"**Effects** — Phosphor (CRT scanlines), Stars (animated starfield), Terminal Intro (boot animation)",
+			"**Hero** — toggle individual elements on your card's first page (badges row, commission status, rate pill, etc.)",
 		],
 		gotcha:
-			"Re-applying after a denial requires waiting 14 days. Use that time to improve your portfolio — denials usually mean we want to see more before deciding.",
-		url: `${SITE}/member/applications`,
-	},
-	{
-		key: "scam-logs",
-		label: "Scam Logs",
-		emoji: "🚨",
-		title: "Scam Logs (DSF)",
-		intro:
-			"**Report and browse known scammers.** Submissions are reviewed by staff and published once verified. Helps the whole community avoid bad actors.",
-		steps: [
-			"Browse existing logs at **/scamlogs** — search by username, Discord ID, or platform",
-			"To submit, click **Report** and fill in: subject identity, scam type, evidence, date",
-			"Attach screenshots, transaction logs, message archives — the more concrete the better",
-			"Staff reviews submissions within 1-3 days",
-			"Approved reports appear publicly with your submission credited (anonymously by default)",
-		],
-		gotcha:
-			"Reports need **concrete evidence**. Hearsay or vibes-only reports are denied. Screenshots with timestamps + Discord IDs are the gold standard.",
-		url: `${SITE}/scamlogs`,
+			"All three effects stacked (Phosphor + Stars + Terminal Intro) gets overwhelming. Pick **one** as your signature look. Terminal Intro adds 2-3 seconds before your card paints, so skip it if you want visitors to land instantly.",
+		url: `${SITE}/member/customize`,
 	},
 	{
 		key: "badges",
@@ -168,36 +151,53 @@ const DOCS_EMBEDS: DocSection[] = [
 		emoji: "🏆",
 		title: "Badges",
 		intro:
-			"Cosmetic **recognitions** earned for contribution, role tenure, community participation, and event participation. Equipped badges appear on your public card.",
+			"Cosmetic **recognitions** earned for contribution, role tenure, marketplace activity, community work, and events. Equipped badges show in a row on your public card hero.",
 		steps: [
-			"Open **Badges** in the sidebar to see your earned + available badges",
+			"Open **Badges** in the sidebar to see earned + available badges",
+			"Filter by category — Staff, Marketplace, Community, Awards, Events, Misc",
 			"Click any badge for details on how it's earned",
-			"Drag up to **6 badges** into your equipped row",
+			"Drag up to **6 badges** into the Equipped row at the top",
 			"Reorder by drag — first slot is the showcase position",
-			"Equipped badges render on your public card in the order shown",
 		],
 		gotcha:
-			"Some badges are role-locked (only staff can wear them) and some are event-locked (only earnable during specific events). Don't farm — they're meant to be milestones.",
+			"Role-locked badges (Owner, Admin, Investigator) only show while you hold the role — leave the role and the badge disappears. Event badges can never be re-issued, so earn them while they're available.",
 		url: `${SITE}/member/badges`,
 	},
 	{
-		key: "customize",
-		label: "Customize",
-		emoji: "⚙️",
-		title: "Customize Page",
+		key: "scam-logs",
+		label: "Scam Logs",
+		emoji: "🚨",
+		title: "Scam Prevention Database",
 		intro:
-			"**Card-wide visual settings** — background, audio, opacity, effects, hero customization. This is where your card gets its personality.",
+			"NightHawk's public registry of **verified scammers** — Discord users, Roblox accounts, or platform identities that have been caught running scams against developers. Contributed by partner Roblox dev servers and reviewed by NightHawk staff. R.I.O.T's `/scamlookup` command queries this list.",
 		steps: [
-			"**Background** — image, gif, or video (or pick from the Library above)",
-			"**Audio** — looping background track, muted by default",
-			"**Opacity + Blur** — how transparent the card body is over the background",
-			"**Colors** — background tint + accent color overrides",
-			"**Effects** — Phosphor (CRT scanlines), Stars (animated starfield), Terminal Intro (boot animation)",
-			"**Hero** — every element on the hero page is toggleable",
+			"Browse existing records at **/scamlogs** — search by username, Discord ID, or platform handle",
+			"If contacted by someone listed, treat the interaction with caution",
+			"To submit a new record, contribute via your partner server or open a ticket in the NightHawk hub",
+			"Submissions need concrete evidence — screenshots with IDs, transaction logs, message archives",
+			"To dispute a record about you, join the NightHawk hub and open an appeal",
 		],
 		gotcha:
-			"All effects default OFF for a reason — they're polarizing. Phosphor + Stars + Terminal Intro stacked can be overwhelming. Pick one as your signature look.",
-		url: `${SITE}/member/customize`,
+			"Reports need **concrete evidence**. Hearsay or vibes-only reports get denied. Screenshots with timestamps + Discord IDs are the gold standard — without them, the report can't be approved (not because we doubt you, but because publishing an unverified accusation could hurt the wrong person).",
+		url: `${SITE}/scamlogs`,
+	},
+	{
+		key: "careers",
+		label: "Careers",
+		emoji: "💼",
+		title: "Careers (Work at NightHawk)",
+		intro:
+			"**NightHawk's open positions** — volunteer, hybrid, and paid roles across development, design, investigation, moderation, and community. We hire people we'd want to work with for the long haul.\n\nNot to be confused with portfolio Applications. Careers is about *joining the NightHawk team*; Applications is about *getting verified to post portfolio entries*.",
+		steps: [
+			"Browse open positions at **/careers**",
+			"Each listing shows the role, type (volunteer / hybrid / paid), and what we're looking for",
+			"Click **Apply** on any role that fits — answer the role-specific questions",
+			"Submit. Staff reviews; you'll hear back via the contact channel you provided",
+			"Approved hires get onboarded with mentorship from senior staff",
+		],
+		gotcha:
+			"Hiring NightHawk for *your* project is different — that goes through the [hiring service agreement](https://nighthawknetwork.org/docs/hiring-nighthawk), not the Careers page. Careers is for people who want to join the NightHawk team.",
+		url: `${SITE}/careers`,
 	},
 ]
 
@@ -218,8 +218,8 @@ function buildSectionEmbed(s: DocSection): EmbedBuilder {
 				value: s.gotcha,
 			},
 			{
-				name: "Links",
-				value: `[Open in the portal →](${s.url})\n[Full guide on docs →](${SITE}/docs/guide-${s.key})`,
+				name: "Link",
+				value: `[Open in the portal →](${s.url})`,
 			},
 		)
 		.setFooter({ text: "NightHawk Network · nighthawknetwork.org" })
@@ -229,12 +229,10 @@ function buildSectionEmbed(s: DocSection): EmbedBuilder {
 function buildUniversalEmbeds(): { embed: EmbedBuilder; rows: ActionRowBuilder<ButtonBuilder>[] } {
 	const intro =
 		"All NightHawk feature docs in one place. Pick any section below to view the full guide — only **you** see the answer, so feel free to explore without spamming the channel.\n\n" +
-		DOCS_EMBEDS.map(s => `${s.emoji}  **${s.label}** — [${s.url.replace("https://", "")}](${s.url})`).join("\n") +
-		`\n\nPrefer reading on the web? [Browse all guides at nighthawknetwork.org/docs →](${SITE}/docs)`
+		DOCS_EMBEDS.map(s => `${s.emoji}  **${s.label}** — [${s.url.replace("https://", "")}](${s.url})`).join("\n")
 
 	const embed = new EmbedBuilder()
 		.setTitle("📚  NightHawk Docs")
-		.setURL(`${SITE}/docs`)
 		.setColor(NH_RED)
 		.setDescription(intro)
 		.setFooter({ text: "Pick a section below · NightHawk Network" })
