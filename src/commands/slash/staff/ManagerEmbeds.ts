@@ -99,12 +99,12 @@ const DOCS_EMBEDS: DocSection[] = [
 			"Pick a template — 7 ship: Quad Grid, Triple Grid, Staggered, Hero Collage, Showcase Card, Magazine, Filmstrip",
 			"Click portfolio entries from the left panel to fill the slots",
 			"On the **Style** tab, pick a theme preset or set custom accent + title",
-			"On the **Watermark** tab, enable + style your watermark (12 fonts, 16 text effects, 4 tile modes)",
+			"On the **Watermark** tab, enable + style your watermark (12 fonts, 16 text effects, 3 tile modes: Single / Grid / Scatter)",
 			"On the **Effects** tab, add chromatic / vignette / grain / accent border",
 			"Click **Download PNG** when satisfied",
 		],
 		gotcha:
-			"Use a **Tiled** or **Banner** watermark to deter art theft. Single-corner marks are easily cropped off. Opacity ~40% reads on any background.",
+			"Use **Grid** or **Scatter** tile mode to deter art theft — single-stamp watermarks are easily cropped off. Opacity ~40% reads on any background.",
 		url: `${SITE}/member/portfolio-mockup`,
 	},
 	{
