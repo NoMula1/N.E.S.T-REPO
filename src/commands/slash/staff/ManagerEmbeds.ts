@@ -218,8 +218,8 @@ function buildSectionEmbed(s: DocSection): EmbedBuilder {
 				value: s.gotcha,
 			},
 			{
-				name: "Link",
-				value: `[Open in the portal →](${s.url})`,
+				name: "Links",
+				value: `[Open in the portal →](${s.url})\n[Full guide on docs →](${SITE}/docs/guide-${s.key})`,
 			},
 		)
 		.setFooter({ text: "NightHawk Network · nighthawknetwork.org" })
@@ -229,10 +229,12 @@ function buildSectionEmbed(s: DocSection): EmbedBuilder {
 function buildUniversalEmbeds(): { embed: EmbedBuilder; rows: ActionRowBuilder<ButtonBuilder>[] } {
 	const intro =
 		"All NightHawk feature docs in one place. Pick any section below to view the full guide — only **you** see the answer, so feel free to explore without spamming the channel.\n\n" +
-		DOCS_EMBEDS.map(s => `${s.emoji}  **${s.label}** — [${s.url.replace("https://", "")}](${s.url})`).join("\n")
+		DOCS_EMBEDS.map(s => `${s.emoji}  **${s.label}** — [${s.url.replace("https://", "")}](${s.url})`).join("\n") +
+		`\n\nPrefer reading on the web? [Browse all guides at nighthawknetwork.org/docs →](${SITE}/docs)`
 
 	const embed = new EmbedBuilder()
 		.setTitle("📚  NightHawk Docs")
+		.setURL(`${SITE}/docs`)
 		.setColor(NH_RED)
 		.setDescription(intro)
 		.setFooter({ text: "Pick a section below · NightHawk Network" })
