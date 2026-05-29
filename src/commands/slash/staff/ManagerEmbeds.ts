@@ -1,107 +1,127 @@
 /* ──────────────────────────────────────────────────────────────────
-   /managerembeds — central command for posting the NightHawk docs
-   embeds. Staff-only. Each entry mirrors one section of the docs
-   on https://nighthawknetwork.org so the in-Discord content stays
-   the source-of-truth-style same as the website.
+   /managerembeds — central command for posting NightHawk docs +
+   feature guides as Discord embeds. Staff-only.
 
-   Usage:
-     /managerembeds                  → posts the Universal hub embed
-                                       with buttons to view each doc
-     /managerembeds section:portfolio → posts that single section
-                                        directly into the channel
+   STRUCTURE (per Tyler's spec)
 
-   Button interactions on the Universal hub are handled in
-   src/events/help/DocsHubButtons.ts.
+     Universal hub  → 5 top-level buttons:
+                      Marketplace · Portfolios · Scam Logs ·
+                      Careers · Documentation
+     Portfolios     → overview embed + sub-buttons for each
+                      sub-feature (Entries / Applications /
+                      Mockup Maker / Background Library /
+                      Customize / Badges)
+     Documentation  → category buttons (Legal / Hiring /
+                      Marketplace / R.I.O.T / Community / FAQ) →
+                      per-category doc select-menu → individual
+                      doc embed
+     Direct send    → /managerembeds section:<autocomplete> posts
+                      ANY single embed (feature, sub-feature, or
+                      doc) straight into the channel
 
-   To add a new doc: extend DOCS_EMBEDS below + add a matching
-   choice on the `section` option. The buttons + autocomplete
-   pick up new entries automatically.
+   Feature + sub-feature content is authored in-file (full
+   walkthroughs). Doc content is pulled live from the website's
+   /docs/manifest.json so the ~28 legal/policy/RIOT/FAQ docs stay
+   one-source-of-truth on the web — each renders as title + summary
+   + link to the full page.
+
+   Interaction handling lives in src/events/help/DocsHubButtons.ts.
    ────────────────────────────────────────────────────────────────── */
 import {
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
-	Colors,
 	EmbedBuilder,
 	PermissionsBitField,
+	StringSelectMenuBuilder,
+	StringSelectMenuOptionBuilder,
 } from "discord.js"
 import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
 
 const NH_RED = 0xE63946
-const NH_DARK = 0x100616
 const SITE = "https://nighthawknetwork.org"
 
-/* ─── Doc catalog ────────────────────────────────────────────────
-   Each entry is a complete embed definition. The `key` is what
-   the slash choice + button customId refer to.
-
-   `intro`  → embed description (markdown, up to 4096 chars)
-   `steps`  → ordered list rendered as one field
-   `gotcha` → quick "watch out for" callout
-   `url`    → button + footer link to the live page
-*/
-interface DocSection {
+/* ═══════════════════════════════════════════════════════════════
+   TYPES
+═══════════════════════════════════════════════════════════════ */
+interface EmbedDef {
 	key: string
 	label: string
 	emoji: string
 	title: string
 	intro: string
-	steps: string[]
-	gotcha: string
+	steps?: string[]
+	gotcha?: string
 	url: string
+	/** For parent features (portfolios) — keys of PORTFOLIO_SUBS to expose as drill-down buttons. */
+	subKeys?: string[]
 }
 
-const DOCS_EMBEDS: DocSection[] = [
+interface DocMeta {
+	slug: string
+	title: string
+	tldr: string
+	category: string
+	catLabel: string
+	accent?: number
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PORTFOLIO SUB-FEATURES
+   Reached by drilling into the Portfolios button. Each is also
+   directly sendable via the section autocomplete (sub:<key>).
+═══════════════════════════════════════════════════════════════ */
+const PORTFOLIO_SUBS: EmbedDef[] = [
 	{
-		key: "portfolio",
-		label: "Portfolio",
-		emoji: "📁",
-		title: "Portfolio",
+		key: "portfolio-entries",
+		label: "Entries",
+		emoji: "📇",
+		title: "Portfolio · Entries",
 		intro:
-			"Your **dev work, organized by category**. Each entry is a title, image, optional description, and tags. Your entries auto-render on your public card at `nighthawknetwork.org/c/<yourname>` — no publish step, edits land instantly.\n\nTo post entries in a category (UI/UX, Scripter, Modeler, GFX/Art, etc.) you first need to be **approved for that category** via the Applications page — see the Applications guide.",
+			"Your dev work, organized by category. Each entry is a title, image, optional description, and tags. Entries auto-render on your public card at `nighthawknetwork.org/c/<yourname>` — no publish step, edits land instantly.",
 		steps: [
-			"Get approved for at least one category via **Applications** (gives you the Verified badge)",
+			"Get verified in at least one category via **Applications** (the sub-feature next door)",
 			"On the **Portfolio** page, click **+ New Entry** under an approved category",
 			"Fill in title, image, optional description and tags, then save",
-			"Reorder entries by drag — first one becomes the category thumbnail",
-			"View your live card any time by clicking **Public Card** in the sidebar",
+			"Reorder entries by drag — the first one becomes the category thumbnail",
+			"View your live card any time via **Public Card** in the sidebar",
 		],
 		gotcha:
-			"Discord image URLs **expire after ~24h** because Discord signs them with a time-limited token. Re-upload through NightHawk hosting or use Imgur for stable links — otherwise your entry's image goes dead.",
+			"Discord image URLs **expire after ~24h** (signed CDN tokens). Re-upload through NightHawk hosting or use Imgur for stable links — otherwise the entry's image goes dead.",
 		url: `${SITE}/member/portfolio`,
 	},
 	{
 		key: "applications",
 		label: "Applications",
 		emoji: "✅",
-		title: "Applications (Category Verification)",
+		title: "Portfolio · Applications (Category Verification)",
 		intro:
-			"Apply to be **verified in a portfolio category** so you can post entries in it. Approval also earns you the **Verified badge** that appears on your public card.\n\nThis is *not* a hiring system — it's a skill-check that vouches you as a Scripter, Modeler, GFX Artist, etc. on the platform.",
+			"Apply to be **verified in a portfolio category** so you can post entries in it. Approval also earns the **Verified badge** on your card. It's a skill-check — not a hiring system. (For jobs at NightHawk, see **Careers**.)",
 		steps: [
 			"Open **Applications** in the sidebar",
-			"Find the category that matches your work, click **Apply**",
-			"Fill out the form — link to real work samples (Roblox places, image galleries, GitHub)",
+			"Find the category that matches your work (Scripter, Modeler, GFX, etc.) and click **Apply**",
+			"Link to real work samples — Roblox places, galleries, GitHub. Quality over quantity",
 			"Submit. Status flows: Pending → Approved / Denied",
-			"Approved categories unlock the matching tab on your Portfolio page + the Verified badge",
+			"Approved categories unlock the matching Portfolio tab + the Verified badge",
 		],
 		gotcha:
-			"Work samples matter more than written length. Three strong samples beat ten mediocre ones. If you were on a team for a project, say what your role was — undisclosed shared credit gets flagged.",
+			"Re-applying after a denial requires a 14-day wait. Use it to ship more work — denials usually mean 'show us more,' not 'never.'",
 		url: `${SITE}/member/applications`,
 	},
 	{
 		key: "mockup-maker",
 		label: "Mockup Maker",
 		emoji: "🎨",
-		title: "Mockup Maker",
+		title: "Portfolio · Mockup Maker",
 		intro:
-			"Generate **shareable preview images** from your portfolio entries. Pick a layout, drop in your work, customize the look, download as a 1920×1080 PNG. Use it on for-hire posts, in DMs, anywhere you need to summarize your portfolio in one image.",
+			"Generate **shareable preview images** from your portfolio entries — pick a layout, drop in your work, customize, download a 1920×1080 PNG. Use it on for-hire posts, in DMs, anywhere you need to summarize your portfolio in one image.",
 		steps: [
-			"Pick a template — 7 ship: Quad Grid, Triple Grid, Staggered, Hero Collage, Showcase Card, Magazine, Filmstrip",
+			"Pick a template — **7 ship**: Quad Grid, Triple Grid, Staggered, Hero Collage, Showcase Card, Magazine, Filmstrip",
 			"Click portfolio entries from the left panel to fill the slots",
-			"On the **Style** tab, pick a theme preset or set custom accent + title",
-			"On the **Watermark** tab, enable + style your watermark (12 fonts, 16 text effects, 3 tile modes: Single / Grid / Scatter)",
-			"On the **Effects** tab, add chromatic / vignette / grain / accent border",
-			"Click **Download PNG** when satisfied",
+			"**Style** tab — theme preset or custom accent + title",
+			"**Watermark** tab — enable + style (12 fonts, 16 text effects, 3 tile modes: Single / Grid / Scatter)",
+			"**Effects** tab — chromatic / vignette / grain / accent border",
+			"Click **Download PNG**",
 		],
 		gotcha:
 			"Use **Grid** or **Scatter** tile mode to deter art theft — single-stamp watermarks are easily cropped off. Opacity ~40% reads on any background.",
@@ -111,57 +131,92 @@ const DOCS_EMBEDS: DocSection[] = [
 		key: "background-library",
 		label: "Background Library",
 		emoji: "🌌",
-		title: "Background Library",
+		title: "Portfolio · Background Library",
 		intro:
 			"Pick an **animated background** for your public card. Search across millions of items — gifs from KLIPY, videos from Pexels, stock images from Pixabay, and live wallpapers from Steam Workshop (Wallpaper Engine).",
 		steps: [
-			"Open **Customize** in the sidebar",
-			"Scroll to the **Library** section",
+			"Open **Customize** in the sidebar, scroll to the **Library** section",
 			"Type any keyword (anime, lo-fi, cyberpunk, galaxy, sunset…)",
 			"Use the **Type** filter (Any / Videos / GIFs / Images) to narrow",
 			"Click **Sources** to toggle which APIs you search across",
 			"Click any tile to apply instantly, then save",
 		],
 		gotcha:
-			"Wallpaper Engine animated wallpapers usually look best as backgrounds — they're designed for the use case. The search scores video-type results highest so they float to the top.",
+			"Wallpaper Engine animated wallpapers usually look best — they're designed for the use case. Search scores video results highest so they float to the top.",
 		url: `${SITE}/member/customize`,
 	},
 	{
 		key: "customize",
 		label: "Customize",
 		emoji: "⚙️",
-		title: "Customize",
+		title: "Portfolio · Customize",
 		intro:
-			"**Card-wide visual settings** — background, audio, opacity, blur, colors, and visual effects. This is where your card gets its personality. Every setting has a sensible default; the heavier looks (CRT scanlines, animated starfield) are opt-in.",
+			"**Card-wide visual settings** — background, audio, opacity, blur, colors, and visual effects. Where your card gets its personality. Every setting has a sensible default; the heavier looks are opt-in.",
 		steps: [
 			"**Background** — image, gif, or video. Upload up to 20MB or pick from the Library",
-			"**Audio** — looping track, muted by default. Visitors can unmute via a volume widget",
-			"**Profile Opacity + Blur** — how transparent and frosted the card body is over the background",
-			"**Colors** — background tint + accent color overrides (leave blank for defaults)",
-			"**Effects** — Phosphor (CRT scanlines), Stars (animated starfield), Terminal Intro (boot animation)",
-			"**Hero** — toggle individual elements on your card's first page (badges row, commission status, rate pill, etc.)",
+			"**Audio** — looping track, muted by default. Visitors can unmute",
+			"**Opacity + Blur** — how transparent / frosted the card body is over the background",
+			"**Colors** — background tint + accent overrides (blank = defaults)",
+			"**Effects** — Phosphor (CRT scanlines), Stars (starfield), Terminal Intro (boot animation)",
+			"**Hero** — toggle individual elements on your card's first page",
 		],
 		gotcha:
-			"All three effects stacked (Phosphor + Stars + Terminal Intro) gets overwhelming. Pick **one** as your signature look. Terminal Intro adds 2-3 seconds before your card paints, so skip it if you want visitors to land instantly.",
+			"All three effects stacked (Phosphor + Stars + Terminal Intro) gets overwhelming. Pick **one** as your signature. Terminal Intro adds 2-3s before the card paints.",
 		url: `${SITE}/member/customize`,
 	},
 	{
 		key: "badges",
 		label: "Badges",
 		emoji: "🏆",
-		title: "Badges",
+		title: "Portfolio · Badges",
 		intro:
 			"Cosmetic **recognitions** earned for contribution, role tenure, marketplace activity, community work, and events. Equipped badges show in a row on your public card hero.",
 		steps: [
-			"Open **Badges** in the sidebar to see earned + available badges",
+			"Open **Badges** in the sidebar",
 			"Filter by category — Staff, Marketplace, Community, Awards, Events, Misc",
 			"Click any badge for details on how it's earned",
-			"Drag up to **6 badges** into the Equipped row at the top",
+			"Drag up to **6 badges** into the Equipped row",
 			"Reorder by drag — first slot is the showcase position",
 		],
 		gotcha:
-			"Role-locked badges (Owner, Admin, Investigator) only show while you hold the role — leave the role and the badge disappears. Event badges can never be re-issued, so earn them while they're available.",
+			"Role-locked badges only show while you hold the role. Event badges can never be re-issued — earn them while they're available.",
 		url: `${SITE}/member/badges`,
+	},
+]
+
+/* ═══════════════════════════════════════════════════════════════
+   TOP-LEVEL FEATURES
+   The 5 buttons on the universal hub. `portfolios` + `documentation`
+   are parents (drill-down); the rest are leaf embeds.
+═══════════════════════════════════════════════════════════════ */
+const TOP_LEVEL: EmbedDef[] = [
+	{
+		key: "marketplace",
+		label: "Marketplace",
+		emoji: "🛒",
+		title: "Marketplace",
+		intro:
+			"NightHawk's marketplace connects developers and clients across **Discord and the web**. Post a **Hiring**, **For Hire**, or **Selling** listing — it syncs both ways: post on Discord with `/post`, it shows on the website; post on the website, it shows in Discord.",
+		steps: [
+			"On Discord, run **`/post`** and pick a type — **Hiring** (you need work done), **For Hire** (offering services), or **Selling** (assets / products)",
+			"Or post from the **website marketplace** — same three types",
+			"Fill the template: clear title, specific description, pricing, portfolio proof, delivery estimate, contact method",
+			"Submit — staff reviews before it goes live",
+			"Once approved, your listing appears in **both** the Discord marketplace channels and on the website",
+		],
+		gotcha:
+			"Listings need real pricing + portfolio proof. No stolen content, account sales, or ToS-violating services — see **Marketplace Rules** under Documentation. Market-banned users can't post.",
+		url: `${SITE}/marketplace`,
+	},
+	{
+		key: "portfolios",
+		label: "Portfolios",
+		emoji: "📁",
+		title: "Portfolios",
+		intro:
+			"Your verified work showcase. Get verified in categories, post entries, and they render as your public card at `nighthawknetwork.org/c/<yourname>`.\n\nThe portfolio system has several sub-features — pick one below to dive in:\n\n📇 **Entries** — add your work\n✅ **Applications** — get verified in a category\n🎨 **Mockup Maker** — generate shareable preview images\n🌌 **Background Library** — animated card backgrounds\n⚙️ **Customize** — card-wide visuals\n🏆 **Badges** — earned cosmetics",
+		url: `${SITE}/member/portfolio`,
+		subKeys: ["portfolio-entries", "applications", "mockup-maker", "background-library", "customize", "badges"],
 	},
 	{
 		key: "scam-logs",
@@ -169,16 +224,16 @@ const DOCS_EMBEDS: DocSection[] = [
 		emoji: "🚨",
 		title: "Scam Prevention Database",
 		intro:
-			"NightHawk's public registry of **verified scammers** — Discord users, Roblox accounts, or platform identities that have been caught running scams against developers. Contributed by partner Roblox dev servers and reviewed by NightHawk staff. R.I.O.T's `/scamlookup` command queries this list.",
+			"NightHawk's public registry of **verified scammers** — Discord users, Roblox accounts, or platform identities caught running scams against developers. Contributed by partner Roblox dev servers and reviewed by NightHawk staff. R.I.O.T's `/scamlookup` command queries this list.",
 		steps: [
-			"Browse existing records at **/scamlogs** — search by username, Discord ID, or platform handle",
+			"Browse records at **/scamlogs** — search by username, Discord ID, or platform handle",
 			"If contacted by someone listed, treat the interaction with caution",
-			"To submit a new record, contribute via your partner server or open a ticket in the NightHawk hub",
+			"To submit a record, contribute via your partner server or open a ticket in the NightHawk hub",
 			"Submissions need concrete evidence — screenshots with IDs, transaction logs, message archives",
 			"To dispute a record about you, join the NightHawk hub and open an appeal",
 		],
 		gotcha:
-			"Reports need **concrete evidence**. Hearsay or vibes-only reports get denied. Screenshots with timestamps + Discord IDs are the gold standard — without them, the report can't be approved (not because we doubt you, but because publishing an unverified accusation could hurt the wrong person).",
+			"Reports need **concrete evidence** — screenshots with timestamps + Discord IDs are the gold standard. Hearsay gets denied, not because we doubt you, but because publishing an unverified accusation could hurt the wrong person.",
 		url: `${SITE}/scamlogs`,
 	},
 	{
@@ -187,69 +242,110 @@ const DOCS_EMBEDS: DocSection[] = [
 		emoji: "💼",
 		title: "Careers (Work at NightHawk)",
 		intro:
-			"**NightHawk's open positions** — volunteer, hybrid, and paid roles across development, design, investigation, moderation, and community. We hire people we'd want to work with for the long haul.\n\nNot to be confused with portfolio Applications. Careers is about *joining the NightHawk team*; Applications is about *getting verified to post portfolio entries*.",
+			"**NightHawk's open positions** — volunteer, hybrid, and paid roles across development, design, investigation, moderation, and community. We hire people we'd want to work with for the long haul.\n\nNot the same as portfolio **Applications** (verification to post entries), and not the same as **hiring NightHawk** to build your project.",
 		steps: [
 			"Browse open positions at **/careers**",
 			"Each listing shows the role, type (volunteer / hybrid / paid), and what we're looking for",
-			"Click **Apply** on any role that fits — answer the role-specific questions",
+			"Click **Apply** and answer the role-specific questions",
 			"Submit. Staff reviews; you'll hear back via the contact channel you provided",
 			"Approved hires get onboarded with mentorship from senior staff",
 		],
 		gotcha:
-			"Hiring NightHawk for *your* project is different — that goes through the [hiring service agreement](https://nighthawknetwork.org/docs/hiring-nighthawk), not the Careers page. Careers is for people who want to join the NightHawk team.",
+			"Don't confuse Careers with Applications. Careers = joining the NightHawk team. Applications = getting verified to post portfolio entries. Hiring NightHawk for your project is a third, separate flow (see Documentation → Hiring NightHawk).",
 		url: `${SITE}/careers`,
+	},
+	{
+		key: "documentation",
+		label: "Documentation",
+		emoji: "📚",
+		title: "Documentation",
+		intro:
+			"Everything published at **nighthawknetwork.org/docs** — terms, policies, R.I.O.T docs, processes, and FAQs. Pick a category below to browse, then choose a document to view it as its own embed.",
+		url: `${SITE}/docs`,
 	},
 ]
 
-/* Build an individual section embed */
-function buildSectionEmbed(s: DocSection): EmbedBuilder {
-	return new EmbedBuilder()
-		.setTitle(`${s.emoji}  ${s.title}`)
-		.setURL(s.url)
-		.setColor(NH_RED)
-		.setDescription(s.intro)
-		.addFields(
-			{
-				name: "How to use it",
-				value: s.steps.map((step, i) => `**${i + 1}.** ${step}`).join("\n"),
-			},
-			{
-				name: "⚠️  Watch out for",
-				value: s.gotcha,
-			},
-			{
-				name: "Links",
-				value: `[Open in the portal →](${s.url})\n[Full guide on docs →](${SITE}/docs/guide-${s.key})`,
-			},
-		)
-		.setFooter({ text: "NightHawk Network · nighthawknetwork.org" })
+/* ═══════════════════════════════════════════════════════════════
+   DOC MANIFEST — fetched live + cached for 10 min
+═══════════════════════════════════════════════════════════════ */
+let docCache: { at: number; docs: DocMeta[] } | null = null
+const DOC_CACHE_MS = 10 * 60 * 1000
+
+async function loadDocs(): Promise<DocMeta[]> {
+	if (docCache && Date.now() - docCache.at < DOC_CACHE_MS) return docCache.docs
+	try {
+		const r = await fetch(`${SITE}/docs/manifest.json`)
+		if (r.ok) {
+			const m: any = await r.json()
+			const cats: Record<string, any> = Object.fromEntries((m.categories || []).map((c: any) => [c.id, c]))
+			const docs: DocMeta[] = (m.docs || [])
+				.filter((d: any) => d.category !== "guides" && d.category !== "__internal__")
+				.map((d: any) => ({
+					slug: d.slug,
+					title: d.title,
+					tldr: d.tldr || "",
+					category: d.category,
+					catLabel: cats[d.category]?.label || d.category,
+					accent: cats[d.category]?.accent ? parseInt(String(cats[d.category].accent).replace("#", ""), 16) : undefined,
+				}))
+			docCache = { at: Date.now(), docs }
+			return docs
+		}
+	} catch (e) {
+		console.warn("[managerembeds] manifest fetch failed:", (e as Error).message)
+	}
+	return docCache?.docs || []
 }
 
-/* Build the Universal hub embed + 2 button rows (max 5 per row) */
-function buildUniversalEmbeds(): { embed: EmbedBuilder; rows: ActionRowBuilder<ButtonBuilder>[] } {
-	const intro =
-		"All NightHawk feature docs in one place. Pick any section below to view the full guide — only **you** see the answer, so feel free to explore without spamming the channel.\n\n" +
-		DOCS_EMBEDS.map(s => `${s.emoji}  **${s.label}** — [${s.url.replace("https://", "")}](${s.url})`).join("\n") +
-		`\n\nPrefer reading on the web? [Browse all guides at nighthawknetwork.org/docs →](${SITE}/docs)`
+/* Ordered list of doc categories for the Documentation hub. */
+const DOC_CATEGORY_ORDER = [
+	{ id: "legal",       label: "Legal & Compliance", emoji: "⚖️" },
+	{ id: "hiring",      label: "Hiring & Freelance", emoji: "🤝" },
+	{ id: "marketplace", label: "Marketplace",        emoji: "🛒" },
+	{ id: "riot",        label: "R.I.O.T Bot",        emoji: "🤖" },
+	{ id: "community",   label: "Community",          emoji: "👥" },
+	{ id: "faq",         label: "FAQ",                emoji: "❓" },
+]
 
-	const embed = new EmbedBuilder()
-		.setTitle("📚  NightHawk Docs")
-		.setURL(`${SITE}/docs`)
+/* ═══════════════════════════════════════════════════════════════
+   EMBED BUILDERS
+═══════════════════════════════════════════════════════════════ */
+
+/* Leaf feature / sub-feature embed (marketplace, scam-logs, careers, all portfolio subs) */
+function buildLeafEmbed(d: EmbedDef): EmbedBuilder {
+	const e = new EmbedBuilder()
+		.setTitle(`${d.emoji}  ${d.title}`)
+		.setURL(d.url)
 		.setColor(NH_RED)
-		.setDescription(intro)
-		.setFooter({ text: "Pick a section below · NightHawk Network" })
+		.setDescription(d.intro)
+		.setFooter({ text: "NightHawk Network · nighthawknetwork.org" })
+	if (d.steps?.length) {
+		e.addFields({ name: "How to use it", value: d.steps.map((s, i) => `**${i + 1}.** ${s}`).join("\n") })
+	}
+	if (d.gotcha) {
+		e.addFields({ name: "⚠️  Watch out for", value: d.gotcha })
+	}
+	e.addFields({ name: "Link", value: `[Open in the portal →](${d.url})` })
+	return e
+}
 
-	// Discord caps at 5 buttons per row → split 8 docs across 2 rows
+/* Portfolios parent — overview embed + sub-feature buttons */
+function buildPortfolioHub(): { embed: EmbedBuilder; rows: ActionRowBuilder<ButtonBuilder>[] } {
+	const def = TOP_LEVEL.find(t => t.key === "portfolios")!
+	const embed = new EmbedBuilder()
+		.setTitle(`${def.emoji}  ${def.title}`)
+		.setURL(def.url)
+		.setColor(NH_RED)
+		.setDescription(def.intro)
+		.setFooter({ text: "Pick a sub-feature below · NightHawk Network" })
 	const rows: ActionRowBuilder<ButtonBuilder>[] = []
-	const half = Math.ceil(DOCS_EMBEDS.length / 2)
-	for (let r = 0; r < 2; r++) {
-		const slice = DOCS_EMBEDS.slice(r * half, (r + 1) * half)
-		if (!slice.length) continue
+	const subs = PORTFOLIO_SUBS
+	for (let i = 0; i < subs.length; i += 5) {
 		const row = new ActionRowBuilder<ButtonBuilder>()
-		for (const s of slice) {
+		for (const s of subs.slice(i, i + 5)) {
 			row.addComponents(
 				new ButtonBuilder()
-					.setCustomId(`docs_view_${s.key}`)
+					.setCustomId(`me_sub_${s.key}`)
 					.setLabel(s.label)
 					.setEmoji(s.emoji)
 					.setStyle(ButtonStyle.Secondary),
@@ -260,56 +356,185 @@ function buildUniversalEmbeds(): { embed: EmbedBuilder; rows: ActionRowBuilder<B
 	return { embed, rows }
 }
 
-/* Export the section list + helpers so the button handler in
-   src/events/help/DocsHubButtons.ts can resolve a customId back
-   to its section without duplicating data. */
-export { DOCS_EMBEDS, buildSectionEmbed, buildUniversalEmbeds }
-export type { DocSection }
+/* Documentation parent — overview + category buttons */
+async function buildDocsHub(): Promise<{ embed: EmbedBuilder; rows: ActionRowBuilder<ButtonBuilder>[] }> {
+	const docs = await loadDocs()
+	const counts: Record<string, number> = {}
+	for (const d of docs) counts[d.category] = (counts[d.category] || 0) + 1
+	const def = TOP_LEVEL.find(t => t.key === "documentation")!
+	const list = DOC_CATEGORY_ORDER
+		.filter(c => counts[c.id])
+		.map(c => `${c.emoji}  **${c.label}** — ${counts[c.id]} doc${counts[c.id] === 1 ? "" : "s"}`)
+		.join("\n")
+	const embed = new EmbedBuilder()
+		.setTitle(`${def.emoji}  ${def.title}`)
+		.setURL(def.url)
+		.setColor(NH_RED)
+		.setDescription(`${def.intro}\n\n${list}`)
+		.setFooter({ text: "Pick a category below · NightHawk Network" })
+	const rows: ActionRowBuilder<ButtonBuilder>[] = []
+	const cats = DOC_CATEGORY_ORDER.filter(c => counts[c.id])
+	for (let i = 0; i < cats.length; i += 5) {
+		const row = new ActionRowBuilder<ButtonBuilder>()
+		for (const c of cats.slice(i, i + 5)) {
+			row.addComponents(
+				new ButtonBuilder()
+					.setCustomId(`me_doccat_${c.id}`)
+					.setLabel(c.label)
+					.setEmoji(c.emoji)
+					.setStyle(ButtonStyle.Secondary),
+			)
+		}
+		rows.push(row)
+	}
+	return { embed, rows }
+}
 
+/* Per-category doc select menu */
+async function buildDocCategorySelect(catId: string): Promise<{ embed: EmbedBuilder; rows: ActionRowBuilder<StringSelectMenuBuilder>[] } | null> {
+	const docs = (await loadDocs()).filter(d => d.category === catId)
+	if (!docs.length) return null
+	const cat = DOC_CATEGORY_ORDER.find(c => c.id === catId)
+	const embed = new EmbedBuilder()
+		.setTitle(`${cat?.emoji || "📚"}  ${cat?.label || catId}`)
+		.setColor(NH_RED)
+		.setDescription(`${docs.length} document${docs.length === 1 ? "" : "s"} in this category. Pick one from the menu to view it.`)
+		.setFooter({ text: "NightHawk Network · nighthawknetwork.org" })
+	const menu = new StringSelectMenuBuilder()
+		.setCustomId("me_docpick")
+		.setPlaceholder("Choose a document…")
+		.addOptions(
+			docs.slice(0, 25).map(d =>
+				new StringSelectMenuOptionBuilder()
+					.setLabel(d.title.slice(0, 100))
+					.setDescription((d.tldr || "").slice(0, 100))
+					.setValue(d.slug),
+			),
+		)
+	const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)
+	return { embed, rows: [row] }
+}
+
+/* Individual doc embed — summary + link (full text lives on the web) */
+function buildDocEmbed(doc: DocMeta): EmbedBuilder {
+	return new EmbedBuilder()
+		.setTitle(`📄  ${doc.title}`)
+		.setURL(`${SITE}/docs/${doc.slug}`)
+		.setColor(doc.accent ?? NH_RED)
+		.setDescription(doc.tldr || "_No summary available._")
+		.addFields({ name: "Read the full document", value: `[${SITE.replace("https://", "")}/docs/${doc.slug} →](${SITE}/docs/${doc.slug})` })
+		.setFooter({ text: `${doc.catLabel} · NightHawk Docs` })
+}
+
+/* Universal hub — 5 top-level category buttons */
+function buildUniversalHub(): { embed: EmbedBuilder; rows: ActionRowBuilder<ButtonBuilder>[] } {
+	const intro =
+		"Everything NightHawk, in one place. Pick a section below — only **you** see what opens, so explore freely without spamming the channel.\n\n" +
+		TOP_LEVEL.map(t => `${t.emoji}  **${t.label}**`).join("   ·   ") +
+		`\n\nPrefer the web? [Browse all docs at nighthawknetwork.org/docs →](${SITE}/docs)`
+	const embed = new EmbedBuilder()
+		.setTitle("📖  NightHawk — Docs & Features")
+		.setURL(`${SITE}/docs`)
+		.setColor(NH_RED)
+		.setDescription(intro)
+		.setFooter({ text: "Pick a section below · NightHawk Network" })
+	const row = new ActionRowBuilder<ButtonBuilder>()
+	for (const t of TOP_LEVEL) {
+		row.addComponents(
+			new ButtonBuilder()
+				.setCustomId(`me_top_${t.key}`)
+				.setLabel(t.label)
+				.setEmoji(t.emoji)
+				.setStyle(ButtonStyle.Primary),
+		)
+	}
+	return { embed, rows: [row] }
+}
+
+/* Exports for the interaction handler in DocsHubButtons.ts */
+export {
+	TOP_LEVEL,
+	PORTFOLIO_SUBS,
+	loadDocs,
+	buildLeafEmbed,
+	buildPortfolioHub,
+	buildDocsHub,
+	buildDocCategorySelect,
+	buildDocEmbed,
+	buildUniversalHub,
+}
+export type { EmbedDef, DocMeta }
+
+/* ═══════════════════════════════════════════════════════════════
+   COMMAND
+═══════════════════════════════════════════════════════════════ */
 export default new CommandExecutor()
 	.setName("managerembeds")
-	.setDescription("Post a NightHawk docs embed in this channel")
+	.setDescription("Post a NightHawk docs / feature embed in this channel")
 	.addStringOption(opt =>
 		opt
 			.setName("section")
-			.setDescription("Which section to post — leave blank for the universal hub")
+			.setDescription("Jump straight to a feature, sub-feature, or doc — leave blank for the universal hub")
 			.setRequired(false)
-			.addChoices(
-				{ name: "Universal Hub (all docs)", value: "universal" },
-				...DOCS_EMBEDS.map(s => ({ name: `${s.emoji} ${s.label}`, value: s.key })),
-			),
+			.setAutocomplete(true),
 	)
 	.setDefaultMemberPermissions(PermissionsBitField.Flags.ManageMessages)
-	.setBasePermission({
-		Level: PermissionLevel.Moderator,
+	.setBasePermission({ Level: PermissionLevel.Moderator })
+	.setAutocompleteExecutor(async (interaction) => {
+		const focused = interaction.options.getFocused().toLowerCase()
+		const docs = await loadDocs()
+		const all = [
+			{ name: "📖 Universal Hub (everything)", value: "hub" },
+			...TOP_LEVEL.map(t => ({ name: `${t.emoji} ${t.label}`, value: `feat:${t.key}` })),
+			...PORTFOLIO_SUBS.map(s => ({ name: `${s.emoji} Portfolio · ${s.label}`, value: `sub:${s.key}` })),
+			...docs.map(d => ({ name: `📄 ${d.catLabel} · ${d.title}`.slice(0, 100), value: `doc:${d.slug}` })),
+		]
+		const filtered = all.filter(c => c.name.toLowerCase().includes(focused)).slice(0, 25)
+		await interaction.respond(filtered)
 	})
 	.setExecutor(async interaction => {
 		if (!interaction.inCachedGuild()) {
-			interaction.reply({
-				content: "You must be inside a cached guild to use this command!",
-				ephemeral: true,
-			})
+			interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true })
 			return
 		}
+		const raw = interaction.options.getString("section")
 
-		const sectionKey = interaction.options.getString("section") ?? "universal"
-
-		if (sectionKey === "universal") {
-			const { embed, rows } = buildUniversalEmbeds()
-			// `as any` follows the project's existing pattern for passing
-			// ActionRowBuilder arrays — see PostButton.ts line 1285.
+		// No arg, or explicit "hub" → universal hub (public, with nav buttons)
+		if (!raw || raw === "hub") {
+			const { embed, rows } = buildUniversalHub()
 			await interaction.reply({ embeds: [embed], components: rows as any })
 			return
 		}
 
-		const section = DOCS_EMBEDS.find(s => s.key === sectionKey)
-		if (!section) {
-			interaction.reply({
-				content: `Unknown section: \`${sectionKey}\`. Use the dropdown.`,
-				ephemeral: true,
-			})
-			return
+		// feat:<key>
+		if (raw.startsWith("feat:")) {
+			const key = raw.slice(5)
+			if (key === "portfolios") {
+				const { embed, rows } = buildPortfolioHub()
+				await interaction.reply({ embeds: [embed], components: rows as any })
+				return
+			}
+			if (key === "documentation") {
+				const { embed, rows } = await buildDocsHub()
+				await interaction.reply({ embeds: [embed], components: rows as any })
+				return
+			}
+			const def = TOP_LEVEL.find(t => t.key === key)
+			if (def) { await interaction.reply({ embeds: [buildLeafEmbed(def)] }); return }
 		}
 
-		await interaction.reply({ embeds: [buildSectionEmbed(section)] })
+		// sub:<key>
+		if (raw.startsWith("sub:")) {
+			const def = PORTFOLIO_SUBS.find(s => s.key === raw.slice(4))
+			if (def) { await interaction.reply({ embeds: [buildLeafEmbed(def)] }); return }
+		}
+
+		// doc:<slug>
+		if (raw.startsWith("doc:")) {
+			const slug = raw.slice(4)
+			const doc = (await loadDocs()).find(d => d.slug === slug)
+			if (doc) { await interaction.reply({ embeds: [buildDocEmbed(doc)] }); return }
+		}
+
+		interaction.reply({ content: `Couldn't resolve \`${raw}\`. Use the autocomplete to pick a valid section.`, ephemeral: true })
 	})
