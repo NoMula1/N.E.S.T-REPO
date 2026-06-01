@@ -20,6 +20,10 @@ import { readFileSync, readdirSync, statSync, existsSync } from "fs"
 import { join } from "path"
 import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
 import { config } from "../../../utils/config"
+import { buildUniversalHub } from "./ManagerEmbeds"
+import ServerConfig from "../../../schemas/ServerConfig"
+
+const SNOWFLAKE = /^\d{17,20}$/
 
 const OWNER_ID = "1149913737558499358"
 const EMOJI_ROOT = join(process.cwd(), "assets", "emojis")
@@ -93,7 +97,11 @@ export default new CommandExecutor()
 		opt.setName("action")
 			.setDescription("Which operation to run")
 			.setRequired(true)
-			.addChoices({ name: "Install Emojis", value: "emojisinstall" }))
+			.addChoices(
+				{ name: "Install Emojis", value: "emojisinstall" },
+				{ name: "Manage Embeds", value: "embeds" },
+				{ name: "Set Newsletter Channel", value: "config-newsletter" },
+			))
 	.addStringOption(opt =>
 		opt.setName("target")
 			.setDescription("Where to install the emojis")
@@ -112,6 +120,14 @@ export default new CommandExecutor()
 			.setDescription("When installing all, skip these categories (autocomplete keeps adding to the list)")
 			.setRequired(false)
 			.setAutocomplete(true))
+	.addStringOption(opt =>
+		opt.setName("server")
+			.setDescription("Server ID (for Set Newsletter Channel) — blank uses the current server")
+			.setRequired(false))
+	.addStringOption(opt =>
+		opt.setName("channel")
+			.setDescription("Channel ID (for Set Newsletter Channel)")
+			.setRequired(false))
 	.setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
 	.setBasePermission({ Level: PermissionLevel.Developer, IsUser: [OWNER_ID] })
 	.setAutocompleteExecutor(async (interaction: AutocompleteInteraction) => {
@@ -156,6 +172,37 @@ export default new CommandExecutor()
 		}
 
 		const action = interaction.options.getString("action", true)
+
+		// ─── Manage Embeds → open the embeds hub (owner browse, ephemeral) ───
+		if (action === "embeds") {
+			const { embed, rows } = buildUniversalHub()
+			await interaction.reply({ embeds: [embed], components: rows as any, ephemeral: true })
+			return
+		}
+
+		// ─── Set Newsletter Channel → upsert per-server config ───
+		if (action === "config-newsletter") {
+			const serverId = interaction.options.getString("server") || interaction.guildId!
+			const channelId = interaction.options.getString("channel")
+			if (!SNOWFLAKE.test(serverId)) {
+				interaction.reply({ content: `Invalid server ID: \`${serverId}\`.`, ephemeral: true }); return
+			}
+			if (!channelId || !SNOWFLAKE.test(channelId)) {
+				interaction.reply({ content: "Provide a valid **channel** ID (the newsletter/changelog channel).", ephemeral: true }); return
+			}
+			const guildName = interaction.client.guilds.cache.get(serverId)?.name || ""
+			await ServerConfig.findOneAndUpdate(
+				{ guildID: serverId },
+				{ guildID: serverId, newsletterChannelID: channelId, guildName, updatedAt: new Date() },
+				{ upsert: true, new: true },
+			)
+			await interaction.reply({
+				content: `${config.successEmoji} Newsletter channel for ${guildName ? `**${guildName}**` : `\`${serverId}\``} set to <#${channelId}>.`,
+				ephemeral: true,
+			})
+			return
+		}
+
 		if (action !== "emojisinstall") {
 			interaction.reply({ content: `Unknown action: \`${action}\`.`, ephemeral: true })
 			return

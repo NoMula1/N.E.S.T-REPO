@@ -31,26 +31,16 @@ import {
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
-	ContainerBuilder,
 	EmbedBuilder,
-	MediaGalleryBuilder,
-	MediaGalleryItemBuilder,
 	PermissionsBitField,
-	SectionBuilder,
-	SeparatorBuilder,
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
-	TextDisplayBuilder,
-	ThumbnailBuilder,
 } from "discord.js"
 import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
+import { FLAG_COMPONENTS_V2, v2Banner, v2Container, v2Section, v2Separator, v2Text } from "../../../utils/ComponentsV2"
 
 const NH_RED = 0xE63946
 const SITE = "https://nighthawknetwork.org"
-/* MessageFlags.IsComponentsV2 (1 << 15). Used as a raw value because the
-   top-level discord-api-types bundled with discord.js predates this flag
-   in its typings, even though the runtime + builders support it. */
-const FLAG_COMPONENTS_V2 = 1 << 15
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -481,15 +471,12 @@ function buildUniversalHub(): { embed: EmbedBuilder; rows: ActionRowBuilder<Butt
 ═══════════════════════════════════════════════════════════════ */
 function buildTestComponents() {
 	const IMG = `${SITE}/img/embeds`
-	const banner = (file: string, alt: string) =>
-		new MediaGalleryBuilder().addItems(
-			new MediaGalleryItemBuilder().setURL(`${IMG}/${file}`).setDescription(alt))
-	const rule = () => new SeparatorBuilder().setDivider(true)
-	const td = (s: string) => new TextDisplayBuilder().setContent(s)
-	const section = (blocks: string[], thumbFile: string) =>
-		new SectionBuilder()
-			.addTextDisplayComponents(blocks.map(td))
-			.setThumbnailAccessory(new ThumbnailBuilder().setURL(`${IMG}/${thumbFile}`))
+	// Thin wrappers over the shared ComponentsV2 helpers that prefix the
+	// hosted-image path. rule/td map straight to v2Separator/v2Text.
+	const banner = (file: string, alt: string) => v2Banner(`${IMG}/${file}`, alt)
+	const rule = v2Separator
+	const td = v2Text
+	const section = (blocks: string[], thumbFile: string) => v2Section(blocks, `${IMG}/${thumbFile}`)
 
 	// NightHawk onboarding embed in the Components V2 style — original copy +
 	// original hosted banners/tiles (not the reference's content or art).
@@ -522,19 +509,9 @@ function buildTestComponents() {
 
 	// Wrap everything in a Container so it renders as one cohesive bordered
 	// card (the "actual embed" look) instead of loose components on the
-	// channel background. NO accent color is set — the reference renders as
-	// a plain dark card with no bright left stripe, so setting an accent
-	// would add a colored bar that doesn't match. The Container keeps
-	// insertion order across the typed add methods (each pushes to one
-	// shared array), so we dispatch each item to the matching method.
-	const container = new ContainerBuilder()
-	for (const c of items) {
-		if (c instanceof MediaGalleryBuilder) container.addMediaGalleryComponents(c)
-		else if (c instanceof SectionBuilder) container.addSectionComponents(c)
-		else if (c instanceof SeparatorBuilder) container.addSeparatorComponents(c)
-		else if (c instanceof TextDisplayBuilder) container.addTextDisplayComponents(c)
-	}
-	return [container]
+	// channel background. v2Container wraps the ordered list into one card
+	// (no accent stripe — plain dark card to match the reference).
+	return [v2Container(items)]
 }
 
 /* Exports for the interaction handler in DocsHubButtons.ts */
