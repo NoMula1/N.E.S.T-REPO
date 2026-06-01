@@ -31,6 +31,7 @@ import {
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
+	ContainerBuilder,
 	EmbedBuilder,
 	MediaGalleryBuilder,
 	MediaGalleryItemBuilder,
@@ -480,11 +481,12 @@ function buildUniversalHub(): { embed: EmbedBuilder; rows: ActionRowBuilder<Butt
        broken mentions.
 ═══════════════════════════════════════════════════════════════ */
 function buildTestComponents() {
+	const BLURPLE = 0x5865F2
 	const ph = (w: number, h: number, bg: string, label: string) =>
 		`https://placehold.co/${w}x${h}/${bg}/FFFFFF/png?text=${encodeURIComponent(label)}`
-	const banner = (w: number, h: number, bg: string, label: string, alt: string) =>
+	const banner = (label: string, alt: string) =>
 		new MediaGalleryBuilder().addItems(
-			new MediaGalleryItemBuilder().setURL(ph(w, h, bg, label)).setDescription(alt))
+			new MediaGalleryItemBuilder().setURL(ph(600, 149, "5865F2", label)).setDescription(alt))
 	const rule = () => new SeparatorBuilder().setDivider(true)
 	const td = (s: string) => new TextDisplayBuilder().setContent(s)
 	const section = (blocks: string[], thumbLabel: string) =>
@@ -492,14 +494,15 @@ function buildTestComponents() {
 			.addTextDisplayComponents(blocks.map(td))
 			.setThumbnailAccessory(new ThumbnailBuilder().setURL(ph(170, 170, "5865F2", thumbLabel)))
 
-	return [
-		banner(600, 149, "5865F2", "MakeYourDiscord", "bon c'est ma première image, on y va molo"),
+	// Ordered to match the live MakeBetter render Tyler compared against.
+	const items = [
+		banner("MakeYourDiscord", "bon c'est ma première image, on y va molo"),
 		rule(),
 		section([
 			"## 🐀 C'est quoi ce serveur ?\n💬 **MakeYourDiscord** est un serveur **d'entraide** français, il est destiné aux utilisateurs aguerris mais surtout aussi aux __débutants de Discord__. On veut les aider, informer ! Donc ici, vous retrouverez des **services**, des évènements, des projets (coucou MakeBetter) pour vous aider sur Discord ! Tout les services du serveur sont **gratuits**… 🎉",
 		], "INFO"),
 		rule(),
-		banner(600, 149, "404EED", "2 types de services", "ps : on en a 2 types"),
+		banner("NOS SERVICES", "ps : on en a 2 types"),
 		rule(),
 		section([
 			"### 🛠️ __**La conception**__\nOn créer, modifie vos serveurs en fonction de vos demandes !",
@@ -512,13 +515,26 @@ function buildTestComponents() {
 		], "EVAL"),
 		rule(),
 		td("💜 En effet, y'a tellement de trucs cools (🐸) sur ce serveur que c'est un peu le bordel !\nC'est parti pour vous décrire nos **concepts** :"),
-		banner(600, 51, "5865F2", "★ SERVICES ★", "oui j'ai kiffé le c/c"),
 		td("## 🏆 #🏆・server-award\nC'est un **concours du meilleur** serveur que vous connaissez, avant il était mensuel mais vu que les mêmes serveurs revenaient, maintenant pas de régularité :)\n\n## 🗞️ #🗞️・discord-décrypte\nComme Hugo Décryptes (||pas de procès stp||), on vous prépare des **articles sur l'actualité de Discord** ! On est pas super réguliers (en même temps on recherche un/des rédacteurs) mais le mieux serait d'en proposer 1 chaque 2 semaines :o\n\n## 🎨 #🎨・previews\nNom bizarre ouais mais on imagine, créons des **serveurs** fictifs pour de grandes **marques** (Gentle Mates, Burger King tout ça tout ça) !\n\n## ⌨️ #📖・articles\nBon non ce n'est __pas la même chose__ que Discord-Décryptes, c'est des articles générales sur **l'amélioration de vos serveurs** Discord."),
 		rule(),
 		section([
 			"💬 Vous êtes **actifs** = Vous gagnez des rôles sur le serveur\n\n🟢 Niveau **5** = **@Discordien**\n🟢 Niveau **10** = **@Builder**\n🟢 Niveau **17** = **@Wumpus Lover**\n🟢 Niveau **30** = **@Gromodo**",
 		], "LEVELS"),
 	]
+
+	// Wrap everything in a Container so it renders as one cohesive bordered
+	// card (the "actual embed" look) instead of loose components on the
+	// channel background. The Container keeps insertion order across the
+	// typed add methods (each pushes to one shared array), so we just
+	// dispatch each item to the matching method in sequence.
+	const container = new ContainerBuilder().setAccentColor(BLURPLE)
+	for (const c of items) {
+		if (c instanceof MediaGalleryBuilder) container.addMediaGalleryComponents(c)
+		else if (c instanceof SectionBuilder) container.addSectionComponents(c)
+		else if (c instanceof SeparatorBuilder) container.addSeparatorComponents(c)
+		else if (c instanceof TextDisplayBuilder) container.addTextDisplayComponents(c)
+	}
+	return [container]
 }
 
 /* Exports for the interaction handler in DocsHubButtons.ts */
