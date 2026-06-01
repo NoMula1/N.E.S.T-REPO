@@ -1,6 +1,6 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction, InteractionReplyOptions, SlashCommandBooleanOption, SlashCommandBuilder } from 'discord.js'
 import { config } from '../utils/config'
-import { SlashCommandChannelOption, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandRoleOption, SlashCommandStringOption, SlashCommandUserOption } from '@discordjs/builders'
+import { SlashCommandAttachmentOption, SlashCommandChannelOption, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandRoleOption, SlashCommandStringOption, SlashCommandUserOption } from '@discordjs/builders'
 import { getGuildConfig } from '../utils/GuildConfigCache'
 import { GuildRoles } from '../schemas/GuildConfig'
 
@@ -209,6 +209,15 @@ export class CommandExecutor extends SlashCommandBuilder {
 	 */
 	addChannelOption(input: SlashCommandChannelOption | ((builder: SlashCommandChannelOption) => SlashCommandChannelOption)): this {
 		super.addChannelOption(input)
+		return this
+	};
+	/**
+	 * Adds an attachment option.
+	 *
+	 * @param input - A function that returns an option builder or an already built builder
+	 */
+	addAttachmentOption(input: SlashCommandAttachmentOption | ((builder: SlashCommandAttachmentOption) => SlashCommandAttachmentOption)): this {
+		super.addAttachmentOption(input)
 		return this
 	};
 	/**

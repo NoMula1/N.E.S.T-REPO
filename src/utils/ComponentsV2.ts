@@ -101,3 +101,71 @@ export function resolveEmojis(text: string, map: Map<string, string>): string {
 export async function resolveEmojisLive(client: Client, text: string): Promise<string> {
 	return resolveEmojis(text, await buildEmojiMap(client))
 }
+
+/* ─── Markdown → Components V2 ────────────────────────────────────── */
+
+const BANNER_RE = /^!\[([^\]]*)\]\(([^)\s]+)\)$/
+const THUMB_RE = /^>\s*thumb:\s*(\S+)$/i
+const HR_RE = /^---+$/
+
+/**
+ * Parse update markdown into ordered V2 components.
+ *   ![alt](url)   → full-width banner (own line)
+ *   ---           → divider
+ *   > thumb: url  → the text block containing this line becomes a section
+ *                   with that image on the right
+ *   everything else → markdown text blocks (## headings, **bold**, etc.)
+ * Resolve :emoji: tokens BEFORE calling this.
+ */
+export function parseMarkdownToV2(markdown: string): V2Item[] {
+	const items: V2Item[] = []
+	let buffer: string[] = []
+	let thumb: string | null = null
+
+	const flush = () => {
+		const text = buffer.join("\n").trim()
+		buffer = []
+		const t = thumb
+		thumb = null
+		if (!text) return
+		if (t) items.push(v2Section([text.slice(0, 3900)], t))
+		else items.push(v2Text(text.slice(0, 3900)))
+	}
+
+	for (const line of markdown.replace(/\r\n/g, "\n").split("\n")) {
+		const trimmed = line.trim()
+		if (HR_RE.test(trimmed)) { flush(); items.push(v2Separator()); continue }
+		const b = trimmed.match(BANNER_RE)
+		if (b) { flush(); items.push(v2Banner(b[2], b[1] || "banner")); continue }
+		const th = trimmed.match(THUMB_RE)
+		if (th) { thumb = th[1]; continue }   // applies to current block on flush
+		buffer.push(line)
+	}
+	flush()
+	return items
+}
+
+export interface RenderableUpdate {
+	title: string
+	date: string
+	version?: string
+	banner?: string
+	markdown: string
+}
+
+/**
+ * Render a saved update into Components V2 (a single container).
+ * Resolves custom emoji, prepends optional hero banner + title/date header,
+ * then the parsed body. Caps total components to stay under Discord's limit.
+ */
+export async function renderUpdateComponents(client: Client, update: RenderableUpdate): Promise<ContainerBuilder[]> {
+	const map = await buildEmojiMap(client)
+	const md = resolveEmojis(update.markdown || "", map)
+	const items: V2Item[] = []
+	if (update.banner) items.push(v2Banner(update.banner, update.title))
+	const header = `# ${resolveEmojis(update.title, map)}${update.version ? `  ·  v${update.version}` : ""}\n-# ${update.date}`
+	items.push(v2Text(header))
+	items.push(v2Separator())
+	items.push(...parseMarkdownToV2(md))
+	return [v2Container(items.slice(0, 38))]
+}

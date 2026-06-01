@@ -22,8 +22,14 @@ import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor
 import { config } from "../../../utils/config"
 import { buildUniversalHub } from "./ManagerEmbeds"
 import ServerConfig from "../../../schemas/ServerConfig"
+import Update from "../../../schemas/Update"
+import { renderUpdateComponents, FLAG_COMPONENTS_V2 } from "../../../utils/ComponentsV2"
 
 const SNOWFLAKE = /^\d{17,20}$/
+const todayISO = () => new Date().toISOString().slice(0, 10)
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "update"
+/** Parse a comma list of server IDs. */
+const parseIds = (s: string | null) => (s || "").split(",").map(x => x.trim()).filter(x => SNOWFLAKE.test(x))
 
 const OWNER_ID = "1149913737558499358"
 const EMOJI_ROOT = join(process.cwd(), "assets", "emojis")
@@ -101,6 +107,11 @@ export default new CommandExecutor()
 				{ name: "Install Emojis", value: "emojisinstall" },
 				{ name: "Manage Embeds", value: "embeds" },
 				{ name: "Set Newsletter Channel", value: "config-newsletter" },
+				{ name: "Create Update", value: "update-create" },
+				{ name: "View Update", value: "update-view" },
+				{ name: "Send Update", value: "update-send" },
+				{ name: "List Updates", value: "update-list" },
+				{ name: "Delete Update", value: "update-delete" },
 			))
 	.addStringOption(opt =>
 		opt.setName("target")
@@ -128,10 +139,62 @@ export default new CommandExecutor()
 		opt.setName("channel")
 			.setDescription("Channel ID (for Set Newsletter Channel)")
 			.setRequired(false))
+	// ─── Update options ───
+	.addStringOption(opt =>
+		opt.setName("update")
+			.setDescription("Which saved update (View / Send / Delete)")
+			.setRequired(false)
+			.setAutocomplete(true))
+	.addAttachmentOption(opt =>
+		opt.setName("file")
+			.setDescription("Markdown (.md) file for Create Update")
+			.setRequired(false))
+	.addStringOption(opt =>
+		opt.setName("title")
+			.setDescription("Title for Create Update")
+			.setRequired(false))
+	.addStringOption(opt =>
+		opt.setName("date")
+			.setDescription("Date for Create Update (YYYY-MM-DD) — blank = today")
+			.setRequired(false))
+	.addStringOption(opt =>
+		opt.setName("version")
+			.setDescription("Version label for Create Update, e.g. 2.0 (optional)")
+			.setRequired(false))
+	.addStringOption(opt =>
+		opt.setName("banner")
+			.setDescription("Hero banner image URL for Create Update (optional)")
+			.setRequired(false))
+	.addStringOption(opt =>
+		opt.setName("scope")
+			.setDescription("Send Update target")
+			.setRequired(false)
+			.addChoices(
+				{ name: "All configured servers", value: "all" },
+				{ name: "All except (use 'server' = IDs to skip)", value: "all-except" },
+				{ name: "Specific (use 'server' = IDs to send to)", value: "specific" },
+			))
 	.setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
 	.setBasePermission({ Level: PermissionLevel.Developer, IsUser: [OWNER_ID] })
 	.setAutocompleteExecutor(async (interaction: AutocompleteInteraction) => {
 		const focused = interaction.options.getFocused(true)
+
+		// Saved-update picker (View / Send / Delete)
+		if (focused.name === "update") {
+			try {
+				const q = focused.value.toLowerCase()
+				const docs = await Update.find().sort({ date: -1, createdAt: -1 }).limit(50).lean()
+				const choices = docs
+					.map((u: any) => ({
+						name: `${u.date} · ${u.title}${u.version ? ` · v${u.version}` : ""}${u.status === "draft" ? " (draft)" : ""}`.slice(0, 100),
+						value: u.updateId,
+					}))
+					.filter(c => c.name.toLowerCase().includes(q) || c.value.toLowerCase().includes(q))
+					.slice(0, 25)
+				await interaction.respond(choices)
+			} catch { await interaction.respond([]) }
+			return
+		}
 
 		if (focused.name === "exclude") {
 			// Multi-select via comma accumulation: keep everything before the
@@ -200,6 +263,124 @@ export default new CommandExecutor()
 				content: `${config.successEmoji} Newsletter channel for ${guildName ? `**${guildName}**` : `\`${serverId}\``} set to <#${channelId}>.`,
 				ephemeral: true,
 			})
+			return
+		}
+
+		// ═══════════════════ UPDATE SYSTEM ═══════════════════
+
+		// ─── Create Update (from a .md attachment) ───
+		if (action === "update-create") {
+			const file = interaction.options.getAttachment("file")
+			const title = interaction.options.getString("title")
+			if (!title) { interaction.reply({ content: "Provide a **title**.", ephemeral: true }); return }
+			if (!file) { interaction.reply({ content: "Attach a **.md** file as `file`.", ephemeral: true }); return }
+			const date = (interaction.options.getString("date") || todayISO()).slice(0, 10)
+			const version = interaction.options.getString("version") || ""
+			const banner = interaction.options.getString("banner") || ""
+			await interaction.deferReply({ ephemeral: true })
+
+			let markdown = ""
+			try {
+				const res = await fetch(file.url)
+				if (!res.ok) throw new Error(`fetch ${res.status}`)
+				markdown = await res.text()
+			} catch (e: any) {
+				await interaction.editReply({ content: `Couldn't read the file: ${e?.message || e}` }); return
+			}
+			if (markdown.length > 100_000) { await interaction.editReply({ content: "File too large (max 100KB of markdown)." }); return }
+
+			let updateId = `${date}-${slugify(title)}`
+			let n = 2
+			while (await Update.exists({ updateId })) updateId = `${date}-${slugify(title)}-${n++}`
+			await Update.create({ updateId, title, date, version, banner, markdown, createdBy: interaction.user.id, status: "draft" })
+
+			try {
+				const comps = await renderUpdateComponents(interaction.client, { title, date, version, banner, markdown })
+				await interaction.editReply({ content: `${config.successEmoji} Saved **${title}** (\`${updateId}\`) as a draft. Preview ↓` })
+				await interaction.followUp({ flags: FLAG_COMPONENTS_V2 as any, components: comps as any, ephemeral: true })
+			} catch (e: any) {
+				await interaction.editReply({ content: `${config.successEmoji} Saved **${title}** (\`${updateId}\`), but preview failed: ${e?.message || e}` })
+			}
+			return
+		}
+
+		// ─── View Update (ephemeral preview) ───
+		if (action === "update-view") {
+			const id = interaction.options.getString("update")
+			if (!id) { interaction.reply({ content: "Pick an **update**.", ephemeral: true }); return }
+			const u = await Update.findOne({ updateId: id }).lean() as any
+			if (!u) { interaction.reply({ content: `No update \`${id}\`.`, ephemeral: true }); return }
+			await interaction.deferReply({ ephemeral: true })
+			try {
+				const comps = await renderUpdateComponents(interaction.client, u)
+				await interaction.editReply({ content: `Preview of **${u.title}** (\`${id}\`):` })
+				await interaction.followUp({ flags: FLAG_COMPONENTS_V2 as any, components: comps as any, ephemeral: true })
+			} catch (e: any) {
+				await interaction.editReply({ content: `Render failed: ${e?.message || e}` })
+			}
+			return
+		}
+
+		// ─── Send Update (targeting: all / all-except / specific) ───
+		if (action === "update-send") {
+			const id = interaction.options.getString("update")
+			const scope = interaction.options.getString("scope") || "all"
+			if (!id) { interaction.reply({ content: "Pick an **update**.", ephemeral: true }); return }
+			const u = await Update.findOne({ updateId: id }) as any
+			if (!u) { interaction.reply({ content: `No update \`${id}\`.`, ephemeral: true }); return }
+			await interaction.deferReply({ ephemeral: true })
+
+			const configs = await ServerConfig.find({ newsletterChannelID: { $ne: "" } }).lean() as any[]
+			const ids = parseIds(interaction.options.getString("server"))
+			let targets = configs
+			if (scope === "specific") targets = configs.filter(c => ids.includes(c.guildID))
+			else if (scope === "all-except") targets = configs.filter(c => !ids.includes(c.guildID))
+			if (!targets.length) {
+				await interaction.editReply({ content: "No target servers. Configure newsletter channels first with **Set Newsletter Channel**, and for specific/all-except pass valid server IDs in `server`." })
+				return
+			}
+
+			const comps = await renderUpdateComponents(interaction.client, u)
+			let sent = 0
+			const fails: string[] = []
+			for (const cfg of targets) {
+				try {
+					const ch = await interaction.client.channels.fetch(cfg.newsletterChannelID)
+					if (!ch || !ch.isTextBased() || !("send" in ch)) throw new Error("not a sendable text channel")
+					const msg = await (ch as any).send({ flags: FLAG_COMPONENTS_V2, components: comps })
+					u.sentTo.push({ guildID: cfg.guildID, channelID: cfg.newsletterChannelID, messageID: msg.id, sentAt: new Date() })
+					sent++
+				} catch (e: any) {
+					if (fails.length < 6) fails.push(`• ${cfg.guildName || cfg.guildID}: ${e?.message || e}`)
+				}
+			}
+			u.status = "published"
+			await u.save()
+
+			const lines = [
+				`${config.successEmoji} Sent **${u.title}** to **${sent}** server${sent === 1 ? "" : "s"} (scope: ${scope}).`,
+				fails.length ? `Failed ${fails.length}:\n${fails.join("\n")}` : "",
+			].filter(Boolean)
+			await interaction.editReply({ content: lines.join("\n") })
+			return
+		}
+
+		// ─── List Updates ───
+		if (action === "update-list") {
+			const docs = await Update.find().sort({ date: -1, createdAt: -1 }).limit(25).lean() as any[]
+			if (!docs.length) { interaction.reply({ content: "No saved updates yet — create one with **Create Update**.", ephemeral: true }); return }
+			const lines = docs.map(u =>
+				`• \`${u.updateId}\` — **${u.title}** · ${u.date}${u.version ? ` · v${u.version}` : ""} · ${u.status}${u.sentTo?.length ? ` · sent ${u.sentTo.length}×` : ""}`)
+			interaction.reply({ content: `**Saved updates (${docs.length})**\n${lines.join("\n").slice(0, 1900)}`, ephemeral: true })
+			return
+		}
+
+		// ─── Delete Update ───
+		if (action === "update-delete") {
+			const id = interaction.options.getString("update")
+			if (!id) { interaction.reply({ content: "Pick an **update**.", ephemeral: true }); return }
+			const r = await Update.deleteOne({ updateId: id })
+			interaction.reply({ content: r.deletedCount ? `${config.successEmoji} Deleted \`${id}\`.` : `No update \`${id}\`.`, ephemeral: true })
 			return
 		}
 

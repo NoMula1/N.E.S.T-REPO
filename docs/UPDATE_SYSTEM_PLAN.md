@@ -129,7 +129,25 @@ Custom emoji (`:RDIcon:`, `:Automod:`, …) render from the pack installed via `
 - ✅ `/ops action:emojisinstall` — owner-only bulk emoji installer; target Server|Application;
   category + multi-exclude (comma autocomplete); skips existing; **re-run continues** (filters
   already-installed before batching); 1.2s pacing; 200/run cap; bundled pack `assets/emojis/` (263).
-- 🔜 **Phase 1 in progress** (this build).
+- ✅ **Phase 1 DONE** — `src/utils/ComponentsV2.ts` (builders + emoji resolver),
+  `src/schemas/ServerConfig.ts` (nh_server_config), `/ops` actions `embeds` +
+  `config-newsletter`. ManagerEmbeds refactored onto the shared module.
+- ✅ **Phase 2 DONE** — `src/schemas/Update.ts` (nh_updates), markdown→V2 parser
+  (`parseMarkdownToV2`) + `renderUpdateComponents` in ComponentsV2, and `/ops`
+  Update actions: `update-create` (.md attachment + title/date/version/banner),
+  `update-view` (preview), `update-send` (scope all / all-except / specific via
+  `server` comma-IDs, posts to each server's configured newsletter channel,
+  logs sentTo), `update-list`, `update-delete`. `update` option autocompletes
+  from saved updates. Added `addAttachmentOption` wrapper to CommandExecutor.
+- 🔜 **Phase 3 next** — Update Mode (event tracking: all/one/exclude → draft).
+
+### How to author + send an update (Phase 2 usage)
+1. `/ops action:"Set Newsletter Channel" server:<guildID> channel:<channelID>` for each target server.
+2. Write the update as a `.md` file (## headings, `![alt](url)` banners, `---` dividers,
+   `> thumb: url` for side images, `:emoji:` from the installed pack).
+3. `/ops action:"Create Update" title:... [date] [version] [banner] file:<the .md>` → saves draft + previews.
+4. `/ops action:"View Update" update:<pick>` to preview again.
+5. `/ops action:"Send Update" update:<pick> scope:<All|All except|Specific> [server:<comma IDs>]`.
 
 Relevant files:
 - `src/commands/slash/staff/ManagerEmbeds.ts` — embeds hub + builders + TestEmbed.
