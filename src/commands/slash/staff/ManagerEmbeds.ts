@@ -481,7 +481,6 @@ function buildUniversalHub(): { embed: EmbedBuilder; rows: ActionRowBuilder<Butt
        broken mentions.
 ═══════════════════════════════════════════════════════════════ */
 function buildTestComponents() {
-	const BLURPLE = 0x5865F2
 	const ph = (w: number, h: number, bg: string, label: string) =>
 		`https://placehold.co/${w}x${h}/${bg}/FFFFFF/png?text=${encodeURIComponent(label)}`
 	const banner = (label: string, alt: string) =>
@@ -524,10 +523,12 @@ function buildTestComponents() {
 
 	// Wrap everything in a Container so it renders as one cohesive bordered
 	// card (the "actual embed" look) instead of loose components on the
-	// channel background. The Container keeps insertion order across the
-	// typed add methods (each pushes to one shared array), so we just
-	// dispatch each item to the matching method in sequence.
-	const container = new ContainerBuilder().setAccentColor(BLURPLE)
+	// channel background. NO accent color is set — the reference renders as
+	// a plain dark card with no bright left stripe, so setting an accent
+	// would add a colored bar that doesn't match. The Container keeps
+	// insertion order across the typed add methods (each pushes to one
+	// shared array), so we dispatch each item to the matching method.
+	const container = new ContainerBuilder()
 	for (const c of items) {
 		if (c instanceof MediaGalleryBuilder) container.addMediaGalleryComponents(c)
 		else if (c instanceof SectionBuilder) container.addSectionComponents(c)
