@@ -23,7 +23,9 @@ import { config } from "../../../utils/config"
 import { buildUniversalHub } from "./ManagerEmbeds"
 import ServerConfig from "../../../schemas/ServerConfig"
 import Update from "../../../schemas/Update"
+import UpdateTracking from "../../../schemas/UpdateTracking"
 import { renderUpdateComponents, FLAG_COMPONENTS_V2 } from "../../../utils/ComponentsV2"
+import { TRACK_TYPES, setActiveLocal, draftMarkdownFromChanges } from "../../../utils/updateMode"
 
 const SNOWFLAKE = /^\d{17,20}$/
 const todayISO = () => new Date().toISOString().slice(0, 10)
@@ -146,6 +148,24 @@ export default new CommandExecutor()
 		.setName("delete_update")
 		.setDescription("Delete a saved update")
 		.addStringOption(opt => opt.setName("update").setDescription("Which update").setRequired(true).setAutocomplete(true)))
+	.addSubcommand(s => s
+		.setName("track_start")
+		.setDescription("Update Mode: start tracking this server's changes")
+		.addStringOption(opt => opt.setName("scope").setDescription("What to track")
+			.addChoices(
+				{ name: "All change types", value: "all" },
+				{ name: "One type (set 'types')", value: "one" },
+				{ name: "All except (set 'types' to skip)", value: "all-except" }))
+		.addStringOption(opt => opt.setName("types").setDescription("channels, roles, emojis, settings, bots").setAutocomplete(true)))
+	.addSubcommand(s => s
+		.setName("track_status")
+		.setDescription("Update Mode: show tracking status + changes so far"))
+	.addSubcommand(s => s
+		.setName("track_finish")
+		.setDescription("Update Mode: stop & turn tracked changes into a draft update"))
+	.addSubcommand(s => s
+		.setName("track_cancel")
+		.setDescription("Update Mode: stop & discard tracked changes"))
 	.setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
 	.setBasePermission({ Level: PermissionLevel.Developer, IsUser: [OWNER_ID] })
 	.setAutocompleteExecutor(async (interaction: AutocompleteInteraction) => {
@@ -165,6 +185,20 @@ export default new CommandExecutor()
 					.slice(0, 25)
 				await interaction.respond(choices)
 			} catch { await interaction.respond([]) }
+			return
+		}
+
+		// Tracked-type multi-picker (track_start)
+		if (focused.name === "types") {
+			const parts = focused.value.split(",")
+			const current = (parts[parts.length - 1] || "").trim().toLowerCase()
+			const chosen = parts.slice(0, -1).map(s => s.trim()).filter(Boolean)
+			const chosenLower = new Set(chosen.map(s => s.toLowerCase()))
+			const suggestions = (TRACK_TYPES as readonly string[])
+				.filter(t => !chosenLower.has(t) && t.includes(current))
+				.slice(0, 25)
+				.map(t => { const full = [...chosen, t].join(", ").slice(0, 100); return { name: full, value: full } })
+			await interaction.respond(suggestions)
 			return
 		}
 
@@ -353,6 +387,82 @@ export default new CommandExecutor()
 			if (!id) { interaction.reply({ content: "Pick an **update**.", ephemeral: true }); return }
 			const r = await Update.deleteOne({ updateId: id })
 			interaction.reply({ content: r.deletedCount ? `${config.successEmoji} Deleted \`${id}\`.` : `No update \`${id}\`.`, ephemeral: true })
+			return
+		}
+
+		// ═══════════════════ UPDATE MODE (tracking) ═══════════════════
+
+		// ─── Start tracking ───
+		if (action === "track_start") {
+			const scope = interaction.options.getString("scope") || "all"
+			const raw = (interaction.options.getString("types") || "")
+				.split(",").map(s => s.trim().toLowerCase()).filter(t => (TRACK_TYPES as readonly string[]).includes(t))
+			let types: string[]
+			if (scope === "all") types = [...TRACK_TYPES]
+			else if (scope === "one") {
+				if (!raw.length) { interaction.reply({ content: `For scope **One**, set \`types\` to a single type (${TRACK_TYPES.join(", ")}).`, ephemeral: true }); return }
+				types = [raw[0]]
+			} else {
+				types = (TRACK_TYPES as readonly string[]).filter(t => !raw.includes(t))
+			}
+			if (!types.length) { interaction.reply({ content: "No change types left to track.", ephemeral: true }); return }
+			await UpdateTracking.findOneAndUpdate(
+				{ guildID: interaction.guildId },
+				{ guildID: interaction.guildId, active: true, scope, types, startedAt: new Date(), startedBy: interaction.user.id, changes: [] },
+				{ upsert: true },
+			)
+			setActiveLocal(interaction.guildId!, true)
+			interaction.reply({ content: `${config.successEmoji} **Update Mode ON** for this server.\nTracking: **${types.join(", ")}**.\nMake your changes, then run \`/ops track_finish\`.`, ephemeral: true })
+			return
+		}
+
+		// ─── Tracking status ───
+		if (action === "track_status") {
+			const doc = await UpdateTracking.findOne({ guildID: interaction.guildId }).lean() as any
+			if (!doc || !doc.active) { interaction.reply({ content: "Update Mode is **off** here. Start with `/ops track_start`.", ephemeral: true }); return }
+			const counts: Record<string, number> = {}
+			for (const c of doc.changes) counts[c.type] = (counts[c.type] || 0) + 1
+			const summary = Object.entries(counts).map(([t, n]) => `• ${t}: ${n}`).join("\n") || "• (none yet)"
+			interaction.reply({ content: `**Update Mode ON** · tracking ${doc.types.join(", ")}\n**${doc.changes.length}** change(s) recorded:\n${summary}`, ephemeral: true })
+			return
+		}
+
+		// ─── Finish tracking → draft update ───
+		if (action === "track_finish") {
+			const doc = await UpdateTracking.findOne({ guildID: interaction.guildId }) as any
+			if (!doc || !doc.active) { interaction.reply({ content: "Update Mode isn't active here. Start with `/ops track_start`.", ephemeral: true }); return }
+			doc.active = false
+			await doc.save()
+			setActiveLocal(interaction.guildId!, false)
+			await interaction.deferReply({ ephemeral: true })
+
+			const md = draftMarkdownFromChanges(doc.changes)
+			const date = todayISO()
+			let updateId = `${date}-server-update`
+			let n = 2
+			while (await Update.exists({ updateId })) updateId = `${date}-server-update-${n++}`
+			const title = `Server Update ${date}`
+			await Update.create({ updateId, title, date, version: "", banner: "", markdown: md, createdBy: interaction.user.id, status: "draft" })
+
+			try {
+				const comps = await renderUpdateComponents(interaction.client, { title, date, markdown: md })
+				await interaction.editReply({ content: `${config.successEmoji} **Update Mode OFF.** Logged **${doc.changes.length}** change(s) → draft \`${updateId}\`. Edit + add your off-Discord changes, then send with \`/ops send_update\`. Preview ↓` })
+				await interaction.followUp({ flags: FLAG_COMPONENTS_V2 as any, components: comps as any, ephemeral: true })
+			} catch (e: any) {
+				await interaction.editReply({ content: `${config.successEmoji} Saved draft \`${updateId}\` (${doc.changes.length} changes), preview failed: ${e?.message || e}` })
+			}
+			return
+		}
+
+		// ─── Cancel tracking (discard) ───
+		if (action === "track_cancel") {
+			const doc = await UpdateTracking.findOne({ guildID: interaction.guildId }) as any
+			if (!doc || !doc.active) { interaction.reply({ content: "Update Mode isn't active here.", ephemeral: true }); return }
+			doc.active = false
+			doc.changes = []
+			await doc.save()
+			setActiveLocal(interaction.guildId!, false)
+			interaction.reply({ content: `${config.successEmoji} Update Mode **cancelled** — tracked changes discarded.`, ephemeral: true })
 			return
 		}
 

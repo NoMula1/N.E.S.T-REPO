@@ -21,7 +21,8 @@ export const client = new CoreClient(config.clientID, {
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.GuildMessageReactions
+		GatewayIntentBits.GuildMessageReactions,
+		GatewayIntentBits.GuildExpressions   // emoji/sticker events for Update Mode tracking
 	],
 	partials: [
 		Partials.Message,

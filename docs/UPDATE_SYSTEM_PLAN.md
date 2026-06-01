@@ -139,7 +139,26 @@ Custom emoji (`:RDIcon:`, `:Automod:`, …) render from the pack installed via `
   `server` comma-IDs, posts to each server's configured newsletter channel,
   logs sentTo), `update-list`, `update-delete`. `update` option autocompletes
   from saved updates. Added `addAttachmentOption` wrapper to CommandExecutor.
-- 🔜 **Phase 3 next** — Update Mode (event tracking: all/one/exclude → draft).
+- ✅ **Phase 3 DONE** — Update Mode tracking. `src/schemas/UpdateTracking.ts`
+  (nh_update_tracking), `src/utils/updateMode.ts` (in-memory ACTIVE set +
+  recordChange + draftMarkdownFromChanges), `src/events/updatemode/Tracker.ts`
+  (on* handlers for channels/roles/emojis/settings/bots + onReady→refreshActive).
+  Added `GuildExpressions` intent to Core.ts (emoji events). `/ops` track
+  subcommands: `track_start` (scope all/one/all-except + `types` autocomplete),
+  `track_status`, `track_finish` (→ auto-draft Update + preview), `track_cancel`.
+  Subcommand refactor of /ops also shipped (each subcommand shows only its own
+  options) + "Update Embeds" button folded into the Manage Embeds hub.
+- 🔜 **Phase 4 next** — AI compose: route the track_finish draft through
+  `src/ai/` so it polishes tracked changes + Tyler's off-Discord notes
+  (summarize-only, never invent). Then Phase 5 (web composer + modal paste).
+
+### Update Mode usage (Phase 3)
+1. `/ops track_start scope:<All|One|All except> [types:channels,roles,…]`
+2. Do your server changes (bot logs channels/roles/emojis/settings/bots).
+3. `/ops track_status` to see what's logged.
+4. `/ops track_finish` → saves a draft Update from the changes + previews it.
+   Edit it (re-create) / add off-Discord notes, then `/ops send_update`.
+   `/ops track_cancel` discards instead.
 
 ### How to author + send an update (Phase 2 usage)
 1. `/ops action:"Set Newsletter Channel" server:<guildID> channel:<channelID>` for each target server.
