@@ -16,6 +16,9 @@ A modular, multi-server **Update / changelog system** for NightHawk + partner se
 Two complementary authoring paths feed **one stored Update object**, all under `/ops`.
 
 ### `/ops` structure (owner-only)
+> **Implemented as a no-option command → ephemeral button/menu/modal PANEL**
+> (one picker row, no subcommands). The tree below is the conceptual layout;
+> each node is a button or menu, not a slash subcommand.
 ```
 /ops
  ├─ 📑 Manage Embeds        (the old /managerembeds, moved here)
@@ -148,25 +151,50 @@ Custom emoji (`:RDIcon:`, `:Automod:`, …) render from the pack installed via `
   `track_status`, `track_finish` (→ auto-draft Update + preview), `track_cancel`.
   Subcommand refactor of /ops also shipped (each subcommand shows only its own
   options) + "Update Embeds" button folded into the Manage Embeds hub.
-- 🔜 **Phase 4 next** — AI compose: route the track_finish draft through
-  `src/ai/` so it polishes tracked changes + Tyler's off-Discord notes
-  (summarize-only, never invent). Then Phase 5 (web composer + modal paste).
+- ✅ **/ops HUB REFACTOR** — Tyler wanted "it all under ONE command" (one
+  picker row, no subcommand clutter, no R.I.O.T/DevSec `/ops` confusion).
+  Discord always explodes subcommands into separate picker rows, so the
+  only way to get one row is **no options at all**: `/ops` now opens an
+  ephemeral owner-only **control panel** (buttons + menus + modals). Each
+  action collects ONLY its own inputs when clicked, so nothing clutters
+  anything else. New files: `src/utils/opsEmoji.ts` (pack reader +
+  `installEmojiPack` runner, moved out of Ops.ts), `src/utils/opsHub.ts`
+  (panel builders, modals, customId scheme — all `ops_*`), and
+  `src/events/ops/OpsHub.ts` (InteractionCreate router for `ops_*`).
+  `Ops.ts` is now a thin no-option command that replies with the root
+  panel. Markdown authoring kept BOTH ways: paste into the Create modal
+  (≤4000 chars) OR leave it blank and upload a `.md` file (message
+  collector; MessageContent intent is on). Modal-paste folds in the old
+  "Phase 5 modal paste" method early. tsc clean.
+- 🔜 **Phase 4 next** — AI compose: route a saved draft through `src/ai/`
+  so it polishes tracked changes + Tyler's off-Discord notes
+  (summarize-only, never invent). Surface as an **"AI Compose"** button in
+  the Updates panel (pick a draft → modal for notes → one-step-undo
+  backup → preview). Then Phase 5 (web composer; modal paste already done).
 
-### Update Mode usage (Phase 3)
-1. `/ops track_start scope:<All|One|All except> [types:channels,roles,…]`
+### Panel navigation (current — everything via `/ops`)
+Run `/ops` → ephemeral control panel. Buttons:
+- **Manage Embeds** → the docs/feature/update-embed hub (unchanged).
+- **Updates** → Create · List · View · Send · Delete.
+- **Update Mode** → Start (all) · types-menu (specific) · Status · Finish · Cancel.
+- **Configure** → Set Newsletter Channel (modal) · List Configured.
+- **Install Emojis** → This Server / Bot App (modal asks category + exclude).
+
+### Update Mode usage (panel)
+1. `/ops` → **Update Mode** → **Start (all)**, or pick specific types in the menu.
 2. Do your server changes (bot logs channels/roles/emojis/settings/bots).
-3. `/ops track_status` to see what's logged.
-4. `/ops track_finish` → saves a draft Update from the changes + previews it.
-   Edit it (re-create) / add off-Discord notes, then `/ops send_update`.
-   `/ops track_cancel` discards instead.
+3. **Status** to see what's logged.
+4. **Finish** → saves a draft Update from the changes + previews it.
+   Edit it / add off-Discord notes, then **Updates → Send**. **Cancel** discards.
 
-### How to author + send an update (Phase 2 usage)
-1. `/ops action:"Set Newsletter Channel" server:<guildID> channel:<channelID>` for each target server.
-2. Write the update as a `.md` file (## headings, `![alt](url)` banners, `---` dividers,
-   `> thumb: url` for side images, `:emoji:` from the installed pack).
-3. `/ops action:"Create Update" title:... [date] [version] [banner] file:<the .md>` → saves draft + previews.
-4. `/ops action:"View Update" update:<pick>` to preview again.
-5. `/ops action:"Send Update" update:<pick> scope:<All|All except|Specific> [server:<comma IDs>]`.
+### How to author + send an update (panel)
+1. `/ops` → **Configure** → **Set Newsletter Channel** (server ID blank = current; channel ID) per target server.
+2. `/ops` → **Updates** → **Create** → modal: title/date/version/banner, then either
+   **paste markdown** into the box (≤4000 chars) OR leave it blank and **upload a `.md` file**
+   when prompted. Markdown supports `##` headings, `![alt](url)` banners, `---` dividers,
+   `> thumb: url` side images, `:emoji:` from the installed pack. Saves draft + previews.
+3. **Updates → View** → pick to preview again.
+4. **Updates → Send** → pick the update → **All / All-except / Specific** → (pick servers) → broadcast.
 
 Relevant files:
 - `src/commands/slash/staff/ManagerEmbeds.ts` — embeds hub + builders + TestEmbed.

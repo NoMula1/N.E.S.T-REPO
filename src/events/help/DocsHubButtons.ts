@@ -73,7 +73,7 @@ export default {
 			if (id === "me_updates_list") {
 				const docs = await Update.find().sort({ date: -1, createdAt: -1 }).limit(25).lean() as any[]
 				if (!docs.length) {
-					await interaction.reply({ content: "No saved updates yet. Create one with `/ops create_update`.", ephemeral: true })
+					await interaction.reply({ content: "No saved updates yet. Create one from **/ops → Updates → Create**.", ephemeral: true })
 					return
 				}
 				const menu = new StringSelectMenuBuilder()
@@ -111,7 +111,7 @@ export default {
 			await interaction.deferReply({ ephemeral: true })
 			try {
 				const comps = await renderUpdateComponents(interaction.client, u)
-				await interaction.editReply({ content: `Preview of **${u.title}** (\`${id}\`) — send it with \`/ops send_update\`.` })
+				await interaction.editReply({ content: `Preview of **${u.title}** (\`${id}\`) — send it from **/ops → Updates → Send**.` })
 				await interaction.followUp({ flags: FLAG_COMPONENTS_V2 as any, components: comps as any, ephemeral: true })
 			} catch (e: any) {
 				await interaction.editReply({ content: `Render failed: ${e?.message || e}` })
