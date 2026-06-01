@@ -32,14 +32,24 @@ import {
 	ButtonBuilder,
 	ButtonStyle,
 	EmbedBuilder,
+	MediaGalleryBuilder,
+	MediaGalleryItemBuilder,
 	PermissionsBitField,
+	SectionBuilder,
+	SeparatorBuilder,
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
+	TextDisplayBuilder,
+	ThumbnailBuilder,
 } from "discord.js"
 import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
 
 const NH_RED = 0xE63946
 const SITE = "https://nighthawknetwork.org"
+/* MessageFlags.IsComponentsV2 (1 << 15). Used as a raw value because the
+   top-level discord-api-types bundled with discord.js predates this flag
+   in its typings, even though the runtime + builders support it. */
+const FLAG_COMPONENTS_V2 = 1 << 15
 
 /* ═══════════════════════════════════════════════════════════════
    TYPES
@@ -451,6 +461,66 @@ function buildUniversalHub(): { embed: EmbedBuilder; rows: ActionRowBuilder<Butt
 	return { embed, rows: [row] }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   TEST EMBED — Components V2 demo
+   A faithful reproduction of the MakeYourDiscord server-info message
+   Tyler shared, built with Discord's Components V2 layout (banners,
+   text+thumbnail sections, dividers, headings). Demonstrates the
+   format end-to-end.
+
+   Notes:
+     • Sent with MessageFlags.IsComponentsV2 — NO content/embeds allowed
+       alongside it.
+     • Banner / thumbnail images use placehold.co placeholders so the
+       demo is self-contained (the original Discord CDN URLs had
+       expiring tokens, several already dead). Swap these for hosted
+       NightHawk images for a real one.
+     • Custom emoji from the source server → Unicode equivalents so
+       they render anywhere. Role/channel names → bold text instead of
+       broken mentions.
+═══════════════════════════════════════════════════════════════ */
+function buildTestComponents() {
+	const ph = (w: number, h: number, bg: string, label: string) =>
+		`https://placehold.co/${w}x${h}/${bg}/FFFFFF/png?text=${encodeURIComponent(label)}`
+	const banner = (w: number, h: number, bg: string, label: string, alt: string) =>
+		new MediaGalleryBuilder().addItems(
+			new MediaGalleryItemBuilder().setURL(ph(w, h, bg, label)).setDescription(alt))
+	const rule = () => new SeparatorBuilder().setDivider(true)
+	const td = (s: string) => new TextDisplayBuilder().setContent(s)
+	const section = (blocks: string[], thumbLabel: string) =>
+		new SectionBuilder()
+			.addTextDisplayComponents(blocks.map(td))
+			.setThumbnailAccessory(new ThumbnailBuilder().setURL(ph(170, 170, "5865F2", thumbLabel)))
+
+	return [
+		banner(600, 149, "5865F2", "MakeYourDiscord", "bon c'est ma première image, on y va molo"),
+		rule(),
+		section([
+			"## 🐀 C'est quoi ce serveur ?\n💬 **MakeYourDiscord** est un serveur **d'entraide** français, il est destiné aux utilisateurs aguerris mais surtout aussi aux __débutants de Discord__. On veut les aider, informer ! Donc ici, vous retrouverez des **services**, des évènements, des projets (coucou MakeBetter) pour vous aider sur Discord ! Tout les services du serveur sont **gratuits**… 🎉",
+		], "INFO"),
+		rule(),
+		banner(600, 149, "404EED", "2 types de services", "ps : on en a 2 types"),
+		rule(),
+		section([
+			"### 🛠️ __**La conception**__\nOn créer, modifie vos serveurs en fonction de vos demandes !",
+			"🔹 L'unique condition est d'avoir invité __2 personnes__ sur le serveur avec votre propre lien d'invitation.\n\n🔹 Vous devrez remplir un __formulaire__ pour qu'on soit les plus efficaces possibles ! Attention, vous pouvez avoir accès au même service seulement 1 fois toutes les 2 semaines.\n\n🔹 Ce sont nos superbes **@Concepteurs** qui s'en chargent ! __Respectez-les__ :)",
+		], "DESIGN"),
+		rule(),
+		section([
+			"### 📊 L'**évaluation**\nBasée sur une cinquantaine de critères (subjectifs), ramenés sur 20, elle vous aide à viser les points forts et faibles de vos serveurs !",
+			"Pareillement,\n\n🔸 L'unique condition est d'avoir invité __2 personnes__ sur le serveur avec votre propre lien d'invitation.\n\n🔸 Vous devrez remplir un __formulaire__ pour qu'on soit les plus efficaces possibles ! Seulement 1 fois toutes les 2 semaines.\n\n🔸 Ce sont nos superbes **@Evaluateurs** qui s'en chargent ! __Respectez-les__ :)",
+		], "EVAL"),
+		rule(),
+		td("💜 En effet, y'a tellement de trucs cools (🐸) sur ce serveur que c'est un peu le bordel !\nC'est parti pour vous décrire nos **concepts** :"),
+		banner(600, 51, "5865F2", "★ SERVICES ★", "oui j'ai kiffé le c/c"),
+		td("## 🏆 #🏆・server-award\nC'est un **concours du meilleur** serveur que vous connaissez, avant il était mensuel mais vu que les mêmes serveurs revenaient, maintenant pas de régularité :)\n\n## 🗞️ #🗞️・discord-décrypte\nComme Hugo Décryptes (||pas de procès stp||), on vous prépare des **articles sur l'actualité de Discord** ! On est pas super réguliers (en même temps on recherche un/des rédacteurs) mais le mieux serait d'en proposer 1 chaque 2 semaines :o\n\n## 🎨 #🎨・previews\nNom bizarre ouais mais on imagine, créons des **serveurs** fictifs pour de grandes **marques** (Gentle Mates, Burger King tout ça tout ça) !\n\n## ⌨️ #📖・articles\nBon non ce n'est __pas la même chose__ que Discord-Décryptes, c'est des articles générales sur **l'amélioration de vos serveurs** Discord."),
+		rule(),
+		section([
+			"💬 Vous êtes **actifs** = Vous gagnez des rôles sur le serveur\n\n🟢 Niveau **5** = **@Discordien**\n🟢 Niveau **10** = **@Builder**\n🟢 Niveau **17** = **@Wumpus Lover**\n🟢 Niveau **30** = **@Gromodo**",
+		], "LEVELS"),
+	]
+}
+
 /* Exports for the interaction handler in DocsHubButtons.ts */
 export {
 	TOP_LEVEL,
@@ -462,6 +532,7 @@ export {
 	buildDocCategorySelect,
 	buildDocEmbed,
 	buildUniversalHub,
+	buildTestComponents,
 }
 export type { EmbedDef, DocMeta }
 
@@ -485,6 +556,7 @@ export default new CommandExecutor()
 		const docs = await loadDocs()
 		const all = [
 			{ name: "📖 Universal Hub (everything)", value: "hub" },
+			{ name: "🧪 TestEmbed (Components V2 demo)", value: "test" },
 			...TOP_LEVEL.map(t => ({ name: `${t.emoji} ${t.label}`, value: `feat:${t.key}` })),
 			...PORTFOLIO_SUBS.map(s => ({ name: `${s.emoji} Portfolio · ${s.label}`, value: `sub:${s.key}` })),
 			...docs.map(d => ({ name: `📄 ${d.catLabel} · ${d.title}`.slice(0, 100), value: `doc:${d.slug}` })),
@@ -503,6 +575,16 @@ export default new CommandExecutor()
 		if (!raw || raw === "hub") {
 			const { embed, rows } = buildUniversalHub()
 			await interaction.reply({ embeds: [embed], components: rows as any })
+			return
+		}
+
+		// TestEmbed → Components V2 message. IsComponentsV2 flag is required
+		// and forbids content/embeds, so this reply shape is distinct.
+		if (raw === "test") {
+			await interaction.reply({
+				flags: FLAG_COMPONENTS_V2 as any,
+				components: buildTestComponents() as any,
+			})
 			return
 		}
 
