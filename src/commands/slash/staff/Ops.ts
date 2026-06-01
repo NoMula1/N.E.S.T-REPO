@@ -171,16 +171,14 @@ export default new CommandExecutor()
 			return
 		}
 
-		const batch = files.slice(0, MAX_PER_RUN)
-		const overflow = files.length - batch.length
 		const where = target === "application" ? "the bot application" : `**${interaction.guild.name}**`
 		const exclNote = exclude ? ` (excluding **${exclude}**)` : ""
-		await interaction.reply({
-			content: `${config.loadingEmoji} Installing **${batch.length}** emoji${batch.length === 1 ? "" : "s"} into ${where}${exclNote}…${overflow > 0 ? `\n(${overflow} over the ${MAX_PER_RUN}/run cap — re-run to continue.)` : ""}`,
-			ephemeral: true,
-		})
+		await interaction.deferReply({ ephemeral: true })
 
-		// Pre-load existing names at the target to skip duplicates.
+		// Fetch what's already at the target FIRST, then filter the pack down
+		// to only the not-yet-installed ones. This is what makes re-runs
+		// actually CONTINUE: each run skips the already-present emojis and
+		// takes the next chunk, instead of re-checking the same first batch.
 		let existing = new Set<string>()
 		try {
 			if (target === "application") {
@@ -191,6 +189,21 @@ export default new CommandExecutor()
 				existing = new Set(coll.map((e: GuildEmoji) => e.name?.toLowerCase() || ""))
 			}
 		} catch { /* non-fatal */ }
+
+		const pending = files.filter(f => !existing.has(f.name.toLowerCase()))
+		const alreadyThere = files.length - pending.length
+		if (!pending.length) {
+			await interaction.editReply({ content: `${config.successEmoji} All **${files.length}** emoji${files.length === 1 ? "" : "s"} are already installed in ${where}. Nothing to do.` })
+			return
+		}
+
+		const batch = pending.slice(0, MAX_PER_RUN)
+		const overflow = pending.length - batch.length
+		await interaction.editReply({
+			content: `${config.loadingEmoji} Installing **${batch.length}** emoji${batch.length === 1 ? "" : "s"} into ${where}${exclNote}…`
+				+ (alreadyThere ? `\n(${alreadyThere} already there — skipping.)` : "")
+				+ (overflow > 0 ? `\n(${overflow} remaining after this run — re-run to continue.)` : ""),
+		})
 
 		let installed = 0, skipped = 0, failed = 0, capHit = false
 		const errors: string[] = []
@@ -219,13 +232,16 @@ export default new CommandExecutor()
 			await sleep(CREATE_DELAY_MS)
 		}
 
+		const remaining = overflow + skipped + failed   // not-yet-installed after this run
 		const lines = [
 			`${config.successEmoji} **Emoji install complete** — ${where}`,
-			`• Installed: **${installed}**`,
-			skipped ? `• Skipped (already exist): ${skipped}` : "",
+			`• Installed this run: **${installed}**`,
+			alreadyThere ? `• Already present (skipped): ${alreadyThere}` : "",
 			failed ? `• Failed: ${failed}` : "",
 			capHit ? `• ⚠️ Hit this server's emoji cap — install remaining categories to another server, or use **target: Bot Application**.` : "",
-			overflow > 0 ? `• ${overflow} more over the ${MAX_PER_RUN}/run cap — re-run to continue.` : "",
+			(overflow > 0 || (capHit && remaining > 0))
+				? `• **Re-run the exact same command to continue** — it skips what's already in and installs the next batch. (${overflow > 0 ? `${overflow} left after the per-run cap` : `${remaining} left`}.)`
+				: "",
 			errors.length ? `\n${errors.join("\n")}` : "",
 		].filter(Boolean)
 		await interaction.editReply({ content: lines.join("\n") }).catch(() => {})
