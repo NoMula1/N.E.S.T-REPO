@@ -1,6 +1,6 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction, InteractionReplyOptions, SlashCommandBooleanOption, SlashCommandBuilder } from 'discord.js'
 import { config } from '../utils/config'
-import { SlashCommandAttachmentOption, SlashCommandChannelOption, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandRoleOption, SlashCommandStringOption, SlashCommandUserOption } from '@discordjs/builders'
+import { SlashCommandAttachmentOption, SlashCommandChannelOption, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandRoleOption, SlashCommandStringOption, SlashCommandSubcommandBuilder, SlashCommandUserOption } from '@discordjs/builders'
 import { getGuildConfig } from '../utils/GuildConfigCache'
 import { GuildRoles } from '../schemas/GuildConfig'
 
@@ -218,6 +218,16 @@ export class CommandExecutor extends SlashCommandBuilder {
 	 */
 	addAttachmentOption(input: SlashCommandAttachmentOption | ((builder: SlashCommandAttachmentOption) => SlashCommandAttachmentOption)): this {
 		super.addAttachmentOption(input)
+		return this
+	};
+	/**
+	 * Adds a subcommand. Each subcommand exposes only its own options in the
+	 * Discord UI (fixes the "every option shows for every action" clutter).
+	 *
+	 * @param input - A function that returns a subcommand builder or a built one
+	 */
+	addSubcommand(input: SlashCommandSubcommandBuilder | ((builder: SlashCommandSubcommandBuilder) => SlashCommandSubcommandBuilder)): this {
+		super.addSubcommand(input as any)
 		return this
 	};
 	/**

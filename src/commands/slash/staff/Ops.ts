@@ -99,81 +99,53 @@ function gatherFiles(category: string | null, exclude: string | null): PackFile[
 export default new CommandExecutor()
 	.setName("ops")
 	.setDescription("Owner operations")
-	.addStringOption(opt =>
-		opt.setName("action")
-			.setDescription("Which operation to run")
-			.setRequired(true)
-			.addChoices(
-				{ name: "Install Emojis", value: "emojisinstall" },
-				{ name: "Manage Embeds", value: "embeds" },
-				{ name: "Set Newsletter Channel", value: "config-newsletter" },
-				{ name: "Create Update", value: "update-create" },
-				{ name: "View Update", value: "update-view" },
-				{ name: "Send Update", value: "update-send" },
-				{ name: "List Updates", value: "update-list" },
-				{ name: "Delete Update", value: "update-delete" },
-			))
-	.addStringOption(opt =>
-		opt.setName("target")
-			.setDescription("Where to install the emojis")
-			.setRequired(false)
+	// Each subcommand exposes ONLY its own options in the Discord UI.
+	.addSubcommand(s => s
+		.setName("install_emojis")
+		.setDescription("Install the bundled emoji pack")
+		.addStringOption(opt => opt.setName("target").setDescription("Where to install")
 			.addChoices(
 				{ name: "This Server (members can use)", value: "server" },
-				{ name: "Bot Application (bot uses in embeds)", value: "application" },
-			))
-	.addStringOption(opt =>
-		opt.setName("category")
-			.setDescription("Which category to install — leave blank for all")
-			.setRequired(false)
-			.setAutocomplete(true))
-	.addStringOption(opt =>
-		opt.setName("exclude")
-			.setDescription("When installing all, skip these categories (autocomplete keeps adding to the list)")
-			.setRequired(false)
-			.setAutocomplete(true))
-	.addStringOption(opt =>
-		opt.setName("server")
-			.setDescription("Server ID (for Set Newsletter Channel) — blank uses the current server")
-			.setRequired(false))
-	.addStringOption(opt =>
-		opt.setName("channel")
-			.setDescription("Channel ID (for Set Newsletter Channel)")
-			.setRequired(false))
-	// ─── Update options ───
-	.addStringOption(opt =>
-		opt.setName("update")
-			.setDescription("Which saved update (View / Send / Delete)")
-			.setRequired(false)
-			.setAutocomplete(true))
-	.addAttachmentOption(opt =>
-		opt.setName("file")
-			.setDescription("Markdown (.md) file for Create Update")
-			.setRequired(false))
-	.addStringOption(opt =>
-		opt.setName("title")
-			.setDescription("Title for Create Update")
-			.setRequired(false))
-	.addStringOption(opt =>
-		opt.setName("date")
-			.setDescription("Date for Create Update (YYYY-MM-DD) — blank = today")
-			.setRequired(false))
-	.addStringOption(opt =>
-		opt.setName("version")
-			.setDescription("Version label for Create Update, e.g. 2.0 (optional)")
-			.setRequired(false))
-	.addStringOption(opt =>
-		opt.setName("banner")
-			.setDescription("Hero banner image URL for Create Update (optional)")
-			.setRequired(false))
-	.addStringOption(opt =>
-		opt.setName("scope")
-			.setDescription("Send Update target")
-			.setRequired(false)
+				{ name: "Bot Application (bot uses in embeds)", value: "application" }))
+		.addStringOption(opt => opt.setName("category").setDescription("Which category — blank for all").setAutocomplete(true))
+		.addStringOption(opt => opt.setName("exclude").setDescription("When installing all, skip these (autocomplete keeps adding)").setAutocomplete(true)))
+	.addSubcommand(s => s
+		.setName("embeds")
+		.setDescription("Open the Manage Embeds hub (docs, features, updates)"))
+	.addSubcommand(s => s
+		.setName("set_newsletter")
+		.setDescription("Set a server's newsletter / changelog channel")
+		.addStringOption(opt => opt.setName("channel").setDescription("Channel ID to post updates in").setRequired(true))
+		.addStringOption(opt => opt.setName("server").setDescription("Server ID — blank uses the current server")))
+	.addSubcommand(s => s
+		.setName("create_update")
+		.setDescription("Save a new update from a markdown file")
+		.addStringOption(opt => opt.setName("title").setDescription("Update title").setRequired(true))
+		.addAttachmentOption(opt => opt.setName("file").setDescription("The .md file").setRequired(true))
+		.addStringOption(opt => opt.setName("date").setDescription("YYYY-MM-DD — blank = today"))
+		.addStringOption(opt => opt.setName("version").setDescription("Version label, e.g. 2.0"))
+		.addStringOption(opt => opt.setName("banner").setDescription("Hero banner image URL")))
+	.addSubcommand(s => s
+		.setName("view_update")
+		.setDescription("Preview a saved update")
+		.addStringOption(opt => opt.setName("update").setDescription("Which update").setRequired(true).setAutocomplete(true)))
+	.addSubcommand(s => s
+		.setName("send_update")
+		.setDescription("Broadcast a saved update to servers")
+		.addStringOption(opt => opt.setName("update").setDescription("Which update").setRequired(true).setAutocomplete(true))
+		.addStringOption(opt => opt.setName("scope").setDescription("Target")
 			.addChoices(
 				{ name: "All configured servers", value: "all" },
-				{ name: "All except (use 'server' = IDs to skip)", value: "all-except" },
-				{ name: "Specific (use 'server' = IDs to send to)", value: "specific" },
-			))
+				{ name: "All except (server = IDs to skip)", value: "all-except" },
+				{ name: "Specific (server = IDs to send to)", value: "specific" }))
+		.addStringOption(opt => opt.setName("server").setDescription("Comma-separated server IDs (for specific / all-except)")))
+	.addSubcommand(s => s
+		.setName("list_updates")
+		.setDescription("List all saved updates"))
+	.addSubcommand(s => s
+		.setName("delete_update")
+		.setDescription("Delete a saved update")
+		.addStringOption(opt => opt.setName("update").setDescription("Which update").setRequired(true).setAutocomplete(true)))
 	.setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
 	.setBasePermission({ Level: PermissionLevel.Developer, IsUser: [OWNER_ID] })
 	.setAutocompleteExecutor(async (interaction: AutocompleteInteraction) => {
@@ -234,7 +206,7 @@ export default new CommandExecutor()
 			return
 		}
 
-		const action = interaction.options.getString("action", true)
+		const action = interaction.options.getSubcommand()
 
 		// ─── Manage Embeds → open the embeds hub (owner browse, ephemeral) ───
 		if (action === "embeds") {
@@ -244,7 +216,7 @@ export default new CommandExecutor()
 		}
 
 		// ─── Set Newsletter Channel → upsert per-server config ───
-		if (action === "config-newsletter") {
+		if (action === "set_newsletter") {
 			const serverId = interaction.options.getString("server") || interaction.guildId!
 			const channelId = interaction.options.getString("channel")
 			if (!SNOWFLAKE.test(serverId)) {
@@ -269,7 +241,7 @@ export default new CommandExecutor()
 		// ═══════════════════ UPDATE SYSTEM ═══════════════════
 
 		// ─── Create Update (from a .md attachment) ───
-		if (action === "update-create") {
+		if (action === "create_update") {
 			const file = interaction.options.getAttachment("file")
 			const title = interaction.options.getString("title")
 			if (!title) { interaction.reply({ content: "Provide a **title**.", ephemeral: true }); return }
@@ -305,7 +277,7 @@ export default new CommandExecutor()
 		}
 
 		// ─── View Update (ephemeral preview) ───
-		if (action === "update-view") {
+		if (action === "view_update") {
 			const id = interaction.options.getString("update")
 			if (!id) { interaction.reply({ content: "Pick an **update**.", ephemeral: true }); return }
 			const u = await Update.findOne({ updateId: id }).lean() as any
@@ -322,7 +294,7 @@ export default new CommandExecutor()
 		}
 
 		// ─── Send Update (targeting: all / all-except / specific) ───
-		if (action === "update-send") {
+		if (action === "send_update") {
 			const id = interaction.options.getString("update")
 			const scope = interaction.options.getString("scope") || "all"
 			if (!id) { interaction.reply({ content: "Pick an **update**.", ephemeral: true }); return }
@@ -366,7 +338,7 @@ export default new CommandExecutor()
 		}
 
 		// ─── List Updates ───
-		if (action === "update-list") {
+		if (action === "list_updates") {
 			const docs = await Update.find().sort({ date: -1, createdAt: -1 }).limit(25).lean() as any[]
 			if (!docs.length) { interaction.reply({ content: "No saved updates yet — create one with **Create Update**.", ephemeral: true }); return }
 			const lines = docs.map(u =>
@@ -376,7 +348,7 @@ export default new CommandExecutor()
 		}
 
 		// ─── Delete Update ───
-		if (action === "update-delete") {
+		if (action === "delete_update") {
 			const id = interaction.options.getString("update")
 			if (!id) { interaction.reply({ content: "Pick an **update**.", ephemeral: true }); return }
 			const r = await Update.deleteOne({ updateId: id })
@@ -384,7 +356,7 @@ export default new CommandExecutor()
 			return
 		}
 
-		if (action !== "emojisinstall") {
+		if (action !== "install_emojis") {
 			interaction.reply({ content: `Unknown action: \`${action}\`.`, ephemeral: true })
 			return
 		}

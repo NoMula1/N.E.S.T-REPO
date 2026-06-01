@@ -449,7 +449,15 @@ function buildUniversalHub(): { embed: EmbedBuilder; rows: ActionRowBuilder<Butt
 				.setStyle(ButtonStyle.Primary),
 		)
 	}
-	return { embed, rows: [row] }
+	// Second row: saved Update Embeds (the dated changelog posts).
+	const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+		new ButtonBuilder()
+			.setCustomId("me_updates_list")
+			.setLabel("Update Embeds")
+			.setEmoji("🛰️")
+			.setStyle(ButtonStyle.Secondary),
+	)
+	return { embed, rows: [row, row2] }
 }
 
 /* ═══════════════════════════════════════════════════════════════
