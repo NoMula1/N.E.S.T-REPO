@@ -57,13 +57,20 @@ function emojiName(file: string, used: Set<string>): string {
 	return name
 }
 
+/* Parse a comma-separated exclude string into a lowercased name set. */
+function parseExclude(exclude: string | null): Set<string> {
+	return new Set((exclude || "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean))
+}
+
 /* Gather pack files, optionally scoped to one category, optionally
-   excluding one category (only meaningful when installing all). */
+   excluding one or more categories (comma-separated; only meaningful
+   when installing all). */
 function gatherFiles(category: string | null, exclude: string | null): PackFile[] {
 	const used = new Set<string>()
 	const out: PackFile[] = []
 	let cats = category && category !== "(all)" ? [category] : listCategories()
-	if (exclude) cats = cats.filter(c => c.toLowerCase() !== exclude.toLowerCase())
+	const excludeSet = parseExclude(exclude)
+	if (excludeSet.size) cats = cats.filter(c => !excludeSet.has(c.toLowerCase()))
 	for (const cat of cats) {
 		const dir = join(EMOJI_ROOT, cat)
 		if (!existsSync(dir)) continue
@@ -102,16 +109,36 @@ export default new CommandExecutor()
 			.setAutocomplete(true))
 	.addStringOption(opt =>
 		opt.setName("exclude")
-			.setDescription("When installing all, skip this one category")
+			.setDescription("When installing all, skip these categories (autocomplete keeps adding to the list)")
 			.setRequired(false)
 			.setAutocomplete(true))
 	.setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
 	.setBasePermission({ Level: PermissionLevel.Developer, IsUser: [OWNER_ID] })
 	.setAutocompleteExecutor(async (interaction: AutocompleteInteraction) => {
 		const focused = interaction.options.getFocused(true)
-		// `exclude` offers categories only; `category` also offers "(all)".
-		const base = focused.name === "exclude" ? listCategories() : ["(all)", ...listCategories()]
-		const choices = base
+
+		if (focused.name === "exclude") {
+			// Multi-select via comma accumulation: keep everything before the
+			// last comma as already-chosen, suggest categories for the fragment
+			// after it, and return the FULL accumulated string as each value so
+			// picking one appends rather than replaces.
+			const parts = focused.value.split(",")
+			const current = (parts[parts.length - 1] || "").trim().toLowerCase()
+			const chosen = parts.slice(0, -1).map(s => s.trim()).filter(Boolean)
+			const chosenLower = new Set(chosen.map(s => s.toLowerCase()))
+			const suggestions = listCategories()
+				.filter(c => !chosenLower.has(c.toLowerCase()) && c.toLowerCase().includes(current))
+				.slice(0, 25)
+				.map(c => {
+					const full = [...chosen, c].join(", ").slice(0, 100)   // Discord value cap
+					return { name: full, value: full }
+				})
+			await interaction.respond(suggestions)
+			return
+		}
+
+		// `category` — single value, also offers "(all)".
+		const choices = ["(all)", ...listCategories()]
 			.filter(c => c.toLowerCase().includes(focused.value.toLowerCase()))
 			.slice(0, 25)
 			.map(c => ({ name: c, value: c }))
