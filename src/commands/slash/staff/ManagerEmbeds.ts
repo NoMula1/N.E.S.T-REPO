@@ -472,53 +472,52 @@ function buildUniversalHub(): { embed: EmbedBuilder; rows: ActionRowBuilder<Butt
    Notes:
      • Sent with MessageFlags.IsComponentsV2 — NO content/embeds allowed
        alongside it.
-     • Banner / thumbnail images use placehold.co placeholders so the
-       demo is self-contained (the original Discord CDN URLs had
-       expiring tokens, several already dead). Swap these for hosted
-       NightHawk images for a real one.
-     • Custom emoji from the source server → Unicode equivalents so
-       they render anywhere. Role/channel names → bold text instead of
-       broken mentions.
+     • Banners + thumbnails are NightHawk's own hosted artwork at
+       nighthawknetwork.org/img/embeds (permanent URLs, no expiring
+       tokens). Rendered via the site's SVG→PNG pipeline.
+     • Copy is original NightHawk onboarding content (English).
+       Standard Unicode emoji so everything renders without the bot
+       needing to share a server with any custom emoji source.
 ═══════════════════════════════════════════════════════════════ */
 function buildTestComponents() {
-	const ph = (w: number, h: number, bg: string, label: string) =>
-		`https://placehold.co/${w}x${h}/${bg}/FFFFFF/png?text=${encodeURIComponent(label)}`
-	const banner = (label: string, alt: string) =>
+	const IMG = `${SITE}/img/embeds`
+	const banner = (file: string, alt: string) =>
 		new MediaGalleryBuilder().addItems(
-			new MediaGalleryItemBuilder().setURL(ph(600, 149, "5865F2", label)).setDescription(alt))
+			new MediaGalleryItemBuilder().setURL(`${IMG}/${file}`).setDescription(alt))
 	const rule = () => new SeparatorBuilder().setDivider(true)
 	const td = (s: string) => new TextDisplayBuilder().setContent(s)
-	const section = (blocks: string[], thumbLabel: string) =>
+	const section = (blocks: string[], thumbFile: string) =>
 		new SectionBuilder()
 			.addTextDisplayComponents(blocks.map(td))
-			.setThumbnailAccessory(new ThumbnailBuilder().setURL(ph(170, 170, "5865F2", thumbLabel)))
+			.setThumbnailAccessory(new ThumbnailBuilder().setURL(`${IMG}/${thumbFile}`))
 
-	// Ordered to match the live MakeBetter render Tyler compared against.
+	// NightHawk onboarding embed in the Components V2 style — original copy +
+	// original hosted banners/tiles (not the reference's content or art).
 	const items = [
-		banner("MakeYourDiscord", "bon c'est ma première image, on y va molo"),
+		banner("hero.png", "NightHawk — Developer Protection Network"),
 		rule(),
 		section([
-			"## 🐀 C'est quoi ce serveur ?\n💬 **MakeYourDiscord** est un serveur **d'entraide** français, il est destiné aux utilisateurs aguerris mais surtout aussi aux __débutants de Discord__. On veut les aider, informer ! Donc ici, vous retrouverez des **services**, des évènements, des projets (coucou MakeBetter) pour vous aider sur Discord ! Tout les services du serveur sont **gratuits**… 🎉",
-		], "INFO"),
+			"## 🛡️ What is NightHawk?\n💬 **NightHawk** is a **developer protection network** for the Roblox creator community. We run a cross-server scam registry, verified portfolios, a marketplace, and a careers system — all built to keep developers safe and help good work get seen. Everything here is **free**. 🎉",
+		], "tile-reticle.png"),
 		rule(),
-		banner("NOS SERVICES", "ps : on en a 2 types"),
-		rule(),
-		section([
-			"### 🛠️ __**La conception**__\nOn créer, modifie vos serveurs en fonction de vos demandes !",
-			"🔹 L'unique condition est d'avoir invité __2 personnes__ sur le serveur avec votre propre lien d'invitation.\n\n🔹 Vous devrez remplir un __formulaire__ pour qu'on soit les plus efficaces possibles ! Attention, vous pouvez avoir accès au même service seulement 1 fois toutes les 2 semaines.\n\n🔹 Ce sont nos superbes **@Concepteurs** qui s'en chargent ! __Respectez-les__ :)",
-		], "DESIGN"),
+		banner("services.png", "Our Services"),
 		rule(),
 		section([
-			"### 📊 L'**évaluation**\nBasée sur une cinquantaine de critères (subjectifs), ramenés sur 20, elle vous aide à viser les points forts et faibles de vos serveurs !",
-			"Pareillement,\n\n🔸 L'unique condition est d'avoir invité __2 personnes__ sur le serveur avec votre propre lien d'invitation.\n\n🔸 Vous devrez remplir un __formulaire__ pour qu'on soit les plus efficaces possibles ! Seulement 1 fois toutes les 2 semaines.\n\n🔸 Ce sont nos superbes **@Evaluateurs** qui s'en chargent ! __Respectez-les__ :)",
-		], "EVAL"),
-		rule(),
-		td("💜 En effet, y'a tellement de trucs cools (🐸) sur ce serveur que c'est un peu le bordel !\nC'est parti pour vous décrire nos **concepts** :"),
-		td("## 🏆 #🏆・server-award\nC'est un **concours du meilleur** serveur que vous connaissez, avant il était mensuel mais vu que les mêmes serveurs revenaient, maintenant pas de régularité :)\n\n## 🗞️ #🗞️・discord-décrypte\nComme Hugo Décryptes (||pas de procès stp||), on vous prépare des **articles sur l'actualité de Discord** ! On est pas super réguliers (en même temps on recherche un/des rédacteurs) mais le mieux serait d'en proposer 1 chaque 2 semaines :o\n\n## 🎨 #🎨・previews\nNom bizarre ouais mais on imagine, créons des **serveurs** fictifs pour de grandes **marques** (Gentle Mates, Burger King tout ça tout ça) !\n\n## ⌨️ #📖・articles\nBon non ce n'est __pas la même chose__ que Discord-Décryptes, c'est des articles générales sur **l'amélioration de vos serveurs** Discord."),
+			"### 🎨 __**Verified Portfolios**__\nBuild a public card at `nhwk.dev/c/you` that shows off your work.",
+			"🔹 Apply to get **verified** in a category — Scripter, Builder, GFX, and more.\n\n🔹 Post entries, equip badges, and customize your card with backgrounds + effects.\n\n🔹 Generate shareable preview images with the **Mockup Maker**. Open **/managerembeds** anytime for the full guide.",
+		], "tile-wrench.png"),
 		rule(),
 		section([
-			"💬 Vous êtes **actifs** = Vous gagnez des rôles sur le serveur\n\n🟢 Niveau **5** = **@Discordien**\n🟢 Niveau **10** = **@Builder**\n🟢 Niveau **17** = **@Wumpus Lover**\n🟢 Niveau **30** = **@Gromodo**",
-		], "LEVELS"),
+			"### 🛒 __**The Marketplace**__\nHire developers, offer your services, or sell assets — synced between Discord and the web.",
+			"🔸 Post with **/post** — Hiring, For Hire, or Selling.\n\n🔸 Every listing is **staff-reviewed** before it goes live.\n\n🔸 No scams, no stolen content, no ToS-breaking services — that's the whole point.",
+		], "tile-chart.png"),
+		rule(),
+		td("💜 There's a lot more under the hood. Here's the rest of what NightHawk runs:"),
+		td("## 🚨 Scam Logs\nA public registry of **verified scammers**, queryable in-server with R.I.O.T's `/scamlookup`. Contributed by partner servers, reviewed by staff.\n\n## 🎯 Careers\nOpen positions at NightHawk — **volunteer, hybrid, and paid** roles across development, design, investigation, and community.\n\n## 📚 Documentation\nEvery policy, R.I.O.T doc, and feature guide lives at **nighthawknetwork.org/docs**.\n\n## 🤝 Partners\nRun a Roblox dev server? Join the **R.I.O.T network** and protect your community from known scammers."),
+		rule(),
+		section([
+			"💬 Active members earn roles + badges that show on your public card.\n\n🟢 Verified in a category = **Verified** badge\n🟢 Contribute to the scam registry = **Investigator** track\n🟢 Tenure + participation = **milestone** badges",
+		], "tile-reticle.png"),
 	]
 
 	// Wrap everything in a Container so it renders as one cohesive bordered
