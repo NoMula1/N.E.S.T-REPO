@@ -57,11 +57,13 @@ function emojiName(file: string, used: Set<string>): string {
 	return name
 }
 
-/* Gather pack files, optionally scoped to one category. */
-function gatherFiles(category: string | null): PackFile[] {
+/* Gather pack files, optionally scoped to one category, optionally
+   excluding one category (only meaningful when installing all). */
+function gatherFiles(category: string | null, exclude: string | null): PackFile[] {
 	const used = new Set<string>()
 	const out: PackFile[] = []
-	const cats = category && category !== "(all)" ? [category] : listCategories()
+	let cats = category && category !== "(all)" ? [category] : listCategories()
+	if (exclude) cats = cats.filter(c => c.toLowerCase() !== exclude.toLowerCase())
 	for (const cat of cats) {
 		const dir = join(EMOJI_ROOT, cat)
 		if (!existsSync(dir)) continue
@@ -98,12 +100,19 @@ export default new CommandExecutor()
 			.setDescription("Which category to install — leave blank for all")
 			.setRequired(false)
 			.setAutocomplete(true))
+	.addStringOption(opt =>
+		opt.setName("exclude")
+			.setDescription("When installing all, skip this one category")
+			.setRequired(false)
+			.setAutocomplete(true))
 	.setDefaultMemberPermissions(PermissionsBitField.Flags.Administrator)
 	.setBasePermission({ Level: PermissionLevel.Developer, IsUser: [OWNER_ID] })
 	.setAutocompleteExecutor(async (interaction: AutocompleteInteraction) => {
-		const focused = interaction.options.getFocused().toLowerCase()
-		const choices = ["(all)", ...listCategories()]
-			.filter(c => c.toLowerCase().includes(focused))
+		const focused = interaction.options.getFocused(true)
+		// `exclude` offers categories only; `category` also offers "(all)".
+		const base = focused.name === "exclude" ? listCategories() : ["(all)", ...listCategories()]
+		const choices = base
+			.filter(c => c.toLowerCase().includes(focused.value.toLowerCase()))
 			.slice(0, 25)
 			.map(c => ({ name: c, value: c }))
 		await interaction.respond(choices)
@@ -127,18 +136,20 @@ export default new CommandExecutor()
 
 		const target = interaction.options.getString("target") || "server"
 		const category = interaction.options.getString("category")
+		const exclude = interaction.options.getString("exclude")
 
-		const files = gatherFiles(category)
+		const files = gatherFiles(category, exclude)
 		if (!files.length) {
-			interaction.reply({ content: `No emoji files found${category && category !== "(all)" ? ` in category \`${category}\`` : ""}. Pack lives at \`assets/emojis/<Category>/\`.`, ephemeral: true })
+			interaction.reply({ content: `No emoji files found${category && category !== "(all)" ? ` in category \`${category}\`` : ""}${exclude ? ` (excluding \`${exclude}\`)` : ""}. Pack lives at \`assets/emojis/<Category>/\`.`, ephemeral: true })
 			return
 		}
 
 		const batch = files.slice(0, MAX_PER_RUN)
 		const overflow = files.length - batch.length
 		const where = target === "application" ? "the bot application" : `**${interaction.guild.name}**`
+		const exclNote = exclude ? ` (excluding **${exclude}**)` : ""
 		await interaction.reply({
-			content: `${config.loadingEmoji} Installing **${batch.length}** emoji${batch.length === 1 ? "" : "s"} into ${where}…${overflow > 0 ? `\n(${overflow} over the ${MAX_PER_RUN}/run cap — re-run to continue.)` : ""}`,
+			content: `${config.loadingEmoji} Installing **${batch.length}** emoji${batch.length === 1 ? "" : "s"} into ${where}${exclNote}…${overflow > 0 ? `\n(${overflow} over the ${MAX_PER_RUN}/run cap — re-run to continue.)` : ""}`,
 			ephemeral: true,
 		})
 
