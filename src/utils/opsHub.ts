@@ -59,14 +59,13 @@ export function buildRootPanel(): Panel {
 	const embed = panelEmbed(
 		"🛰️  NightHawk Ops",
 		"Owner control panel — only **you** see this. Pick a section:\n\n" +
-		"📑 **Manage Embeds** — docs, feature & update embeds\n" +
 		"📰 **Updates** — create, preview, send & manage changelog posts\n" +
 		"🛰️ **Update Mode** — track this server's changes into a draft\n" +
 		"⚙️ **Configure** — set each server's newsletter channel\n" +
-		"😀 **Install Emojis** — load the bundled emoji pack",
+		"😀 **Install Emojis** — load the bundled emoji pack\n\n" +
+		"_Posting docs / feature / ToS embeds lives in its own command:_ `/managerembeds`.",
 	)
 	const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-		btn("ops_nav_embeds", "Manage Embeds", "📑", ButtonStyle.Primary),
 		btn("ops_nav_updates", "Updates", "📰", ButtonStyle.Primary),
 		btn("ops_nav_mode", "Update Mode", "🛰️", ButtonStyle.Primary),
 		btn("ops_nav_config", "Configure", "⚙️"),

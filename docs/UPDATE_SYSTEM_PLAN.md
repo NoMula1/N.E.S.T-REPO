@@ -20,15 +20,22 @@ Two complementary authoring paths feed **one stored Update object**, all under `
 > (one picker row, no subcommands). The tree below is the conceptual layout;
 > each node is a button or menu, not a slash subcommand.
 ```
-/ops
- ├─ 📑 Manage Embeds        (the old /managerembeds, moved here)
- │    ├─ Doc Embeds         (docs from nighthawknetwork.org/docs/manifest.json)
- │    ├─ Feature Embeds     (portfolio, marketplace, scam-logs, careers, customize, badges, applications, mockup-maker, background-library)
- │    └─ Update Embeds      → select-menu of saved updates → View / Send / Edit / Delete
- ├─ 🛰️ Update Mode          → Start / Finish / Compose
- ├─ ⚙️ Configure Server     → per-server settings (newsletter channel by ID, etc.)
- └─ 😀 Install Emojis        (DONE — Ops.ts emojisinstall)
+/ops   (no options → opens the panel)
+ ├─ 📰 Updates              → Create / List / View / Send / Delete (changelog posts)
+ ├─ 🛰️ Update Mode          → Start / Status / Finish / Cancel
+ ├─ ⚙️ Configure            → per-server settings (newsletter channel by ID)
+ └─ 😀 Install Emojis        → This Server / Bot App
+
+/managerembeds  (SEPARATE command — Tyler kept embeds out of /ops, 2026-06)
+ └─ section:<mixed type-to-search list>  → posts the chosen embed PUBLICLY
+      Universal Hub · TestEmbed · Feature embeds · Portfolio sub-features ·
+      Docs / ToS / Legal / Hiring / Marketplace docs · Update Embeds (browse)
 ```
+> **Why embeds are NOT in /ops:** the panel uses buttons/menus (Discord caps
+> them at 25 items) but there are ~30 embeds. The only flat list that holds
+> them all is `/managerembeds`'s autocomplete — which Tyler prefers ("mixed")
+> and which already posts publicly. So embeds keep their own command; /ops is
+> updates/mode/config/emojis only.
 
 ### Targeting (where an update sends) — mirrors the emoji command ergonomics
 - **All servers**
@@ -172,13 +179,15 @@ Custom emoji (`:RDIcon:`, `:Automod:`, …) render from the pack installed via `
   the Updates panel (pick a draft → modal for notes → one-step-undo
   backup → preview). Then Phase 5 (web composer; modal paste already done).
 
-### Panel navigation (current — everything via `/ops`)
+### Panel navigation (current)
 Run `/ops` → ephemeral control panel. Buttons:
-- **Manage Embeds** → the docs/feature/update-embed hub (unchanged).
 - **Updates** → Create · List · View · Send · Delete.
 - **Update Mode** → Start (all) · types-menu (specific) · Status · Finish · Cancel.
 - **Configure** → Set Newsletter Channel (modal) · List Configured.
 - **Install Emojis** → This Server / Bot App (modal asks category + exclude).
+
+Embeds are NOT here — post them with **`/managerembeds section:<pick>`** (mixed
+type-to-search list, posts publicly). Kept separate on purpose (see structure note).
 
 ### Update Mode usage (panel)
 1. `/ops` → **Update Mode** → **Start (all)**, or pick specific types in the menu.

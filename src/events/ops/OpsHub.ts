@@ -16,7 +16,6 @@ import UpdateTracking from "../../schemas/UpdateTracking"
 import { renderUpdateComponents, FLAG_COMPONENTS_V2 } from "../../utils/ComponentsV2"
 import { TRACK_TYPES, setActiveLocal, draftMarkdownFromChanges } from "../../utils/updateMode"
 import { installEmojiPack } from "../../utils/opsEmoji"
-import { buildUniversalHub } from "../../commands/slash/staff/ManagerEmbeds"
 import {
 	OWNER_ID, SNOWFLAKE, todayISO, slugify, parseIds,
 	buildRootPanel, buildUpdatesPanel, buildModePanel, buildConfigPanel, buildEmojiPanel,
@@ -64,10 +63,6 @@ async function handleButton(interaction: any, id: string) {
 	if (id === "ops_nav_mode") return interaction.update(panel(buildModePanel()))
 	if (id === "ops_nav_config") return interaction.update(panel(buildConfigPanel()))
 	if (id === "ops_nav_emojis") return interaction.update(panel(buildEmojiPanel()))
-	if (id === "ops_nav_embeds") {
-		const { embed, rows } = buildUniversalHub()
-		return interaction.reply({ embeds: [embed], components: rows as any, ephemeral: true })
-	}
 
 	// ─── Modals ───
 	if (id === "ops_upd_create") return interaction.showModal(createUpdateModal())
