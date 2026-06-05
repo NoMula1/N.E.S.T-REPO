@@ -4,14 +4,40 @@
 ============================================================ */
 import { GuildMember } from "discord.js"
 import type { GuildConfig } from "../schemas/GuildConfig"
+import NestSystemConfigModel from "../schemas/NestSystemConfig"
+import { Log } from "../utils/logging"
 
-/** Is this guild allowed to use AI in v1?
- *  v1 = only the primary NightHawk guild. */
-export function isAllowedGuild(guildId: string | undefined): boolean {
+/* Cached AI-portal allowlist (guild IDs) from the shared NEST db
+   (nest_system_config singleton, managed by staff at
+   /riot/staff-admin on the website). Refreshed at most once per minute
+   so dashboard changes propagate without a bot restart. */
+let allowlistCache: { ids: Set<string>; expiresAt: number } | null = null
+const ALLOWLIST_TTL_MS = 60_000
+
+async function getAllowlistedGuildIds(): Promise<Set<string>> {
+	const now = Date.now()
+	if (allowlistCache && allowlistCache.expiresAt > now) return allowlistCache.ids
+	const doc = await NestSystemConfigModel.findOne({ key: 'config' }).lean()
+	const ids = new Set<string>(doc?.aiPortalGuildIds ?? [])
+	allowlistCache = { ids, expiresAt: now + ALLOWLIST_TTL_MS }
+	return ids
+}
+
+/** Is this guild allowed to use AI?
+ *  Allowed if it is the env primary NightHawk guild (always), OR it is in
+ *  the staff-managed allowlist (nest_system_config.aiPortalGuildIds).
+ *  Fails closed: if the allowlist lookup errors, access is denied. */
+export async function isAllowedGuild(guildId: string | undefined): Promise<boolean> {
 	if (!guildId) return false
 	const primary = process.env.NIGHTHAWK_GUILD_ID
-	if (!primary) return false
-	return guildId === primary
+	if (primary && guildId === primary) return true
+	try {
+		const ids = await getAllowlistedGuildIds()
+		return ids.has(guildId)
+	} catch (err) {
+		Log.error("[NightHawk-AI] allowlist lookup failed: " + (err as Error).message)
+		return false
+	}
 }
 
 /** Does this member have permission to invoke the AI in this guild?

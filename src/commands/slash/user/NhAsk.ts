@@ -26,7 +26,7 @@ async function runAsk(interaction: ChatInputCommandInteraction) {
 		return
 	}
 
-	if (!isAllowedGuild(interaction.guildId || undefined)) {
+	if (!(await isAllowedGuild(interaction.guildId || undefined))) {
 		await interaction.reply({ content: "❌ NightHawk AI is not enabled on this server.", flags: MessageFlags.Ephemeral })
 		return
 	}

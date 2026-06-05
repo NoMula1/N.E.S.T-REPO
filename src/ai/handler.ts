@@ -82,7 +82,7 @@ export async function handleAiMention(message: Message): Promise<void> {
 	if (message.author.bot) return
 	if (!message.guild || !message.member) return
 	if (!(message.channel instanceof TextChannel)) return
-	if (!isAllowedGuild(message.guild.id)) return // silently ignore non-primary servers
+	if (!(await isAllowedGuild(message.guild.id))) return // silently ignore non-allowlisted servers
 
 	/* ── 1. Per-guild config check — always fresh so dashboard
 	   changes (role list, enable flag) take effect immediately ─ */
