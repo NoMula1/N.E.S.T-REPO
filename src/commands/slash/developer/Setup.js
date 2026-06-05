@@ -43,7 +43,7 @@ exports.default = new CommandExecutor_1.CommandExecutor()
     // Fetch updated doc to show current linked status
     const updatedConfig = await GuildConfig_1.default.findOne({ guildId }).lean();
     const linked = (_c = updatedConfig === null || updatedConfig === void 0 ? void 0 : updatedConfig.linked) !== null && _c !== void 0 ? _c : false;
-    const portalBase = (_e = (_d = process.env.PORTAL_URL) === null || _d === void 0 ? void 0 : _d.replace(/\/$/, '')) !== null && _e !== void 0 ? _e : 'https://nighthawkorg-production.up.railway.app';
+    const portalBase = (_e = (_d = process.env.PORTAL_URL) === null || _d === void 0 ? void 0 : _d.replace(/\/$/, '')) !== null && _e !== void 0 ? _e : 'https://nighthawknetwork.org';
     const setupUrl = `${portalBase}/member/nest/setup?token=${linkToken}&guild=${guildId}`;
     const embed = new discord_js_1.EmbedBuilder()
         .setTitle('NEST Server Setup')
