@@ -30,7 +30,7 @@ export async function finalizeGiveaway(client: Client, giveawayId: string, sched
 			: `🎉 Congratulations ${mentionList} — you won **${giveaway.title}**!`
 
 		if (channel && (channel as any).isTextBased && giveaway.messageId) {
-			await (channel as any).send({ content: text }).catch((e) => Log.warn(`[giveaway] announce send failed: ${String(e)}`))
+			await (channel as any).send({ content: text }).catch((e: unknown) => Log.warn(`[giveaway] announce send failed: ${String(e)}`))
 			// Attempt to edit original message embed to mark ended
 			try {
 				const msg = await (channel as any).messages.fetch(giveaway.messageId).catch(() => null)
@@ -42,11 +42,11 @@ export async function finalizeGiveaway(client: Client, giveawayId: string, sched
 						await msg.edit({ embeds: [embed] }).catch(() => {})
 					}
 				}
-			} catch (e) {
+			} catch (e: unknown) {
 				Log.warn(`[giveaway] failed to edit original message: ${String(e)}`)
 			}
 		} else if (channel && (channel as any).isTextBased) {
-			await (channel as any).send({ content: text }).catch((e) => Log.warn(`[giveaway] announce send failed: ${String(e)}`))
+			await (channel as any).send({ content: text }).catch((e: unknown) => Log.warn(`[giveaway] announce send failed: ${String(e)}`))
 		} else {
 			Log.warn(`[giveaway] channel ${giveaway.channelId} not available to announce winners for giveaway ${giveawayId}`)
 		}
@@ -55,8 +55,8 @@ export async function finalizeGiveaway(client: Client, giveawayId: string, sched
 		await Giveaway.findByIdAndUpdate(giveawayId, { $set: { status: "ended" } }).catch(() => {})
 		await ScheduledTask.findByIdAndUpdate((scheduledTask as any)?._id, { $set: { status: "fired", nextRunAt: null } }).catch(() => {})
 		Log.info(`[giveaway] finalized ${giveawayId} winners=${winners.join(",")}`)
-	} catch (e) {
-		Log.warn(`[giveaway] finalize failed: ${(e as Error).message}`)
+	} catch (e: unknown) {
+		Log.warn(`[giveaway] finalize failed: ${String((e as Error | unknown))}`)
 		throw e
 	}
 }
