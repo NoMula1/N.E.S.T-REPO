@@ -64,15 +64,33 @@ export default class CoreClient extends Client {
 
 		try {
 			Log.info(`Registering all commands (${toRegister.length}).`)
-			// console.log(toRegister)
 
-			await rest.put(
+			// Build body safely, skipping any command that fails to serialize
+			const body: any[] = []
+			for (const command of toRegister) {
+				try {
+					if (typeof (command as any).toJSON === 'function') {
+						body.push((command as any).toJSON())
+					} else {
+						Log.warn(`Command ${String((command as any).name ?? '(unknown)')} has no toJSON and will be skipped.`)
+					}
+				} catch (err) {
+					Log.error(`Failed to serialize command ${(command as any)?.name ?? '<unknown>'}: ${String(err)}. Skipping.`)
+				}
+			}
+
+			// Timeout wrapper — avoid hanging indefinitely on Discord REST
+			const putPromise = rest.put(
 				Routes.applicationCommands(this.#clientId),
-				{ body: toRegister.map(command => command.toJSON()) })
+				{ body }
+			)
+			const timeoutMs = 30_000
+			const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('REST request timed out')), timeoutMs))
 
+			await Promise.race([putPromise, timeout])
 			Log.info("Registered all commands")
 		} catch (error) {
-			Log.error("Failed to register commands: " + error)
+			Log.error("Failed to register commands: " + String(error))
 		}
 	}
 
