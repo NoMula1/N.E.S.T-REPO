@@ -8,7 +8,7 @@
    Execution targets:
    - dm_reminder       → DM the creator (mention copy may DM extra user)
    - channel_message   → post plain text to channelId
-   - channel_embed     → post an embed to channelId
+   - channel_embed     → post an embed to a channel
 
    Errors increment errorCount; after 5 consecutive errors the task is
    moved to status 'errored' and stops being scheduled.
@@ -17,6 +17,7 @@ import { Client, EmbedBuilder, TextChannel } from "discord.js"
 import ScheduledTask from "../schemas/ScheduledTask"
 import type { ScheduledTask as ScheduledTaskShape, ScheduledEmbedPayload } from "../schemas/ScheduledTask"
 import { Log } from "../utils/logging"
+import { finalizeGiveaway } from "./giveawayFinalizer"
 
 const TICK_INTERVAL_MS = 30_000
 const MAX_CONSECUTIVE_ERRORS = 5
@@ -89,6 +90,15 @@ async function tick(client: Client): Promise<void> {
 
 async function executeTask(client: Client, task: ScheduledTaskShape & { _id: unknown }): Promise<void> {
 	Log.info(`[scheduler] executing task ${String(task._id)} type=${task.type} createdBy=${task.createdBy}`)
+
+	// Special payload key for giveaway finalization — format: GIVEAWAY_END:<giveawayId>
+	if (task.payload?.content && typeof task.payload.content === "string" && task.payload.content.startsWith("GIVEAWAY_END:")) {
+		const giveId = task.payload.content.split(":")[1]
+		if (giveId) {
+			await finalizeGiveaway(client, giveId as string, task)
+			return
+		}
+	}
 
 	switch (task.type) {
 		case "dm_reminder": {
