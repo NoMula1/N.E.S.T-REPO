@@ -10,10 +10,12 @@ export default new CommandExecutor()
 	.setDescription("Create a giveaway (staff)")
 	.setDefaultMemberPermissions(PermissionsBitField.Flags.ManageGuild)
 	.setBasePermission({ Level: PermissionLevel.Moderator })
+	// Required options first (Discord requires required options before optional ones)
 	.addStringOption(opt => opt.setName("title").setDescription("Giveaway title").setRequired(true))
-	.addStringOption(opt => opt.setName("description").setDescription("Optional description").setRequired(false))
 	.addStringOption(opt => opt.setName("duration").setDescription("Duration like 30m, 1h, 2d").setRequired(true))
 	.addIntegerOption(opt => opt.setName("winners").setDescription("How many winners").setRequired(true))
+	// Optional options after
+	.addStringOption(opt => opt.setName("description").setDescription("Optional description").setRequired(false))
 	.addRoleOption(opt => opt.setName("required_role").setDescription("Role required to enter the giveaway").setRequired(false))
 	.addChannelOption(opt => opt.setName("channel").setDescription("Channel to post giveaway in").addChannelTypes(ChannelType.GuildText).setRequired(false))
 	.setExecutor(async interaction => {
