@@ -24,7 +24,7 @@ exports.default = new ContextCommandExecutor_1.MessageContextCommandExecutor()
                 new discord_js_1.EmbedBuilder()
                     .setTitle(`Innapropriate Content`)
                     .setDescription(`Please remember to follow our [Server Rules](https://discord.com/channels/813997998245150721/1390771765117976718)`
-                    + '\n\nYour message\'s contents were deemed to be innapropriate, please remember to keep things clean and safe!'
+                    + '\n\nYour message\'s contents were deemed to be inappropriate , please remember to keep things clean and safe!'
                     + '\n\nThank you for keeping NIGHTHAWK SERVERS safe.')
                     .setFooter({
                     text: 'NIGHTHAWK SERVERS Flagging'
