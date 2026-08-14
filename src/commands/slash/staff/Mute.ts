@@ -126,6 +126,6 @@ export default new CommandExecutor()
 
 		}).catch(async (err: Error) => {
 			handleError(err)
-			await interaction.reply(errorEmbed(`Something went wrong!\n\n\`${err.message}\``)
+			await interaction.reply(errorEmbed(`Something went wrong!\n\n\`${err.message}\``))
 		})
 	})
