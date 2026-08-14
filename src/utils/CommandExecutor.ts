@@ -1,6 +1,6 @@
 import { AutocompleteInteraction, ChatInputCommandInteraction, InteractionReplyOptions, SlashCommandBooleanOption, SlashCommandBuilder } from 'discord.js'
 import { config } from '../utils/config'
-import { SlashCommandAttachmentOption, SlashCommandChannelOption, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandRoleOption, SlashCommandStringOption, SlashCommandSubcommandBuilder, SlashCommandUserOption } from '../utils/SlashTypes'
+import { SlashCommandAttachmentOption, SlashCommandChannelOption, SlashCommandIntegerOption, SlashCommandNumberOption, SlashCommandRoleOption, SlashCommandStringOption, SlashCommandSubcommandBuilder, SlashCommandUserOption } from '@discordjs/builders'
 import { getGuildConfig } from '../utils/GuildConfigCache'
 import { GuildRoles } from '../schemas/GuildConfig'
 
