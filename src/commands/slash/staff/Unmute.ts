@@ -3,6 +3,7 @@ import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor
 import { errorEmbed, handleError, incrimentCase, sendModLogs } from "../../../utils/GenUtils"
 import Case from "../../../schemas/Case"
 import { config } from "../../../utils/config"
+import { getGuildConfig } from "../../../utils/GuildConfigCache"
 import { Scope } from "../../../bootstrap/GlobalScope"
 import FastFlag from "../../../schemas/FastFlag"
 
@@ -20,7 +21,7 @@ export default new CommandExecutor()
 			.setRequired(true)
 	)
 	.setBasePermission({
-		Level: PermissionLevel.Helper,
+		Level: PermissionLevel.None,
 		HasRole: ['1480437092361175163', '1474515140841046231', '1474515390418780330', '1474514887609680124'],
 		/**
 		 * 1480437092361175163 = Trial Help Forums Moderator
@@ -32,6 +33,19 @@ export default new CommandExecutor()
 	})
 	.setExecutor(async (interaction) => {
 		if (!interaction.inCachedGuild()) { interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true }); return }
+
+		// Check if user has Helper role from guild config
+		const guildConfig = await getGuildConfig(interaction.guildId!)
+		const helperRoleId = guildConfig?.roles?.Helper
+		const hasHelperRole = helperRoleId && interaction.member.roles.cache.has(helperRoleId)
+		const hasLegacyRoles = interaction.member.roles.cache.some(r => 
+			['1480437092361175163', '1474515140841046231', '1474515390418780330', '1474514887609680124'].includes(r.id)
+		)
+
+		if (!hasHelperRole && !hasLegacyRoles) {
+			interaction.reply({ content: "You must be a Helper or higher to use this command.", ephemeral: true })
+			return
+		}
 
 		const moderationDisabled = await FastFlag.findOne({ refName: "DisableModerationCommands", enabled: true })
 		if (moderationDisabled) {
@@ -87,7 +101,7 @@ export default new CommandExecutor()
 			await sendModLogs({ guild: interaction.guild!, mod: interaction.member!, targetUser: user.user, action: "Unmute" }, { title: "User Unmuted", actionInfo: `**Reason:** ${reason}\n> **Case ID:** ${caseNumber}`, channel: interaction.channel || undefined })
 		}).catch(async (err: Error) => {
 			handleError(err)
-			await interaction.reply(errorEmbed(`Something went wrong!\n\n\`${err.message}\``))
+			await interaction.reply(errorEmbed(`Something went wrong!\n\n\`${err.message}\``)
 		})
 
 	})

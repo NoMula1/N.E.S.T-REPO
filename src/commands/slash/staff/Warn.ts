@@ -3,6 +3,7 @@ import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor
 import { errorEmbed, getLengthFromString, handleError, incrimentCase, sendModLogs } from "../../../utils/GenUtils"
 import Case from "../../../schemas/Case"
 import { config } from "../../../utils/config"
+import { getGuildConfig } from "../../../utils/GuildConfigCache"
 import { Scope } from "../../../bootstrap/GlobalScope"
 
 export default new CommandExecutor()
@@ -19,7 +20,7 @@ export default new CommandExecutor()
 			.setRequired(true)
 	)
 	.setBasePermission({
-		Level: PermissionLevel.Helper,
+		Level: PermissionLevel.None,
 		HasRole: ['1480437092361175163', '1474515140841046231', '1474515390418780330', '1474514887609680124']
 		/**
 		 * 1480437092361175163 = Trial Help Forums Moderator
@@ -30,6 +31,19 @@ export default new CommandExecutor()
 	})
 	.setExecutor(async (interaction) => {
 		if (!interaction.inCachedGuild()) { interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true }); return }
+
+		// Check if user has Helper role from guild config
+		const guildConfig = await getGuildConfig(interaction.guildId!)
+		const helperRoleId = guildConfig?.roles?.Helper
+		const hasHelperRole = helperRoleId && interaction.member.roles.cache.has(helperRoleId)
+		const hasLegacyRoles = interaction.member.roles.cache.some(r => 
+			['1480437092361175163', '1474515140841046231', '1474515390418780330', '1474514887609680124'].includes(r.id)
+		)
+
+		if (!hasHelperRole && !hasLegacyRoles) {
+			interaction.reply({ content: "You must be a Helper or higher to use this command.", ephemeral: true })
+			return
+		}
 
 		const user = interaction.options.getUser("user")
 		const member = interaction.options.getMember("user")
@@ -89,6 +103,4 @@ export default new CommandExecutor()
 		await user.send({ embeds: [warnedDM] }).catch((err: Error) => { })
 
 		await sendModLogs({ guild: interaction.guild!, mod: interaction.member!, targetUser: user, action: "Warning" }, { title: "User Warned", actionInfo: `**Reason:** ${reason}\n> **Case ID:** ${caseNumber}`, channel: interaction.channel || undefined })
-
-
 	})

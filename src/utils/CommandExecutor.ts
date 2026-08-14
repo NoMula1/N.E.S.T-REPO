@@ -39,8 +39,6 @@ export enum PermissionLevel {
 	MarketStaff,
 	/** Requires the Trial Help Moderator Role */
 	TrialHelpModerator,
-	/** Requires the Helper role. */
-	Helper,
 	/** Requires the Help Moderator role. */
 	HelpModerator,
 	/** Requires the Market Moderator role. */
@@ -68,7 +66,6 @@ export enum PermissionLevel {
 const LEVEL_ROLE_MAP: Partial<Record<PermissionLevel, { key: keyof GuildRoles; message: string }>> = {
 	[PermissionLevel.MarketStaff]:            { key: 'MarketStaff',            message: 'You must be Trial Market Moderator and up to use this command.' },
 	[PermissionLevel.TrialHelpModerator]:     { key: 'TrialHelpModerator',     message: 'You must be Trial Help Moderator and up to use this command.' },
-	[PermissionLevel.Helper]:                 { key: 'Helper',                message: 'You must be Helper and up to use this command.' },
 	[PermissionLevel.HelpModerator]:          { key: 'HelpModerator',          message: 'You must be Help Moderator and up to use this command.' },
 	[PermissionLevel.MarketModerator]:        { key: 'MarketModerator',        message: 'You must be Market Moderator and up to use this command.' },
 	[PermissionLevel.HelpManager]:            { key: 'HelpManager',            message: 'You must be Help Manager and up to use this command.' },
