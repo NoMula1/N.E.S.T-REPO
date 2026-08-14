@@ -1,3 +1,10 @@
+import { EmbedBuilder } from "discord.js"
+import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
+import { errorEmbed, getLengthFromString, handleError, incrimentCase, sendModLogs } from "../../../utils/GenUtils"
+import Case from "../../../schemas/Case"
+import { config } from "../../../utils/config"
+import { Scope } from "../../../bootstrap/GlobalScope"
+
 export default new CommandExecutor()
 	.setName("warn")
 	.setDescription("Issue a warning to a user.")
@@ -78,3 +85,10 @@ export default new CommandExecutor()
 			
 			Continued warns will result in more severe punishment. Keep in mind, warnings will expire in 30 days, meaning it will not longer effect moderation decisions, applications, and more.`)
 			.setColor("Green")
+			.setTimestamp()
+		await user.send({ embeds: [warnedDM] }).catch((err: Error) => { })
+
+		await sendModLogs({ guild: interaction.guild!, mod: interaction.member!, targetUser: user, action: "Warning" }, { title: "User Warned", actionInfo: `**Reason:** ${reason}\n> **Case ID:** ${caseNumber}`, channel: interaction.channel || undefined })
+
+
+	})
