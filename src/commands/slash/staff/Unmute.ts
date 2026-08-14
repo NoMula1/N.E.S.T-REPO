@@ -101,7 +101,7 @@ export default new CommandExecutor()
 			await sendModLogs({ guild: interaction.guild!, mod: interaction.member!, targetUser: user.user, action: "Unmute" }, { title: "User Unmuted", actionInfo: `**Reason:** ${reason}\n> **Case ID:** ${caseNumber}`, channel: interaction.channel || undefined })
 		}).catch(async (err: Error) => {
 			handleError(err)
-			await interaction.reply(errorEmbed(`Something went wrong!\n\n\`${err.message}\``)
+			await interaction.reply(errorEmbed(`Something went wrong!\n\n\`${err.message}\``))
 		})
 
 	})
