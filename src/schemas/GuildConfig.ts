@@ -8,6 +8,7 @@ export interface HelpRole {
 export interface GuildRoles {
   MarketStaff?: string;
   TrialHelpModerator?: string;
+  Helper?: string;
   HelpModerator?: string;
   MarketModerator?: string;
   MarketManager?: string;
@@ -150,6 +151,7 @@ const helpRoleEntrySchema = new mongoose.Schema<HelpRole>({
 const guildRolesSchema = new mongoose.Schema<GuildRoles>({
   MarketStaff: String,
   TrialHelpModerator: String,
+  Helper: String,
   HelpModerator: String,
   MarketModerator: String,
   MarketManager: String,

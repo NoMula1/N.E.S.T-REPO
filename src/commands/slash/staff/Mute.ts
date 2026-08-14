@@ -1,10 +1,3 @@
-import { EmbedBuilder } from "discord.js"
-import { CommandExecutor, PermissionLevel } from "../../../utils/CommandExecutor"
-import { errorEmbed, getLengthFromString, handleError, incrimentCase, sendModLogs } from "../../../utils/GenUtils"
-import Case from "../../../schemas/Case"
-import { config } from "../../../utils/config"
-import FastFlag from "../../../schemas/FastFlag"
-
 export default new CommandExecutor()
 	.setName("mute")
 	.setDescription("Issue a mute to a user.")
@@ -27,14 +20,14 @@ export default new CommandExecutor()
 			.setRequired(true)
 	)
 	.setBasePermission({
-		Level: PermissionLevel.AssistantModerator,
+		Level: PermissionLevel.Helper,
 		HasRole: ['1480437092361175163', '1474515140841046231', '1474515390418780330', '1474514887609680124']
 		/**
 		 * 1480437092361175163 = Trial Help Forums Moderator
 		 * 1474515140841046231 = Scam Investigator
 		 * 1474515390418780330 = Trial Scam Investigator
 		 * 1474514887609680124 = Scam Investigations Manager
-		*/
+	*/
 	})
 	.setExecutor(async (interaction) => {
 		if (!interaction.inCachedGuild()) { interaction.reply({ content: "You must be inside a cached guild to use this command!", ephemeral: true }); return }
@@ -94,23 +87,4 @@ export default new CommandExecutor()
 			})
 
 			const mutedEmbed = new EmbedBuilder()
-				.setDescription(`**Case:** #${caseNumber} | **Mod:** ${interaction.user.username} | **Reason:** ${reason} | **Length:** ${length[1]}`)
-				.setColor("Green")
-			await interaction.reply({ content: `${config.arrowEmoji} **${user.username}** has been muted. (**${warns}** warns)`, embeds: [mutedEmbed] })
-
-			const mutedDM = new EmbedBuilder()
-				.setAuthor({ name: `You have been muted`, iconURL: interaction.guild.iconURL() || undefined })
-				.setDescription(`${config.bulletpointEmoji} **Reason:** ${reason}
-				${config.bulletpointEmoji} **Length:** ${length[1]}
-				${config.bulletpointEmoji} **Case Number:** #${caseNumber}`)
-				.setColor("Green")
-				.setTimestamp()
-			user.send({ embeds: [mutedDM] }).catch((err: Error) => { })
-
-			await sendModLogs({ guild: interaction.guild!, mod: interaction.member!, targetUser: user, action: "Mute" }, { title: "User Muted", actionInfo: `**Reason:** ${reason}\n**Length:**${length[1]}\n> **Case ID:** ${caseNumber}`, channel: interaction.channel || undefined })
-
-		}).catch(async (err: Error) => {
-			handleError(err)
-			await interaction.reply(errorEmbed(`Something went wrong!\n\n\`${err.message}\``))
-		})
-	})
+			
